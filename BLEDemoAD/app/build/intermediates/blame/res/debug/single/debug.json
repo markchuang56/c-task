@@ -1,0 +1,54 @@
+[
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_peripheral_list_characteristic_item.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/peripheral_list_characteristic_item.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/drawable-xxhdpi_ic_launcher.png.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/drawable-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_peripheral_details_characteristic_item.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/peripheral_details_characteristic_item.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/drawable-xhdpi_ic_launcher.png.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/drawable-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_peripheral_list_services_item.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/peripheral_list_services_item.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_activity_peripheral.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/activity_peripheral.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/drawable-mdpi_ic_launcher.png.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/drawable-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_peripheral_list_services_header.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/peripheral_list_services_header.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_activity_scanning_item.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/activity_scanning_item.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/layout_progress_indicator.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/layout/progress_indicator.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/menu_scanning.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/menu/scanning.xml"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/drawable-hdpi_ic_launcher.png.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/drawable-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/res/merged/debug/menu_peripheral.xml.flat",
+        "source": "/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/src/main/res/menu/peripheral.xml"
+    }
+]

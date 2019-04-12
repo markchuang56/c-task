@@ -1,0 +1,7 @@
+#Internal package file, do not edit.
+#Mon Jan 28 15:35:15 CST 2019
+0.baseType=DIRECTORY
+0.base=/Users/jasonchuang/Documents/else/bk-0619/aa/BLEDemoAD/app/build/intermediates/assets/debug
+0.path=production.dat
+0.set=ASSET
+count=1

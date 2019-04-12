@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="true"
+        jar="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="288a254a3ed6d3885bff793a65958124560fa75d">
+        <dex dex="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run-bootstrap_e1a8d2b942f1ca2939353db7d922f2e86b49e487/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.3"
+        sha1="077fc59f05276c69ae0273dae01236d8eefcabaa">
+        <dex dex="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run-bootstrap_e1a8d2b942f1ca2939353db7d922f2e86b49e487/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/incremental-runtime-classes/debug/instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.3"
+        sha1="3be78ebc2706b2e1fe2f12d5726887a92d6c183b">
+        <dex dex="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run_39e8b61ee1b6893c794fc169cfe05c106621c8d7/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/incremental-runtime-classes/debug/instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="3be78ebc2706b2e1fe2f12d5726887a92d6c183b">
+        <dex dex="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/transforms/dex/debug/folders/1000/10000/instant-run_39e8b61ee1b6893c794fc169cfe05c106621c8d7/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/Users/h2Sync/Library/Android/sdk/extras/android/m2repository/com/android/support/support-v4/18.0.0/support-v4-18.0.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.3"
+        sha1="44ec51e9d395a47aab135e5e1b556c0007442156">
+        <dex dex="/Users/h2Sync/Documents/aa/BLEDemoAD/app/build/intermediates/transforms/dex/debug/folders/1000/10/support-v4-18.0.0_b98b96ac28e3db03594043e5ab328202a44d97e4/classes.dex" />
+    </item>
+
+</items>

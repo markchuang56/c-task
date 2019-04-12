@@ -1,0 +1,23 @@
+# hellomake: hellomake.c hellofunc.c
+#	gcc -o hellomake hellomake.c hellofunc.c -I.
+
+CC=gcc
+CFLAGS=-I.
+
+# makefile 3
+DEPS = hellomake.h
+
+# makefile 4
+OBJ = hellomake.o hellofunc.o
+
+# makefile 3
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+# makefile 4
+hellomake: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+# makefile 2, 3
+# hellomake: hellomake.o hellofunc.o
+#	$(CC) -o hellomake hellomake.o hellofunc.o

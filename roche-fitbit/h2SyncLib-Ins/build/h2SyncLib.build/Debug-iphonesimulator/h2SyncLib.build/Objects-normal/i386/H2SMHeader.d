@@ -1,0 +1,24 @@
+dependencies: \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/H2SMHeader.m \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/h2Lib/prefixheader.pch \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/h2SyncLib/H2EquipID.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/BLE_VENDOR/OmronDef.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/h2Lib/StatusCode.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/H2SMHeader.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/IRDA/ROCHE/ACCompactPlus.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/h2Lib/h2BrandModel.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/h2Lib/h2CmdInfo.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/IRDA/ROCHE/ACAviva.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/BAYER/JJBayerContour.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/iCareSens/CareSensN.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/FREESTYLE/FreeStyleLite.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/GlucoCard/GlucoCardVital.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/ONETOUCH/LSOneTouchUltra2.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/ONETOUCH/LSOneTouchUltraMini.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/GlucoCard/ROConfirm.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/h2Lib/h2MeterRecordInfo.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/BeneChek/benechek.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/APEX/Omnis.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/iCareSens/OmnisEmbracePro.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/BIONIME/Bionime.h \
+  /Users/jasonchuang/Documents/else/uc-d/h2SyncLib-Ins/UART/APEX/H2ApexBioEventProcess.h

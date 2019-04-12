@@ -1,0 +1,356 @@
+USER               PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND
+jasonchuang        532   3.1  0.9 123131332 157124   ??  Ss    8:59PM   0:26.94 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+_hidd               94   1.8  0.1  4334400  11768   ??  Ss    8:58PM   0:16.58 /usr/libexec/hidd
+_windowserver      154   0.8  1.3  6568876 220276   ??  Us    8:58PM   2:22.41 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+jasonchuang        285   0.3  1.4  4739268 238880   ??  S     8:59PM   0:11.95 /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal -psn_0_57358
+jasonchuang        697   0.0  0.7 123032088 116772   ??  Ss    9:27PM   0:01.00 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        696   0.0  0.7 106254872 116912   ??  Ss    9:27PM   0:01.06 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        695   0.0  1.6 123448784 265440   ??  Ss    9:27PM   0:11.75 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        692   0.0  0.1  4331408  18204   ??  S     9:26PM   0:00.30 /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistant_service
+jasonchuang        691   0.0  0.1  4332700   8560   ??  S     9:26PM   0:00.05 /usr/libexec/swcd
+jasonchuang        689   0.0  0.2  4457164  28072   ??  S     9:26PM   0:01.14 /private/var/folders/sh/_9swzwk55g586dj74kr40qf40000gn/T/AppTranslocation/7ECB6245-7960-4041-885C-EDEC60E9D20A/d/OpenVanilla.app/Contents/MacOS/OpenVanilla
+jasonchuang        687   0.0  0.1  4296772   8504   ??  Ss    9:26PM   0:00.01 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+jasonchuang        686   0.0  0.1  4357552  19852   ??  S     9:23PM   0:00.16 /System/Library/CoreServices/OSDUIHelper.app/Contents/MacOS/OSDUIHelper
+jasonchuang        681   0.0  0.1  4340304  18948   ??  Ss    9:04PM   0:00.06 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+jasonchuang        680   0.0  0.1  4304964   8560   ??  Ss    9:03PM   0:00.02 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+jasonchuang        670   0.0  0.0  4305084   6112   ??  S     9:00PM   0:00.02 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdwrite
+root               658   0.0  0.1  4304456  10596   ??  Ss    9:00PM   0:00.03 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storeinstalld
+jasonchuang        656   0.0  0.1  4337376  24884   ??  Ss    9:00PM   0:00.22 /System/Library/CoreServices/Siri.app/Contents/XPCServices/SiriNCService.xpc/Contents/MacOS/SiriNCService
+jasonchuang        654   0.0  0.1  4435568  22396   ??  S     9:00PM   0:00.24 /System/Library/CoreServices/PowerChime.app/Contents/MacOS/PowerChime
+_spotlight         651   0.0  0.2  4345644  26676   ??  S     9:00PM   1:09.13 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker-sizing -c MDSSizingWorker -m com.apple.mdworker.sizing
+jasonchuang        650   0.0  0.1  4332912  13384   ??  S     9:00PM   0:00.37 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker-sizing -c MDSSizingWorker -m com.apple.mdworker.sizing
+_spotlight         649   0.0  0.0  4305588   2776   ??  S     9:00PM   0:00.01 /usr/sbin/distnoted agent
+_spotlight         648   0.0  0.1  4340792  12144   ??  S     9:00PM   0:00.06 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+jasonchuang        643   0.0  0.1  4296772   8492   ??  Ss    8:59PM   0:00.01 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+jasonchuang        641   0.0  0.1  4342352  17920   ??  Ss    8:59PM   0:00.06 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+jasonchuang        638   0.0  0.1  4304964   8500   ??  Ss    8:59PM   0:00.02 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+_assetcache        637   0.0  0.1  4336156  13024   ??  Ss    8:59PM   0:00.07 /usr/libexec/AssetCache/AssetCache
+jasonchuang        636   0.0  0.1  4371376   9400   ??  S     8:59PM   0:00.14 /System/Library/PrivateFrameworks/AssetCacheServices.framework/Versions/A/XPCServices/AssetCacheLocatorService.xpc/Contents/MacOS/AssetCacheLocatorService -a
+jasonchuang        635   0.0  0.1  4331200  18728   ??  Ss    8:59PM   0:00.04 /System/Library/PrivateFrameworks/PhotoLibrary.framework/Versions/A/XPCServices/com.apple.PhotoIngestService.xpc/Contents/MacOS/com.apple.PhotoIngestService
+jasonchuang        634   0.0  0.1  4330640  18704   ??  Ss    8:59PM   0:00.04 /System/Library/PrivateFrameworks/PhotoLibraryPrivate.framework/Versions/A/Frameworks/PhotoLibraryServices.framework/Versions/A/XPCServices/com.apple.photomoments.xpc/Contents/MacOS/com.apple.photomoments
+_spotlight         633   0.0  0.1  4334312   8408   ??  S     8:59PM   0:00.19 /usr/libexec/trustd --agent
+jasonchuang        629   0.0  0.1  4304964   8488   ??  Ss    8:59PM   0:00.01 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+jasonchuang        626   0.0  0.1  4338256  18176   ??  Ss    8:59PM   0:00.05 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+jasonchuang        623   0.0  0.3  4351952  54016   ??  S     8:59PM   0:00.63 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+jasonchuang        622   0.0  0.3  4337204  50412   ??  S     8:59PM   0:00.73 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+jasonchuang        621   0.0  0.3  4338176  48504   ??  S     8:59PM   0:00.64 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+jasonchuang        620   0.0  0.3  4338616  55584   ??  S     8:59PM   0:01.49 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+jasonchuang        617   0.0  0.1  4340532  18468   ??  S     8:59PM   0:00.17 /System/Library/PrivateFrameworks/CommerceKit.framework/Resources/LaterAgent.app/Contents/MacOS/LaterAgent
+jasonchuang        616   0.0  0.1  4333504  11452   ??  Ss    8:59PM   0:00.07 /Library/Frameworks/iTunesLibrary.framework/Versions/A/XPCServices/com.apple.iTunesLibraryService.xpc/Contents/MacOS/com.apple.iTunesLibraryService
+_locationd         615   0.0  0.0  4306112   2736   ??  S     8:59PM   0:00.02 /usr/sbin/distnoted agent
+jasonchuang        614   0.0  0.3 106063344  46668   ??  Ss    8:59PM   0:01.14 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+root               613   0.0  0.1  4331088  14000   ??  Ss    8:59PM   0:00.06 /usr/libexec/dmd
+jasonchuang        612   0.0  0.1  4365956  20500   ??  S     8:59PM   0:00.29 /System/Library/PrivateFrameworks/PhotoLibraryPrivate.framework/Versions/A/Support/photolibraryd
+jasonchuang        611   0.0  0.3  4385564  45340   ??  Ss    8:59PM   0:00.07 /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/XPCServices/media-indexer.xpc/Contents/MacOS/media-indexer
+jasonchuang        609   0.0  0.0  4305596   5480   ??  S     8:59PM   0:00.02 /usr/libexec/spindump_agent
+jasonchuang        607   0.0  0.1  4339148   9140   ??  S     8:59PM   0:00.06 /System/Library/PrivateFrameworks/ContextKit.framework/Versions/A/XPCServices/ContextService.xpc/Contents/MacOS/ContextService
+jasonchuang        604   0.0  0.1  4331836  15236   ??  S     8:59PM   0:00.06 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storelegacy
+jasonchuang        603   0.0  0.2  4372044  26468   ??  Ss    8:59PM   0:00.20 /System/Library/PrivateFrameworks/SafariShared.framework/Versions/A/XPCServices/com.apple.Safari.SearchHelper.xpc/Contents/MacOS/com.apple.Safari.SearchHelper
+jasonchuang        602   0.0  0.1  4331728  14140   ??  Ss    8:59PM   0:00.03 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+jasonchuang        600   0.0  0.1  4342352  19300   ??  Ss    8:59PM   0:00.22 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+jasonchuang        599   0.0  0.1  4304964   8504   ??  Ss    8:59PM   0:00.02 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+jasonchuang        598   0.0  0.1  4332572   9040   ??  S     8:59PM   0:00.12 /System/Library/Frameworks/AudioToolbox.framework/AudioComponentRegistrar
+jasonchuang        597   0.0  0.0  4304924   4916   ??  S     8:59PM   0:00.02 /System/Library/Frameworks/MediaAccessibility.framework/Versions/A/XPCServices/com.apple.accessibility.mediaaccessibilityd.xpc/Contents/MacOS/com.apple.accessibility.mediaaccessibilityd
+jasonchuang        596   0.0  0.1  5389112  15128   ??  Ss    8:59PM   0:00.50 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Storage.xpc/Contents/MacOS/com.apple.WebKit.Storage
+jasonchuang        594   0.0  0.1  4334640  11556   ??  Ss    8:59PM   0:00.15 /System/Library/PrivateFrameworks/CloudDocsDaemon.framework/XPCServices/ContainerMetadataExtractor.xpc/Contents/MacOS/ContainerMetadataExtractor
+jasonchuang        591   0.0  0.1  4305640  11164   ??  S     8:59PM   0:00.03 /System/Library/CoreServices/Software Update.app/Contents/Resources/softwareupdate_notify_agent
+root               590   0.0  0.1  4336492   8524   ??  Ss    8:59PM   0:00.07 /usr/libexec/dprivacyd
+jasonchuang        589   0.0  0.1  4370528  19100   ??  S     8:59PM   0:00.60 /System/Library/PrivateFrameworks/SafariSafeBrowsing.framework/com.apple.Safari.SafeBrowsing.Service
+jasonchuang        587   0.0  0.1  4331008  14436   ??  S     8:59PM   0:00.06 /System/Library/PrivateFrameworks/ProtectedCloudStorage.framework/Helpers/ProtectedCloudKeySyncing
+root               586   0.0  0.1  4374208  10620   ??  Ss    8:59PM   0:00.18 /usr/libexec/rtcreportingd
+jasonchuang        585   0.0  0.1  4331320  10732   ??  S     8:59PM   0:00.06 /usr/libexec/videosubscriptionsd
+jasonchuang        584   0.0  0.2  5117448  37564   ??  S     8:59PM   0:00.14 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper --type=renderer --field-trial-handle=12336555093300987040,10471286401012631196,131072 --service-pipe-token=AF289040FD219CBE2C338DCE41D5CCE9 --lang=zh-TW --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --enable-offline-auto-reload --enable-offline-auto-reload-visible-only --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --service-request-channel-token=AF289040FD219CBE2C338DCE41D5CCE9 --renderer-client-id=8
+jasonchuang        583   0.0  0.2  4524284  36692   ??  S     8:59PM   0:00.64 /System/Library/Services/AppleSpell.service/Contents/MacOS/AppleSpell
+jasonchuang        580   0.0  0.1  4446436  24348   ??  S     8:59PM   0:00.23 /System/Library/CoreServices/Menu Extras/TextInput.menu/Contents/SharedSupport/TISwitcher.app/Contents/MacOS/TISwitcher
+jasonchuang        579   0.0  0.1  4332612   8780   ??  S     8:59PM   0:00.09 /Applications/iTunes.app/Contents/MacOS/iTunesHelper.app/Contents/MacOS/iTunesHelper
+jasonchuang        578   0.0  0.1  4306216   9976   ??  S     8:59PM   0:00.02 /System/Library/Frameworks/CryptoTokenKit.framework/ctkd -tw
+jasonchuang        577   0.0  0.0  4331268   7168   ??  S     8:59PM   0:00.05 /System/Library/CoreServices/backgroundtaskmanagementagent
+jasonchuang        576   0.0  0.1  4305748  10048   ??  S     8:59PM   0:00.03 /System/Library/Frameworks/CryptoTokenKit.framework/ctkahp.bundle/Contents/MacOS/ctkahp
+jasonchuang        574   0.0  0.1  4331768  16044   ??  S     8:59PM   0:00.13 /System/Library/CoreServices/diagnostics_agent
+jasonchuang        573   0.0  0.1  4340544  17584   ??  S     8:59PM   0:00.17 /System/Library/PrivateFrameworks/Noticeboard.framework/Versions/A/Resources/nbagent.app/Contents/MacOS/nbagent
+jasonchuang        572   0.0  0.1  4331988  19908   ??  S     8:59PM   0:00.10 /System/Library/CoreServices/cloudpaird
+jasonchuang        571   0.0  0.1  4337240  13580   ??  S     8:59PM   0:00.14 /System/Library/CoreServices/AirPlayUIAgent.app/Contents/MacOS/AirPlayUIAgent --launchd
+jasonchuang        569   0.0  0.1  4332012  15212   ??  S     8:59PM   0:00.12 /System/Library/Image Capture/Support/icdd
+jasonchuang        568   0.0  0.1  4340484  21972   ??  S     8:59PM   0:00.28 /System/Library/CoreServices/Siri.app/Contents/MacOS/Siri launchd
+jasonchuang        567   0.0  0.1  4334476  12980   ??  S     8:59PM   0:00.16 /System/Library/Frameworks/InputMethodKit.framework/Resources/imklaunchagent
+jasonchuang        566   0.0  0.1  4331104  12700   ??  S     8:59PM   0:00.06 /usr/libexec/dmd
+jasonchuang        563   0.0  0.1  4330712  10932   ??  S     8:59PM   0:00.03 /System/Library/CoreServices/SocialPushAgent.app/Contents/MacOS/SocialPushAgent
+jasonchuang        561   0.0  0.1  4370232  15924   ??  S     8:59PM   0:00.20 /usr/sbin/ckkeyrolld
+jasonchuang        560   0.0  0.1  4305324  10624   ??  S     8:59PM   0:00.05 /System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd
+jasonchuang        558   0.0  0.1  4334872  13040   ??  Ss    8:59PM   0:00.05 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/XPCServices/com.apple.CommerceKit.TransactionService.xpc/Contents/MacOS/com.apple.CommerceKit.TransactionService
+jasonchuang        556   0.0  2.7  5751028 447276   ??  S     8:59PM   0:08.48 /Applications/Slack.app/Contents/Frameworks/Slack Helper.app/Contents/MacOS/Slack Helper --type=renderer --disable-pinch --no-sandbox --primordial-pipe-token=DEE8632D712181D2302436211BA9056A --lang=zh-TW --standard-schemes=slack-resources,slack-sounds,slack-webapp-dev --app-path=/Applications/Slack.app/Contents/Resources/app.asar --enable-experimental-web-platform-features --node-integration=false --webview-tag=false --no-sandbox --preload=/Applications/Slack.app/Contents/Resources/app.asar/src/static/ssb-interop.js --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --content-image-texture-target=0,0,3553;0,1,3553;0,2,3553;0,3,3553;0,4,3553;0,5,3553;0,6,3553;0,7,3553;0,8,3553;0,9,3553;0,10,34037;0,11,34037;0,12,34037;0,13,3553;0,14,3553;0,15,3553;0,16,3553;1,0,3553;1,1,3553;1,2,3553;1,3,3553;1,4,3553;1,5,3553;1,6,3553;1,7,3553;1,8,3553;1,9,3553;1,10,34037;1,11,34037;1,12,34037;1,13,3553;1,14,3553;1,15,3553;1,16,3553;2,0,3553;2,1,3553;2,2,3553;2,3,3553;2,4,3553;2,5,3553;2,6,3553;2,7,3553;2,8,3553;2,9,3553;2,10,34037;2,11,34037;2,12,34037;2,13,3553;2,14,3553;2,15,3553;2,16,3553;3,0,3553;3,1,3553;3,2,3553;3,3,3553;3,4,3553;3,5,34037;3,6,3553;3,7,3553;3,8,3553;3,9,3553;3,10,3553;3,11,3553;3,12,34037;3,13,34037;3,14,3553;3,15,34037;3,16,34037;4,0,3553;4,1,3553;4,2,3553;4,3,3553;4,4,3553;4,5,34037;4,6,3553;4,7,3553;4,8,3553;4,9,3553;4,10,3553;4,11,3553;4,12,34037;4,13,34037;4,14,3553;4,15,34037;4,16,34037 --service-request-channel-token=DEE8632D712181D2302436211BA9056A --renderer-client-id=9
+jasonchuang        555   0.0  0.5  5215220  85500   ??  S     8:59PM   0:01.92 /Applications/Slack.app/Contents/Frameworks/Slack Helper.app/Contents/MacOS/Slack Helper --type=renderer --disable-pinch --no-sandbox --primordial-pipe-token=5F5D2AB26C98682AC98EAC06BFC5C755 --lang=zh-TW --standard-schemes=slack-resources,slack-sounds,slack-webapp-dev --app-path=/Applications/Slack.app/Contents/Resources/app.asar --node-integration=true --webview-tag=false --no-sandbox --preload=/Applications/Slack.app/Contents/Resources/app.asar/src/static/index.js --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --content-image-texture-target=0,0,3553;0,1,3553;0,2,3553;0,3,3553;0,4,3553;0,5,3553;0,6,3553;0,7,3553;0,8,3553;0,9,3553;0,10,34037;0,11,34037;0,12,34037;0,13,3553;0,14,3553;0,15,3553;0,16,3553;1,0,3553;1,1,3553;1,2,3553;1,3,3553;1,4,3553;1,5,3553;1,6,3553;1,7,3553;1,8,3553;1,9,3553;1,10,34037;1,11,34037;1,12,34037;1,13,3553;1,14,3553;1,15,3553;1,16,3553;2,0,3553;2,1,3553;2,2,3553;2,3,3553;2,4,3553;2,5,3553;2,6,3553;2,7,3553;2,8,3553;2,9,3553;2,10,34037;2,11,34037;2,12,34037;2,13,3553;2,14,3553;2,15,3553;2,16,3553;3,0,3553;3,1,3553;3,2,3553;3,3,3553;3,4,3553;3,5,34037;3,6,3553;3,7,3553;3,8,3553;3,9,3553;3,10,3553;3,11,3553;3,12,34037;3,13,34037;3,14,3553;3,15,34037;3,16,34037;4,0,3553;4,1,3553;4,2,3553;4,3,3553;4,4,3553;4,5,34037;4,6,3553;4,7,3553;4,8,3553;4,9,3553;4,10,3553;4,11,3553;4,12,34037;4,13,34037;4,14,3553;4,15,34037;4,16,34037 --service-request-channel-token=5F5D2AB26C98682AC98EAC06BFC5C755 --renderer-client-id=8
+jasonchuang        553   0.0  0.1  4307312   8868   ??  S     8:59PM   0:00.02 /Applications/Slack.app/Contents/Frameworks/Electron Framework.framework/Resources/crashpad_handler --no-rate-limit --no-upload-gzip --database=/var/folders/sh/_9swzwk55g586dj74kr40qf40000gn/T/Slack Crashes --metrics-dir=/var/folders/sh/_9swzwk55g586dj74kr40qf40000gn/T/Slack Crashes --url=https://slack.com/apps/breakpad?instanceUid=6b77bbca-80dc-40c4-8184-4d43a14c91c2&version=3.1.1&channel=prod --handshake-fd=45
+jasonchuang        550   0.0  0.3 106074988  43664   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        549   0.0  0.3 122852204  43944   ??  Ss    8:59PM   0:00.36 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        548   0.0  0.4 106106184  64240   ??  Ss    8:59PM   0:00.40 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        547   0.0  0.3 106076012  43820   ??  Ss    8:59PM   0:00.39 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        546   0.0  0.3 106073964  43860   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        545   0.0  0.3 106076012  43884   ??  Ss    8:59PM   0:00.36 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        544   0.0  0.3 106076012  43996   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        543   0.0  0.3 106074988  43812   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        542   0.0  1.0 123331608 173088   ??  Ss    8:59PM   0:02.40 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        541   0.0  0.3 106076012  43988   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        540   0.0  0.3 122853228  43888   ??  Ss    8:59PM   0:00.35 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        539   0.0  0.3 106076012  43828   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        538   0.0  0.9 123178636 143796   ??  Ss    8:59PM   0:01.66 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        537   0.0  0.3 106076012  43912   ??  Ss    8:59PM   0:00.38 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        536   0.0  0.9 106437896 143692   ??  Ss    8:59PM   0:02.67 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        535   0.0  0.3 106074988  43880   ??  Ss    8:59PM   0:00.36 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        534   0.0  0.3 106076012  43788   ??  Ss    8:59PM   0:00.38 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        533   0.0  0.3 122852204  43948   ??  Ss    8:59PM   0:00.39 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        531   0.0  0.3 122852260  43864   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        530   0.0  0.3 106076012  43732   ??  Ss    8:59PM   0:00.39 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        529   0.0  3.0 123678196 500276   ??  Ss    8:59PM   0:23.67 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        528   0.0  1.8 106734564 294104   ??  Ss    8:59PM   0:08.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        527   0.0  3.3 106951232 549308   ??  Ss    8:59PM   4:14.09 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        526   0.0  0.8 106353252 129100   ??  Ss    8:59PM   0:02.09 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        525   0.0  0.3 106074988  43836   ??  Ss    8:59PM   0:00.36 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        524   0.0  0.3 106076012  43848   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        523   0.0  0.3 106074988  43960   ??  Ss    8:59PM   0:00.37 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        522   0.0  0.3 106076012  43904   ??  Ss    8:59PM   0:00.38 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        521   0.0  0.3  5463144  51252   ??  Ss    8:59PM   0:33.42 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking
+jasonchuang        520   0.0  0.3 106076012  44040   ??  Ss    8:59PM   0:00.41 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        519   0.0  0.2  5439784  29320   ??  Ss    8:59PM   0:00.84 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking
+jasonchuang        518   0.0  0.5 106349744  87096   ??  Ss    8:59PM   0:01.61 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+jasonchuang        517   0.0  0.0  4304888   4436   ??  S     8:59PM   0:00.01 /System/Library/PrivateFrameworks/StoreXPCServices.framework/Versions/A/XPCServices/com.apple.appstore.PluginXPCService.xpc/Contents/MacOS/com.apple.appstore.PluginXPCService
+root               516   0.0  0.1  4304700   9528   ??  Ss    8:59PM   0:00.02 /System/Library/CoreServices/Software Update.app/Contents/Resources/suhelperd
+jasonchuang        515   0.0  0.1  4334052  15504   ??  S     8:59PM   0:00.06 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storedownloadd
+jasonchuang        514   0.0  0.1  4373756  21800   ??  S     8:59PM   0:00.46 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storeassetd
+jasonchuang        513   0.0  0.9  4756308 148400   ??  S     8:59PM   0:01.99 /Applications/Slack.app/Contents/Frameworks/Slack Helper.app/Contents/MacOS/Slack Helper --type=gpu-process --no-sandbox --supports-dual-gpus=false --gpu-driver-bug-workarounds=0,1,10,24,27,38,41,49,55,63,65,66,67,68,75,76,78,86,87,88,91,94 --disable-gl-extensions=GL_KHR_blend_equation_advanced GL_KHR_blend_equation_advanced_coherent --gpu-vendor-id=0x8086 --gpu-device-id=0x5926 --gpu-driver-vendor --gpu-driver-version --gpu-driver-date --gpu-active-vendor-id=0x8086 --gpu-active-device-id=0x5926 --service-request-channel-token=B6CC9BD39120E79C61C33E2D2344835E
+jasonchuang        512   0.0  0.1  4337640  22772   ??  S     8:59PM   0:00.28 /System/Library/PrivateFrameworks/ContactsDonation.framework/Versions/A/Support/contactsdonationagent
+jasonchuang        510   0.0  1.3  5938400 223344   ??  S     8:59PM   0:08.56 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper --type=renderer --field-trial-handle=12336555093300987040,10471286401012631196,131072 --service-pipe-token=AC8D8CFF72822104828F46E0FE0CC580 --lang=zh-TW --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --extension-process --enable-offline-auto-reload --enable-offline-auto-reload-visible-only --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --service-request-channel-token=AC8D8CFF72822104828F46E0FE0CC580 --renderer-client-id=7
+jasonchuang        509   0.0  0.1  4330600  24996   ??  S     8:59PM   0:00.07 /System/Library/PrivateFrameworks/PhotoAnalysis.framework/Versions/A/Support/photoanalysisd
+jasonchuang        508   0.0  0.2  4575116  37784   ??  S     8:59PM   0:00.32 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+jasonchuang        506   0.0  0.0  4305000   5284   ??  S     8:59PM   0:00.05 /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/XPCServices/com.apple.hiservices-xpcservice.xpc/Contents/MacOS/com.apple.hiservices-xpcservice
+jasonchuang        505   0.0  0.1  4323084   9520   ??  S     8:59PM   0:00.04 /System/Library/CoreServices/Menu Extras/SafeEjectGPUExtra.menu/Contents/XPCServices/SafeEjectGPUService.xpc/Contents/MacOS/SafeEjectGPUService
+jasonchuang        504   0.0  0.0  4296896   8224   ??  S     8:59PM   0:00.01 SafeEjectGPUAgent
+jasonchuang        501   0.0  0.0  4304420   5032   ??  Ss    8:59PM   0:00.02 /System/Library/PrivateFrameworks/IMFoundation.framework/XPCServices/IMRemoteURLConnectionAgent.xpc/Contents/MacOS/IMRemoteURLConnectionAgent
+jasonchuang        500   0.0  0.1  4295380   8964   ??  S     8:59PM   0:00.02 /System/Library/PrivateFrameworks/CoreFollowUp.framework/Versions/A/Support/followupd
+jasonchuang        495   0.0  0.0  4304424   6428   ??  S     8:59PM   0:00.12 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoteagent
+jasonchuang        494   0.0  0.1  4337776  13580   ??  S     8:59PM   0:00.16 /System/Library/CoreServices/WiFiAgent.app/Contents/MacOS/WiFiAgent
+jasonchuang        493   0.0  0.1  4335132   8460   ??  S     8:59PM   0:00.07 /System/Library/CoreServices/pbs
+root               492   0.0  0.1  4331860  10100   ??  Ss    8:59PM   0:00.05 /System/Library/PrivateFrameworks/AmbientDisplay.framework/Versions/A/XPCServices/com.apple.AmbientDisplayAgent.xpc/Contents/MacOS/com.apple.AmbientDisplayAgent
+jasonchuang        480   0.0  0.0  4296240   1836 s008  S     8:59PM   0:00.05 -bash
+root               479   0.0  0.0  4304432   5852 s008  Ss    8:59PM   0:00.02 login -pfl jasonchuang /bin/bash -c exec -la bash /bin/bash
+jasonchuang        478   0.0  0.1  4331288   9728   ??  S     8:59PM   0:00.17 /System/Library/PrivateFrameworks/ViewBridge.framework/Versions/A/XPCServices/ViewBridgeAuxiliary.xpc/Contents/MacOS/ViewBridgeAuxiliary
+jasonchuang        466   0.0  0.0  4296240   1808 s007  S+    8:59PM   0:00.02 -bash
+root               465   0.0  0.0  4304432   5860 s007  Ss    8:59PM   0:00.02 login -pfl jasonchuang /bin/bash -c exec -la bash /bin/bash
+jasonchuang        439   0.0  0.0  4288048   1800 s006  S+    8:59PM   0:00.01 -bash
+jasonchuang        437   0.0  0.1  4340948  24052   ??  S     8:59PM   0:00.31 /Applications/Sublime Text.app/Contents/MacOS/plugin_host 293 --auto-shell-env
+root               436   0.0  0.0  4304432   5800 s006  Ss    8:59PM   0:00.02 login -pfl jasonchuang /bin/bash -c exec -la bash /bin/bash
+jasonchuang        435   0.0  0.1  4352968  14652   ??  S     8:59PM   0:00.21 /System/Library/CoreServices/CoreLocationAgent.app/Contents/MacOS/CoreLocationAgent
+jasonchuang        429   0.0  0.1  4330884  12376   ??  Ss    8:59PM   0:00.06 /System/Library/PrivateFrameworks/CoreWLANKit.framework/Versions/A/XPCServices/WiFiProxy.xpc/Contents/MacOS/WiFiProxy
+jasonchuang        420   0.0  0.0  4296240   1752 s003  S+    8:59PM   0:00.01 -bash
+root               419   0.0  0.0  4304432   5848 s003  Ss    8:59PM   0:00.02 login -pfl jasonchuang /bin/bash -c exec -la bash /bin/bash
+jasonchuang        408   0.0  0.0  4279856   1760 s002  S+    8:59PM   0:00.02 -bash
+root               407   0.0  0.0  4304432   5880 s002  Ss    8:59PM   0:00.02 login -pfl jasonchuang /bin/bash -c exec -la bash /bin/bash
+jasonchuang        402   0.0  0.3  4543260  48068   ??  S     8:59PM   0:00.87 /System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight
+jasonchuang        399   0.0  0.0  4288048   1800 s001  S+    8:59PM   0:00.01 -bash
+root               398   0.0  0.0  4304432   5892 s001  Ss    8:59PM   0:00.02 login -pf jasonchuang
+jasonchuang        397   0.0  0.1  4304464  14256   ??  Ss    8:59PM   0:00.02 /System/Library/CoreServices/NotificationCenter.app/Contents/XPCServices/com.apple.notificationcenterui.WeatherSummary.xpc/Contents/MacOS/com.apple.notificationcenterui.WeatherSummary
+jasonchuang        396   0.0  0.3  5151260  56104   ??  S     8:59PM   0:00.26 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper --type=renderer --field-trial-handle=12336555093300987040,10471286401012631196,131072 --service-pipe-token=657ACA97FE4A195EBE19F8FF4633B866 --lang=zh-TW --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --enable-offline-auto-reload --enable-offline-auto-reload-visible-only --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --service-request-channel-token=657ACA97FE4A195EBE19F8FF4633B866 --renderer-client-id=6
+jasonchuang        395   0.0  0.2  5116168  37560   ??  S     8:59PM   0:00.14 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper --type=renderer --field-trial-handle=12336555093300987040,10471286401012631196,131072 --service-pipe-token=39D7E50742B0B8B2A91E18E3B7AEF18F --lang=zh-TW --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --enable-offline-auto-reload --enable-offline-auto-reload-visible-only --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --service-request-channel-token=39D7E50742B0B8B2A91E18E3B7AEF18F --renderer-client-id=5
+jasonchuang        389   0.0  0.1  4330964   9756   ??  S     8:59PM   0:00.03 /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+jasonchuang        387   0.0  0.0  4304408   5768   ??  S     8:59PM   0:00.02 /System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent.app/Contents/MacOS/CMFSyncAgent
+jasonchuang        386   0.0  0.0  4296240   1728 s000  S+    8:59PM   0:00.01 -bash
+root               385   0.0  0.0  4304432   5788 s000  Ss    8:59PM   0:00.02 login -pf jasonchuang
+jasonchuang        383   0.0  0.2  5116168  37488   ??  S     8:59PM   0:00.15 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper --type=renderer --field-trial-handle=12336555093300987040,10471286401012631196,131072 --service-pipe-token=EDFEB5977DA1226C190F9ABE0AE1FD4D --lang=zh-TW --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --enable-offline-auto-reload --enable-offline-auto-reload-visible-only --num-raster-threads=2 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --service-request-channel-token=EDFEB5977DA1226C190F9ABE0AE1FD4D --renderer-client-id=4
+jasonchuang        382   0.0  0.1  4332064  12920   ??  Ss    8:59PM   0:00.08 /System/Library/PrivateFrameworks/IMFoundation.framework/XPCServices/IMRemoteURLConnectionAgent.xpc/Contents/MacOS/IMRemoteURLConnectionAgent
+jasonchuang        381   0.0  0.1  4323052  16272   ??  S     8:59PM   0:00.03 /System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistoryPluginHelper
+jasonchuang        380   0.0  0.1  4332064  12900   ??  Ss    8:59PM   0:00.08 /System/Library/PrivateFrameworks/IMFoundation.framework/XPCServices/IMRemoteURLConnectionAgent.xpc/Contents/MacOS/IMRemoteURLConnectionAgent
+_applepay          379   0.0  0.0  4331636   7548   ??  Ss    8:59PM   0:00.04 /usr/libexec/nfcd
+jasonchuang        378   0.0  0.3  4359800  50144   ??  S     8:59PM   0:02.41 /System/Library/PrivateFrameworks/MessagesKit.framework/Resources/soagent.app/Contents/MacOS/soagent
+jasonchuang        377   0.0  0.0  4331900   7628   ??  Ss    8:59PM   0:00.04 /System/Library/Frameworks/VideoToolbox.framework/Versions/A/XPCServices/VTDecoderXPCService.xpc/Contents/MacOS/VTDecoderXPCService
+jasonchuang        376   0.0  0.0  4304936   5216   ??  S     8:59PM   0:00.01 /System/Library/CoreServices/APFSUserAgent
+root               375   0.0  0.1  4304760  11424   ??  Ss    8:59PM   0:00.12 /System/Library/CoreServices/SubmitDiagInfo server-init
+jasonchuang        374   0.0  0.1  4304448  16444   ??  S     8:59PM   0:00.13 /System/Library/PrivateFrameworks/ContactsAgent.framework/Executables/ContactsAgent
+root               373   0.0  0.2  4343940  25868   ??  Ss    8:59PM   0:00.41 /usr/sbin/spindump
+root               372   0.0  0.1  4332288   8604   ??  Ss    8:59PM   0:00.06 /usr/sbin/wirelessproxd
+jasonchuang        371   0.0  0.1  4306216  15608   ??  S     8:59PM   0:00.06 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storeaccountd
+jasonchuang        369   0.0  0.1  4304996   8860   ??  Ss    8:59PM   0:00.02 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Framework.framework/Versions/A/XPCServices/AlertNotificationService.xpc/Contents/MacOS/AlertNotificationService
+jasonchuang        367   0.0  0.3  4676016  56444   ??  S     8:59PM   0:00.41 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper --type=gpu-process --field-trial-handle=12336555093300987040,10471286401012631196,131072 --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --gpu-preferences=KAAAAAAAAACAAAAAAQAAAAAAAAAAAGAAEAAAAAAAAAAAAAAAAAAAADgBAAAmAAAAMAEAAAAAAAA4AQAAAAAAAEABAAAAAAAASAEAAAAAAABQAQAAAAAAAFgBAAAAAAAAYAEAAAAAAABoAQAAAAAAAHABAAAAAAAAeAEAAAAAAACAAQAAAAAAAIgBAAAAAAAAkAEAAAAAAACYAQAAAAAAAKABAAAAAAAAqAEAAAAAAACwAQAAAAAAALgBAAAAAAAAwAEAAAAAAADIAQAAAAAAANABAAAAAAAA2AEAAAAAAADgAQAAAAAAAOgBAAAAAAAA8AEAAAAAAAD4AQAAAAAAAAACAAAAAAAACAIAAAAAAAAQAgAAAAAAABgCAAAAAAAAIAIAAAAAAAAoAgAAAAAAADACAAAAAAAAOAIAAAAAAABAAgAAAAAAAEgCAAAAAAAAUAIAAAAAAABYAgAAAAAAABAAAAAAAAAAAAAAAAUAAAAQAAAAAAAAAAAAAAALAAAAEAAAAAAAAAAAAAAADAAAABAAAAAAAAAAAAAAAA0AAAAQAAAAAAAAAAAAAAAPAAAAEAAAAAAAAAAAAAAAEAAAABAAAAAAAAAAAAAAABIAAAAQAAAAAAAAAAAAAAATAAAAEAAAAAAAAAABAAAABQAAABAAAAAAAAAAAQAAAAsAAAAQAAAAAAAAAAEAAAAMAAAAEAAAAAAAAAABAAAADQAAABAAAAAAAAAAAQAAAA8AAAAQAAAAAAAAAAEAAAAQAAAAEAAAAAAAAAABAAAAEgAAABAAAAAAAAAAAQAAABMAAAAQAAAAAAAAAAMAAAAFAAAAEAAAAAAAAAADAAAACwAAABAAAAAAAAAAAwAAAAwAAAAQAAAAAAAAAAMAAAANAAAAEAAAAAAAAAADAAAADwAAABAAAAAAAAAAAwAAABAAAAAQAAAAAAAAAAMAAAASAAAAEAAAAAAAAAADAAAAEwAAABAAAAAAAAAABQAAAAUAAAAQAAAAAAAAAAUAAAALAAAAEAAAAAAAAAAFAAAADQAAABAAAAAAAAAABQAAAA8AAAAQAAAAAAAAAAUAAAAQAAAAEAAAAAAAAAAFAAAAEgAAABAAAAAAAAAABQAAABMAAAAQAAAAAAAAAAYAAAAFAAAAEAAAAAAAAAAGAAAACwAAABAAAAAAAAAABgAAAA0AAAAQAAAAAAAAAAYAAAAPAAAAEAAAAAAAAAAGAAAAEAAAABAAAAAAAAAABgAAABIAAAAQAAAAAAAAAAYAAAATAAAA --metrics-client-id=c9ad5625-0827-440f-8888-8663a537062e --service-request-channel-token=7855BDFB9821D381AB75B6B7B836D996
+jasonchuang        365   0.0  0.2  4427568  28972   ??  Ss    8:59PM   0:00.44 /System/Library/CoreServices/Dock.app/Contents/XPCServices/com.apple.dock.extra.xpc/Contents/MacOS/com.apple.dock.extra
+jasonchuang        364   0.0  0.2  4380644  28488   ??  S     8:59PM   0:00.95 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/commerce
+jasonchuang        363   0.0  0.1  4334028  10496   ??  S     8:59PM   0:00.13 /System/Library/PrivateFrameworks/UserActivity.framework/Agents/useractivityd
+jasonchuang        361   0.0  0.1  4331040  21452   ??  S     8:59PM   0:00.14 /System/Library/PrivateFrameworks/CloudPhotoServices.framework/Versions/A/Frameworks/CloudPhotosConfigurationXPC.framework/Versions/A/XPCServices/com.apple.CloudPhotosConfiguration.xpc/Contents/MacOS/com.apple.CloudPhotosConfiguration
+root               360   0.0  0.0  4305468   5332   ??  Ss    8:59PM   0:00.02 /usr/sbin/filecoordinationd
+jasonchuang        359   0.0  0.1  4337876   9392   ??  S     8:59PM   0:00.05 /System/Library/CoreServices/iconservicesagent
+jasonchuang        358   0.0  0.1  4332656  11248   ??  S     8:59PM   0:00.05 /usr/libexec/networkserviceproxy
+jasonchuang        357   0.0  0.2  4337788  31524   ??  Ss    8:59PM   0:00.65 /System/Library/PrivateFrameworks/CalendarNotification.framework/Versions/A/XPCServices/CalNCService.xpc/Contents/MacOS/CalNCService
+jasonchuang        356   0.0  0.4  4510260  61628   ??  S     8:59PM   0:01.37 /System/Library/CoreServices/NotificationCenter.app/Contents/MacOS/NotificationCenter
+jasonchuang        355   0.0  0.1  4307760   8932   ??  S     8:59PM   0:00.02 /Applications/Google Chrome.app/Contents/Versions/67.0.3396.62/Google Chrome Framework.framework/Helpers/crashpad_handler --monitor-self-annotation=ptype=crashpad-handler --database=/Users/jasonchuang/Library/Application Support/Google/Chrome/Crashpad --metrics-dir=/Users/jasonchuang/Library/Application Support/Google/Chrome --url=https://clients2.google.com/cr/report --annotation=channel= --annotation=plat=OS X --annotation=prod=Chrome_Mac --annotation=ver=67.0.3396.62 --handshake-fd=8
+_gamecontrollerd   352   0.0  0.1  4305060   9332   ??  Ss    8:59PM   0:00.16 /usr/libexec/gamecontrollerd
+jasonchuang        351   0.0  0.2  4371644  25236   ??  S     8:59PM   0:00.23 /System/Library/PrivateFrameworks/CoreParsec.framework/parsecd
+jasonchuang        350   0.0  0.2  4380980  29316   ??  S     8:59PM   0:00.27 /usr/libexec/fmfd
+jasonchuang        349   0.0  0.4  4585164  70276   ??  S     8:59PM   0:01.42 /System/Library/PrivateFrameworks/CoreSuggestions.framework/Versions/A/Support/suggestd
+jasonchuang        348   0.0  0.2  4376840  29392   ??  S     8:59PM   0:00.31 /System/Library/PrivateFrameworks/PassKitCore.framework/passd
+jasonchuang        347   0.0  0.2  4346960  38156   ??  S     8:59PM   0:00.76 /usr/libexec/sharingd
+jasonchuang        346   0.0  0.2  4336576  32536   ??  S     8:59PM   0:01.16 /System/Library/CoreServices/SafariSupport.bundle/Contents/MacOS/SafariBookmarksSyncAgent
+jasonchuang        345   0.0  0.1  4330740  13652   ??  S     8:59PM   0:00.03 /System/Library/PrivateFrameworks/AskPermission.framework/Versions/A/Resources/askpermissiond
+jasonchuang        344   0.0  0.2  4391772  36556   ??  S     8:59PM   0:00.52 /System/Library/PrivateFrameworks/GameCenterFoundation.framework/Versions/A/gamed
+jasonchuang        343   0.0  0.1  4335580  19032   ??  S     8:59PM   0:00.06 /System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistorySyncHelper
+jasonchuang        342   0.0  0.1  4379140  20244   ??  S     8:59PM   0:00.29 /System/Library/PrivateFrameworks/AuthKit.framework/Versions/A/Support/akd
+jasonchuang        341   0.0  0.2  4389788  39804   ??  S     8:59PM   0:00.77 /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistantd
+jasonchuang        340   0.0  0.1  4331116  22408   ??  S     8:59PM   0:00.61 /usr/libexec/SafariCloudHistoryPushAgent
+jasonchuang        339   0.0  0.1  4335116  13460   ??  S     8:59PM   0:00.05 /usr/libexec/keyboardservicesd
+jasonchuang        338   0.0  0.1  4331264  19188   ??  S     8:59PM   0:00.05 /usr/libexec/siriknowledged
+jasonchuang        337   0.0  0.1  4333664  13488   ??  S     8:59PM   0:01.68 /usr/libexec/nsurlstoraged
+jasonchuang        336   0.0  0.1  4334544  14104   ??  S     8:59PM   0:00.33 /usr/sbin/usernoted
+jasonchuang        335   0.0  0.1  4365452  13356   ??  S     8:59PM   0:01.67 /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+jasonchuang        334   0.0  0.1  4340628  13624   ??  S     8:59PM   0:00.17 /System/Library/CoreServices/CoreServicesUIAgent.app/Contents/MacOS/CoreServicesUIAgent
+jasonchuang        333   0.0  0.1  4377808  15676   ??  S     8:59PM   0:00.38 /System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod
+jasonchuang        332   0.0  0.2  4332384  25772   ??  S     8:59PM   0:00.09 /System/Library/PrivateFrameworks/SafariShared.framework/Versions/A/XPCServices/com.apple.Safari.History.xpc/Contents/MacOS/com.apple.Safari.History
+jasonchuang        331   0.0  0.2  4413800  39960   ??  S     8:59PM   0:00.55 /System/Library/CoreServices/cloudphotosd.app/Contents/MacOS/cloudphotosd
+jasonchuang        329   0.0  0.1  4336604  19196   ??  S     8:59PM   0:00.30 /usr/libexec/knowledge-agent
+jasonchuang        328   0.0  0.3  4389452  44864   ??  S     8:59PM   0:01.43 /System/Library/PrivateFrameworks/CalendarAgent.framework/Executables/CalendarAgent
+jasonchuang        327   0.0  0.1  4341800  17108   ??  S     8:59PM   0:00.10 /System/Library/CoreServices/mapspushd
+jasonchuang        326   0.0  0.1  4334436  15696   ??  S     8:59PM   0:00.35 /usr/libexec/secinitd
+jasonchuang        325   0.0  0.0  4305528   7784   ??  S     8:59PM   0:00.04 /System/Library/Frameworks/Security.framework/Versions/A/Resources/CloudKeychainProxy.bundle/Contents/MacOS/CloudKeychainProxy
+jasonchuang        324   0.0  0.1  4304488  15952   ??  S     8:59PM   0:00.18 /System/Library/Frameworks/AddressBook.framework/Executables/ContactsAccountsService
+jasonchuang        323   0.0  0.1  4304420  12032   ??  S     8:59PM   0:00.03 /System/Library/PrivateFrameworks/CoreCDP.framework/Versions/A/Resources/cdpd
+root               322   0.0  0.0  4304388   5492   ??  Ss    8:59PM   0:00.01 /System/Library/CoreServices/CrashReporterSupportHelper server-init
+jasonchuang        320   0.0  0.2  4340104  35620   ??  S     8:59PM   0:00.62 /usr/libexec/routined LAUNCHED_BY_LAUNCHD
+jasonchuang        316   0.0  0.1  4335580  13352   ??  S     8:59PM   0:00.71 /usr/libexec/pkd
+jasonchuang        314   0.0  0.1  4336592  19304   ??  S     8:59PM   0:00.29 /System/Library/PrivateFrameworks/CloudDocsDaemon.framework/Versions/A/Support/bird
+jasonchuang        312   0.0  0.1  4305848  12252   ??  S     8:59PM   0:00.05 /usr/libexec/rapportd
+jasonchuang        311   0.0  0.1  4331564  16244   ??  S     8:59PM   0:00.09 /System/Library/PrivateFrameworks/IMDPersistence.framework/XPCServices/IMDPersistenceAgent.xpc/Contents/MacOS/IMDPersistenceAgent
+jasonchuang        310   0.0  0.1  4333692  23316   ??  S     8:59PM   0:00.27 /System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent
+jasonchuang        308   0.0  0.2  4342084  27636   ??  S     8:59PM   0:00.49 /System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/Contents/MacOS/identityservicesd
+jasonchuang        307   0.0  0.2  4340084  33084   ??  S     8:59PM   0:00.69 /System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd
+root               306   0.0  0.1  4331496  17524   ??  Ss    8:59PM   0:00.05 /usr/sbin/WirelessRadioManagerd
+jasonchuang        305   0.0  0.2  4339156  40028   ??  S     8:59PM   0:02.56 /System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd
+jasonchuang        304   0.0  0.0  4306064   6912   ??  S     8:59PM   0:00.25 /usr/libexec/pboard
+root               303   0.0  0.0  4331916   7252   ??  Ss    8:59PM   0:00.03 /System/Library/PrivateFrameworks/TCC.framework/Resources/tccd system
+root               302   0.0  0.1  4335476   8904   ??  Ss    8:59PM   0:00.06 /usr/sbin/systemsoundserverd
+jasonchuang        300   0.0  0.1  4379980  18332   ??  S     8:59PM   0:00.80 /usr/libexec/nsurlsessiond
+jasonchuang        298   0.0  0.5  4539336  86084   ??  S     8:59PM   0:02.94 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder
+jasonchuang        297   0.0  0.1  4336336  11192   ??  S     8:59PM   0:00.31 /System/Library/PrivateFrameworks/TCC.framework/Resources/tccd
+jasonchuang        296   0.0  0.2  4458876  39724   ??  S     8:59PM   0:00.80 /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer
+jasonchuang        295   0.0  0.3  4397380  46356   ??  S     8:59PM   0:00.74 /System/Library/CoreServices/talagent
+jasonchuang        294   0.0  0.4  4485224  71336   ??  S     8:59PM   0:01.54 /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock
+jasonchuang        293   0.0  0.4  4577352  60588   ??  S     8:59PM   0:00.66 /Applications/Sublime Text.app/Contents/MacOS/Sublime Text -psn_0_81940
+jasonchuang        292   0.0  0.2  4388476  38372   ??  S     8:59PM   0:02.88 /System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd
+jasonchuang        291   0.0  0.6  5481908 106076   ??  S     8:59PM   0:08.26 /Applications/Slack.app/Contents/MacOS/Slack -psn_0_77843
+jasonchuang        290   0.0  0.5  5574304  79884   ??  S     8:59PM   0:01.36 /Applications/App Store.app/Contents/MacOS/App Store -psn_0_73746
+jasonchuang        289   0.0  0.3  4462716  48824   ??  S     8:59PM   0:00.76 /Applications/Xcode.app/Contents/Applications/FileMerge.app/Contents/MacOS/FileMerge -psn_0_69649
+jasonchuang        288   0.0  0.1  4338208  21556   ??  S     8:59PM   0:01.44 /usr/libexec/secd
+jasonchuang        287   0.0  0.4  5494976  73316   ??  S     8:59PM   0:00.91 /Applications/TextMate.app/Contents/MacOS/TextMate -psn_0_65552
+jasonchuang        286   0.0  1.3  5393688 224732   ??  S     8:59PM   0:11.11 /Applications/LINE.app/Contents/MacOS/LINE -psn_0_61455
+root               284   0.0  0.1  4304704   8444   ??  Ss    8:59PM   0:00.01 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+root               283   0.0  0.1  4336356  12936   ??  Ss    8:59PM   0:00.44 /usr/libexec/amfid
+jasonchuang        282   0.0  1.0  4938160 165544   ??  S     8:59PM   0:07.21 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome -psn_0_53261
+_softwareupdate    281   0.0  0.1  5416692  21440   ??  Ss    8:59PM   0:00.32 /System/Library/CoreServices/Software Update.app/Contents/Resources/softwareupdated
+jasonchuang        280   0.0  0.1  4332256   8828   ??  S     8:59PM   0:00.15 /System/Library/CoreServices/sharedfilelistd
+jasonchuang        279   0.0  1.0  5952248 175576   ??  S     8:59PM   0:29.84 /Applications/Safari.app/Contents/MacOS/Safari -psn_0_49164
+_netbios           278   0.0  0.1  4306548   9928   ??  SNs   8:59PM   0:00.04 /usr/sbin/netbiosd
+jasonchuang        277   0.0  0.2  4359080  30776   ??  S     8:59PM   0:02.08 /usr/libexec/trustd --agent
+jasonchuang        276   0.0  0.1  4335128   9140   ??  S     8:59PM   0:00.32 /usr/libexec/lsd
+jasonchuang        275   0.0  0.2  4343624  29816   ??  S     8:59PM   0:00.74 /System/Library/Frameworks/CoreTelephony.framework/Support/CommCenter -L
+jasonchuang        274   0.0  0.1  4336204  11884   ??  S     8:59PM   0:00.22 /usr/sbin/universalaccessd launchd -s
+jasonchuang        273   0.0  0.1  4306612   9204   ??  S     8:59PM   0:00.68 /usr/sbin/distnoted agent
+jasonchuang        271   0.0  0.2  4337300  29984   ??  S     8:59PM   0:00.92 /usr/libexec/UserEventAgent (Aqua)
+_captiveagent      270   0.0  0.0  4306676   7176   ??  Ss    8:59PM   0:00.14 /usr/libexec/captiveagent
+root               269   0.0  0.2  4412844  38844   ??  Ss    8:59PM   0:00.33 /System/Library/Frameworks/ApplicationServices.framework/Frameworks/SpeechSynthesis.framework/Resources/com.apple.speech.speechsynthesisd
+jasonchuang        268   0.0  0.0  4305304   4032   ??  S     8:59PM   0:00.68 /usr/sbin/cfprefsd agent
+root               267   0.0  0.0  4306132   5812   ??  Ss    8:59PM   0:00.07 /usr/libexec/securityd_service
+root               266   0.0  0.1  4304788   9312   ??  Ss    8:59PM   0:00.03 /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+root               264   0.0  0.0  4331944   7304   ??  Ss    8:59PM   0:00.06 /System/Library/CoreServices/sharedfilelistd
+root               261   0.0  0.0  4305192   4460   ??  Ss    8:59PM   0:00.01 /System/Library/Frameworks/GSS.framework/Helpers/GSSCred
+_atsserver         254   0.0  0.1  4365344  11972   ??  Ss    8:59PM   0:00.32 /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+root               252   0.0  0.0  4305800   5940   ??  Ss    8:59PM   0:00.11 /System/Library/PrivateFrameworks/PerformanceAnalysis.framework/Versions/A/XPCServices/com.apple.PerformanceAnalysis.animationperfd.xpc/Contents/MacOS/com.apple.PerformanceAnalysis.animationperfd
+root               249   0.0  0.0  4304936   4748   ??  Ss    8:59PM   0:00.01 /System/Library/PrivateFrameworks/AccountPolicy.framework/XPCServices/com.apple.AccountPolicyHelper.xpc/Contents/MacOS/com.apple.AccountPolicyHelper
+root               247   0.0  0.1  4305716   9784   ??  Ss    8:59PM   0:00.03 /System/Library/Frameworks/CryptoTokenKit.framework/ctkahp.bundle/Contents/MacOS/ctkahp -d
+root               241   0.0  0.1  4305376  10324   ??  Ss    8:59PM   0:00.02 /usr/libexec/bootinstalld
+_coreaudiod        239   0.0  0.1  4296512   8452   ??  Ss    8:59PM   0:00.01 /System/Library/Frameworks/AudioToolbox.framework/XPCServices/com.apple.audio.SandboxHelper.xpc/Contents/MacOS/com.apple.audio.SandboxHelper
+root               238   0.0  0.1  4307588   9316   ??  Ss    8:59PM   0:00.14 /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/com.apple.CodeSigningHelper.xpc/Contents/MacOS/com.apple.CodeSigningHelper
+root               237   0.0  0.0  4306140   7588   ??  Ss    8:59PM   0:00.04 /System/Library/Frameworks/AudioToolbox.framework/AudioComponentRegistrar -daemon
+root               232   0.0  0.0  4305352   5828   ??  Ss    8:59PM   0:00.02 /usr/libexec/colorsyncd
+root               226   0.0  0.0  4304636   5792   ??  Ss    8:59PM   0:00.04 /usr/libexec/colorsync.displayservices
+root               225   0.0  0.0  4322300   2624   ??  Ss    8:59PM   0:00.01 /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/CVMServer
+root               222   0.0  0.1  4296280  10468   ??  Ss    8:59PM   0:00.02 /usr/libexec/thermald
+root               221   0.0  0.8  4916952 129044   ??  Ss    8:59PM   0:06.54 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+root               220   0.0  0.0  4295704   4396   ??  Ss    8:59PM   0:00.03 /usr/libexec/watchdogd
+_fpsd              219   0.0  0.1  4308668   8652   ??  Ss    8:59PM   0:00.18 /System/Library/PrivateFrameworks/CoreADI.framework/adid
+root               217   0.0  0.0  4331952   7996   ??  Ss    8:59PM   0:00.11 /System/Library/PrivateFrameworks/AuthKit.framework/Versions/A/Support/akd
+root               216   0.0  0.0  4299012   5912   ??  Ss    8:59PM   0:00.05 /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+_locationd         215   0.0  0.1  4334852   9856   ??  S     8:59PM   0:00.13 /usr/libexec/trustd --agent
+root               214   0.0  0.0  4332248   8000   ??  Ss    8:59PM   0:00.39 /usr/libexec/sandboxd
+_locationd         208   0.0  0.0  4304900   1628   ??  S     8:59PM   0:00.03 /usr/sbin/cfprefsd agent
+_locationd         205   0.0  0.1  4332616  12732   ??  S     8:59PM   0:00.13 /usr/libexec/secinitd
+_nsurlstoraged     204   0.0  0.0  4304992   6692   ??  Ss    8:59PM   0:00.10 /usr/libexec/nsurlstoraged --privileged
+_locationd         201   0.0  0.1  4376244  15352   ??  S     8:58PM   0:00.37 /System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod
+root               189   0.0  0.1  4338072  17084   ??  Ss    8:58PM   0:00.54 /usr/libexec/syspolicyd
+root               185   0.0  0.0  4333632   8380   ??  Ss    8:58PM   0:00.19 /usr/libexec/lsd runAsRoot
+_networkd          183   0.0  0.1  4337988  11248   ??  Ss    8:58PM   0:00.66 /usr/libexec/symptomsd
+_cmiodalassistants   182   0.0  0.1  4305984   8520   ??  Ss    8:58PM   0:00.04 /Library/CoreMediaIO/Plug-Ins/DAL/AppleCamera.plugin/Contents/Resources/AppleCameraAssistant
+root               181   0.0  0.0  4331052   2268   ??  Ss    8:58PM   0:00.01 /System/Library/Frameworks/CoreMediaIO.framework/Versions/A/XPCServices/com.apple.cmio.registerassistantservice.xpc/Contents/MacOS/com.apple.cmio.registerassistantservice
+root               180   0.0  0.1  4332340  10120   ??  S     8:58PM   0:00.04 /usr/sbin/systemstats --logger-helper /private/var/db/systemstats
+root               178   0.0  0.1  4334784  14796   ??  Ss    8:58PM   0:00.64 /usr/libexec/mobileassetd
+root               173   0.0  0.0  4331168   7324   ??  Ss    8:58PM   0:00.09 /usr/libexec/powerlogd
+root               172   0.0  0.1  4331792  10352   ??  Ss    8:58PM   0:00.03 /usr/libexec/usbd
+root               171   0.0  0.0  4304408   5136   ??  Ss    8:58PM   0:00.02 /usr/libexec/apfsd
+root               170   0.0  0.0  4304664   4804   ??  Ss    8:58PM   0:00.16 /usr/libexec/sysmond
+_nsurlsessiond     168   0.0  0.1  4376644  16772   ??  Ss    8:58PM   0:00.47 /usr/libexec/nsurlsessiond --privileged
+root               163   0.0  0.1  4332528  12804   ??  Ss    8:58PM   0:00.07 /usr/libexec/secinitd
+root               162   0.0  0.0  4304956   5124   ??  Ss    8:58PM   0:00.09 /System/Library/PrivateFrameworks/SignpostNotification.framework/Versions/A/XPCServices/signpost_notificationd.xpc/Contents/MacOS/signpost_notificationd
+root               147   0.0  0.1  4374660  22232   ??  Ss    8:58PM   0:00.28 /usr/libexec/findmydeviced
+root               146   0.0  0.0  4331636   6248   ??  Ss    8:58PM   0:00.13 /usr/sbin/mDNSResponderHelper
+_analyticsd        145   0.0  0.1  4331980   9176   ??  Ss    8:58PM   0:00.11 /System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd
+root               144   0.0  0.1  4332560   9176   ??  Ss    8:58PM   0:00.17 /System/Library/PrivateFrameworks/WirelessDiagnostics.framework/Support/awdd
+_mdnsresponder     143   0.0  0.1  4333412   8620   ??  Ss    8:58PM   0:00.57 /usr/sbin/mDNSResponder
+_coreaudiod        136   0.0  0.0  4331092   7040   ??  Ss    8:58PM   0:00.10 /System/Library/Frameworks/CoreAudio.framework/Versions/A/XPCServices/com.apple.audio.DriverHelper.xpc/Contents/MacOS/com.apple.audio.DriverHelper
+_coreaudiod        127   0.0  0.1  4313504  14728   ??  Ss    8:58PM   0:25.72 /usr/sbin/coreaudiod
+root               126   0.0  0.1  4341356  15120   ??  Ss    8:58PM   0:01.33 /usr/libexec/airportd
+_ctkd              119   0.0  0.1  4306196   9644   ??  Ss    8:58PM   0:00.03 /System/Library/Frameworks/CryptoTokenKit.framework/ctkd -s
+root               116   0.0  0.0  4304992   8296   ??  Ss    8:58PM   0:00.02 /System/Library/Frameworks/PCSC.framework/Versions/A/XPCServices/com.apple.ctkpcscd.xpc/Contents/MacOS/com.apple.ctkpcscd
+root               114   0.0  0.1  4339036  14572   ??  Ss    8:58PM   0:01.63 /usr/libexec/trustd
+root               108   0.0  0.1  4335028   9108   ??  Ss    8:58PM   0:00.08 /usr/libexec/nehelper
+root               103   0.0  0.0  4304984   4760   ??  Ss    8:58PM   0:00.02 aslmanager
+root               102   0.0  0.1  4347572  13116   ??  Ss    8:58PM   0:00.61 /System/Library/CoreServices/coreservicesd
+root               101   0.0  0.1  4334192  10100   ??  Ss    8:58PM   0:00.24 /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/authd.xpc/Contents/MacOS/authd
+root                99   0.0  0.0  4304932   3476   ??  Ss    8:58PM   0:00.69 /usr/sbin/cfprefsd daemon
+_distnote           98   0.0  0.0  4305588   4024   ??  Ss    8:58PM   0:00.13 /usr/sbin/distnoted daemon
+root                97   0.0  0.0  4304692   2188   ??  Ss    8:58PM   0:01.39 /usr/sbin/notifyd
+root                96   0.0  0.1  4332332  13104   ??  Ss    8:58PM   0:00.13 /usr/libexec/AirPlayXPCHelper
+root                95   0.0  0.1  4338680  20596   ??  Ss    8:58PM   0:00.16 /usr/libexec/corebrightnessd --launchd
+root                93   0.0  0.1  4335040  10384   ??  Ss    8:58PM   0:00.15 /usr/sbin/bluetoothd
+root                91   0.0  0.0  4305180   4376   ??  Ss    8:58PM   0:00.01 /usr/sbin/KernelEventAgent
+root                90   0.0  0.1  4333580   8868   ??  Ss    8:58PM   0:00.07 /System/Library/PrivateFrameworks/GenerationalStorage.framework/Versions/A/Support/revisiond
+root                89   0.0  0.0  4304496   5888   ??  Ss    8:58PM   0:00.04 /System/Library/CoreServices/logind
+jasonchuang         88   0.0  0.2  4399196  32080   ??  Ss    8:58PM   0:01.34 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow console
+root                85   0.0  0.1  4335776  11708   ??  Ss    8:58PM   0:00.39 /usr/libexec/dasd
+_displaypolicyd     83   0.0  0.1  4307292   9640   ??  Ss    8:58PM   0:00.06 /usr/libexec/displaypolicyd -k 1
+root                82   0.0  0.0  4304628   4984   ??  Ss    8:58PM   0:00.01 autofsd
+_locationd          81   0.0  0.1  4384476  19240   ??  Ss    8:58PM   0:01.36 /usr/libexec/locationd
+_usbmuxd            79   0.0  0.0  4331244   5824   ??  Ss    8:58PM   0:00.03 /System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/Resources/usbmuxd -launchd
+root                78   0.0  0.1  4333544   9808   ??  Ss    8:58PM   0:00.89 /usr/sbin/securityd -i
+_timed              77   0.0  0.0  4330872   6608   ??  Ss    8:58PM   0:00.08 /usr/libexec/timed
+root                76   0.0  0.1  4334648  12916   ??  Ss    8:58PM   0:01.82 /System/Library/CoreServices/launchservicesd
+root                75   0.0  0.0  4305288   5780   ??  Ss    8:58PM   0:00.02 /System/Library/PrivateFrameworks/Noticeboard.framework/Versions/A/Resources/nbstated
+root                74   0.0  0.1  4340340  24352   ??  Ss    8:58PM   0:00.65 /System/Library/PrivateFrameworks/ApplePushService.framework/apsd
+root                73   0.0  0.1  4350444  17832   ??  Ss    8:58PM   0:03.23 /usr/libexec/opendirectoryd
+root                70   0.0  0.2  4341360  31344   ??  Ss    8:58PM   0:01.07 /usr/libexec/coreduetd
+root                69   0.0  0.2  4331296  25928   ??  Ss    8:58PM   0:00.13 /System/Library/CoreServices/backupd.bundle/Contents/Resources/backupd-helper -launchd
+root                66   0.0  0.0  4330644   6524   ??  Ss    8:58PM   0:00.21 /usr/libexec/diskarbitrationd
+root                65   0.0  0.0  4310036   8316   ??  Ss    8:58PM   0:00.06 /System/Library/CoreServices/iconservicesagent
+_iconservices       64   0.0  0.0  4306136   6108   ??  Ss    8:58PM   0:00.02 /System/Library/CoreServices/iconservicesd
+root                63   0.0  0.3  4414732  46748   ??  Ss    8:58PM   0:04.75 /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Support/mds
+root                62   0.0  0.1  4336696  14820   ??  SNs   8:58PM   0:00.22 /usr/libexec/warmd
+root                57   0.0  0.0  4305064   4500   ??  Ss    8:58PM   0:00.02 /usr/libexec/keybagd -t 15
+root                56   0.0  0.1  4393508  17144   ??  Ss    8:58PM   0:01.16 /usr/libexec/logd
+root                53   0.0  0.1  4330908   9408   ??  Ss    8:58PM   0:01.01 /System/Library/CoreServices/powerd.bundle/powerd
+root                52   0.0  0.1  4335980  11116   ??  Ss    8:58PM   0:00.55 /usr/libexec/configd
+root                50   0.0  0.1  4310288  12852   ??  Ss    8:58PM   0:00.45 /usr/sbin/systemstats --daemon
+_appleevents        49   0.0  0.1  4334440  10296   ??  Ss    8:58PM   0:00.17 /System/Library/CoreServices/appleeventsd --server
+root                47   0.0  0.1  4332168  20148   ??  Ss    8:58PM   0:00.37 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
+root                45   0.0  0.1  4312288   9920   ??  Ss    8:58PM   0:08.06 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+root                44   0.0  0.1  4344472  21020   ??  Ss    8:58PM   0:02.47 /usr/libexec/kextd
+root                43   0.0  0.1  4304724   8456   ??  Ss    8:58PM   0:00.11 /System/Library/PrivateFrameworks/Uninstall.framework/Resources/uninstalld
+root                40   0.0  0.1  4337028  16704   ??  Ss    8:58PM   0:00.68 /usr/libexec/UserEventAgent (System)
+root                39   0.0  0.0  4305532   1516   ??  Ss    8:58PM   0:00.28 /usr/sbin/syslogd
+root               712   0.0  0.0  4268172    936 s008  R+    9:37PM   0:00.00 ps auxw
+root                 1   0.0  0.1  4328508  21340   ??  Ss    8:58PM   0:09.52 /sbin/launchd
+jasonchuang        704   0.0  0.1  4331364  15416   ??  S     9:29PM   0:00.12 /System/Library/PrivateFrameworks/AOSKit.framework/Versions/A/XPCServices/com.apple.iCloudHelper.xpc/Contents/MacOS/com.apple.iCloudHelper
+root               699   0.0  0.1  4338256  15900   ??  Ss    9:28PM   0:00.04 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService
+jasonchuang        698   0.0  0.1  4354640  21312   ??  Ss    9:27PM   0:00.10 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService

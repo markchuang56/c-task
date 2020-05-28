@@ -1,1 +1,15 @@
-the branch has beend deleted
+the branch has been deleted
+
+git checout [some commit]
+
+// how to create new branch
+
+git branch [new branch]
+
+git checkout [branch name]
+
+git branch -d [delet local branch]
+
+git push origin :[delete remote branch]
+
+git commit -a -v -m "bababa"

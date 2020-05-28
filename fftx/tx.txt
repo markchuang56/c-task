@@ -2,3 +2,8 @@ this is my test file
 how do you turn this on ??
 \thow do you turn this on ??
 \n how do you turn this on ??
+
+int main(int argc, const char *argv[]) {
+	printf("=========== Nothing For Test ==========\n");
+	exit(0);
+}

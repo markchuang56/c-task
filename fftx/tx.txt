@@ -1,7 +1,15 @@
+/*
 this is my test file
 how do you turn this on ??
 \thow do you turn this on ??
 \n how do you turn this on ??
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stderr.h>
+
+#include <math.h>
 
 int main(int argc, const char *argv[]) {
 	printf("=========== Nothing For Test ==========\n");

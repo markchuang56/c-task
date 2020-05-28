@@ -1,0 +1,37 @@
+the branch has been deleted
+
+<<<<<<< HEAD
+
+git command LIST:
+
+git checkout []
+
+git branch []
+
+git branch -d
+
+git push origin master
+git push origin feature
+
+git merge master feature
+master <-- featrue
+
+git merge feature master
+feature <-- maser
+
+good example
+=======
+git checout [some commit]
+
+// how to create new branch
+
+git branch [new branch]
+
+git checkout [branch name]
+
+git branch -d [delet local branch]
+
+git push origin :[delete remote branch]
+
+git commit -a -v -m "bababa"
+>>>>>>> cago

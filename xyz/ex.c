@@ -18,7 +18,9 @@ int main(int argc, const char *argv[]) {
 	for(int i=0; i<N; i++) {
 		complex[i].real = cos(i/N);
 		complex[i].imag = sin(i/N);
+
 		printf("=========== Complex Test ===========\n");
+		pritnf("The Val %d\t%8.5f\t%8.5f\n", i, complex[i].real, complex[i].imag);
 	}
 
 	func();

@@ -1,5 +1,25 @@
 ttp://blog.csdn.net/syrchina/article/details/6670517
 
+# define output folder environment variable
+UNIVERSAL_OUTPUTFOLDER=${BUILD_DIR}/${CONFIGURATION}-universal
+ 
+# Step 1. Build Device and Simulator versions
+xcodebuild -target ${PROJECT_NAME} ONLY_ACTIVE_ARCH=NO -configuration ${CONFIGURATION} -sdk iphoneos  BUILD_DIR="${BUILD_DIR}" BUILD_ROOT="${BUILD_ROOT}"
+xcodebuild -target ${PROJECT_NAME} -configuration ${CONFIGURATION} -sdk iphonesimulator -arch x86_64 -arch i386 -arch armv7 -arch armv7s -arch arm64 BUILD_DIR="${BUILD_DIR}" BUILD_ROOT="${BUILD_ROOT}"
+ 
+# make sure the output directory exists
+mkdir -p "${UNIVERSAL_OUTPUTFOLDER}"
+ 
+# Step 2. Create universal binary file using lipo
+lipo -create -output "${UNIVERSAL_OUTPUTFOLDER}/lib${PROJECT_NAME}.a" "${BUILD_DIR}/${CONFIGURATION}-iphoneos/lib${PROJECT_NAME}.a" "${BUILD_DIR}/${CONFIGURATION}-iphonesimulator/lib${PROJECT_NAME}.a"
+ 
+echo "Universal library can be found here:"
+echo ${UNIVERSAL_OUTPUTFOLDER}/lib${PROJECT_NAME}.a
+ 
+# Last touch. copy the header files. Just for convenience
+cp -R "${BUILD_DIR}/${CONFIGURATION}-iphoneos/include" "${UNIVERSAL_OUTPUTFOLDER}/"
+
+
 程式碼在2011年全國電子大賽結束後（2011年9月3日）釋出，多個版本，註釋詳細。
 
 [cpp] view

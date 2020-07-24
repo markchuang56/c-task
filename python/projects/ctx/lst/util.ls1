@@ -1,0 +1,1240 @@
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     1
+
+
+MACRO ASSEMBLER A51 V7.07
+OBJECT MODULE PLACED IN .\output\util.OBJ
+ASSEMBLER INVOKED BY: C:\Keil\C51\BIN\A51.EXE .\output\util.src PR(.\lst\util.ls1) EP DEBUG
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; .\output\util.SRC generated from: util.c
+                       2     ; COMPILER INVOKED BY:
+                       3     ;        C:\Keil\C51\BIN\C51.EXE util.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT
+                             (.\lst\util.lst) SRC(.\output\util.SRC)
+                       4     
+                       5     $nomod51 
+                       6     
+                       7     NAME    UTIL
+                       8     
+  0080                 9     P0      DATA    080H
+  0090                10     P1      DATA    090H
+  00A0                11     P2      DATA    0A0H
+  00B0                12     P3      DATA    0B0H
+  00B4                13     T0      BIT     0B0H.4
+  00D6                14     AC      BIT     0D0H.6
+  00B5                15     T1      BIT     0B0H.5
+  0090                16     T2      BIT     090H.0
+  00AF                17     EA      BIT     0A8H.7
+  00A8                18     IE      DATA    0A8H
+  00CE                19     EXF2    BIT     0C8H.6
+  00B7                20     RD      BIT     0B0H.7
+  00AC                21     ES      BIT     0A8H.4
+  00B8                22     IP      DATA    0B8H
+  0098                23     RI      BIT     098H.0
+  00B2                24     INT0    BIT     0B0H.2
+  00D7                25     CY      BIT     0D0H.7
+  0099                26     TI      BIT     098H.1
+  00B3                27     INT1    BIT     0B0H.3
+  00CB                28     RCAP2H  DATA    0CBH
+  00BC                29     PS      BIT     0B8H.4
+  0081                30     SP      DATA    081H
+  0091                31     T2EX    BIT     090H.1
+  00D2                32     OV      BIT     0D0H.2
+  00CA                33     RCAP2L  DATA    0CAH
+  00C9                34     C_T2    BIT     0C8H.1
+  00B6                35     WR      BIT     0B0H.6
+  00CD                36     RCLK    BIT     0C8H.5
+  00CC                37     TCLK    BIT     0C8H.4
+  0099                38     SBUF    DATA    099H
+  0087                39     PCON    DATA    087H
+  0098                40     SCON    DATA    098H
+  0089                41     TMOD    DATA    089H
+  0088                42     TCON    DATA    088H
+  0089                43     IE0     BIT     088H.1
+  008B                44     IE1     BIT     088H.3
+  00F0                45     B       DATA    0F0H
+  00C8                46     CP_RL2  BIT     0C8H.0
+  00E0                47     ACC     DATA    0E0H
+  00A9                48     ET0     BIT     0A8H.1
+  00AB                49     ET1     BIT     0A8H.3
+  008D                50     TF0     BIT     088H.5
+  00AD                51     ET2     BIT     0A8H.5
+  008F                52     TF1     BIT     088H.7
+  00CF                53     TF2     BIT     0C8H.7
+  009A                54     RB8     BIT     098H.2
+  008C                55     TH0     DATA    08CH
+  00A8                56     EX0     BIT     0A8H.0
+  0088                57     IT0     BIT     088H.0
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     2
+
+  008D                58     TH1     DATA    08DH
+  009B                59     TB8     BIT     098H.3
+  00AA                60     EX1     BIT     0A8H.2
+  008A                61     IT1     BIT     088H.2
+  00CD                62     TH2     DATA    0CDH
+  00D0                63     P       BIT     0D0H.0
+  009F                64     SM0     BIT     098H.7
+  008A                65     TL0     DATA    08AH
+  009E                66     SM1     BIT     098H.6
+  008B                67     TL1     DATA    08BH
+  00D8                68     WDTCON  DATA    0D8H
+  009D                69     SM2     BIT     098H.5
+  00CC                70     TL2     DATA    0CCH
+  00B9                71     PT0     BIT     0B8H.1
+  00BB                72     PT1     BIT     0B8H.3
+  00D3                73     RS0     BIT     0D0H.3
+  00BD                74     PT2     BIT     0B8H.5
+  008C                75     TR0     BIT     088H.4
+  00D4                76     RS1     BIT     0D0H.4
+  008E                77     TR1     BIT     088H.6
+  00CA                78     TR2     BIT     0C8H.2
+  00B8                79     PX0     BIT     0B8H.0
+  00BA                80     PX1     BIT     0B8H.2
+  0083                81     DPH     DATA    083H
+  0082                82     DPL     DATA    082H
+  00CB                83     EXEN2   BIT     0C8H.3
+  009C                84     REN     BIT     098H.4
+  00C8                85     T2CON   DATA    0C8H
+  00B0                86     RXD     BIT     0B0H.0
+  008E                87     CKCON   DATA    08EH
+  00B1                88     TXD     BIT     0B0H.1
+  00D5                89     F0      BIT     0D0H.5
+  00D0                90     PSW     DATA    0D0H
+                      91     ?PR?_Hextable?UTIL   SEGMENT CODE 
+                      92     ?PR?_UartByte2HexNoCR?UTIL               SEGMENT CODE 
+                      93     ?DT?UTIL             SEGMENT DATA 
+                      94     ?PR?_UartByte2Hex?UTIL                   SEGMENT CODE 
+                      95     ?PR?_UartWord2Hex?UTIL                   SEGMENT CODE 
+                      96     ?PR?UartCarryReturn?UTIL                 SEGMENT CODE 
+                      97     ?PR?_UartChar?UTIL   SEGMENT CODE 
+                      98     ?PR?_UartString?UTIL SEGMENT CODE 
+                      99     ?PR?_Delay1MS?UTIL   SEGMENT CODE 
+                     100     ?PR?_Delay10US?UTIL  SEGMENT CODE 
+                     101     ?PR?EnableAsyncTimer?UTIL                SEGMENT CODE 
+                     102     ?PR?_SetupAsyncTimer?UTIL                SEGMENT CODE 
+                     103     ?PR?Timer0ISR?UTIL   SEGMENT CODE 
+                     104     ?PR?IsAsyncTimeOut?UTIL                  SEGMENT CODE 
+                     105     ?PR?Timer1ISR?UTIL   SEGMENT CODE 
+                     106     ?PR?_DWORDBig2Little_f?UTIL              SEGMENT CODE 
+                     107     ?DT?_DWORDBig2Little_f?UTIL              SEGMENT DATA OVERLAYABLE 
+                     108             EXTRN   DATA (wAsyncCnt)
+                     109             EXTRN   XDATA (pfISROfTime1)
+                     110             EXTRN   BIT (xAsyncTimeOut)
+                     111             EXTRN   CODE (?C?CLDPTR)
+                     112             EXTRN   CODE (?C?ICALL)
+                     113             EXTRN   CODE (?C?CLDOPTR)
+                     114             EXTRN   CODE (?C?CSTPTR)
+                     115             EXTRN   CODE (?C?CSTOPTR)
+                     116             PUBLIC  ?_DWORDBig2Little_f?BYTE
+                     117             PUBLIC  _DWORDBig2Little_f
+                     118             PUBLIC  Timer1ISR
+                     119             PUBLIC  IsAsyncTimeOut
+                     120             PUBLIC  Timer0ISR
+                     121             PUBLIC  _SetupAsyncTimer
+                     122             PUBLIC  EnableAsyncTimer
+                     123             PUBLIC  _Delay10US
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     3
+
+                     124             PUBLIC  _Delay1MS
+                     125             PUBLIC  _UartString
+                     126             PUBLIC  _UartChar
+                     127             PUBLIC  UartCarryReturn
+                     128             PUBLIC  _UartWord2Hex
+                     129             PUBLIC  _UartByte2Hex
+                     130             PUBLIC  _UartByte2HexNoCR
+                     131             PUBLIC  _Hextable
+                     132     
+----                 133             RSEG  ?DT?UTIL
+0000                 134        bUartTmp?549:   DS   1
+                     135     
+----                 136             RSEG  ?DT?UTIL
+0001                 137           dByte?550:   DS   1
+                     138     
+----                 139             RSEG  ?DT?UTIL
+0002                 140            bTmp?142:   DS   1
+                     141     
+----                 142             RSEG  ?DT?UTIL
+0003                 143           dByte?143:   DS   1
+                     144     
+----                 145             RSEG  ?DT?_DWORDBig2Little_f?UTIL
+0000                 146     ?_DWORDBig2Little_f?BYTE:
+0000                 147         dwDest?1456:   DS   3
+0003                 148          dwSrc?1457:   DS   3
+                     149     
+----                 150             RSEG  ?DT?UTIL
+0004                 151           dWord?346:   DS   2
+                     152     
+----                 153             RSEG  ?DT?UTIL
+0006                 154            bTmp?347:   DS   1
+                     155     ; /************************************************************************|
+                     156     ; |                  A L C O R   M I C R O,  C O R P.                      |
+                     157     ; |                                                                        |
+                     158     ; |         This source code is classified as confidential and             |
+                     159     ; |         contains trade secrets owned by Alcor Micro, Corp.             |
+                     160     ; |                                                                        |
+                     161     ; |                         (C)Copyright 2008                              |
+                     162     ; |                         Alcor Micro, Corp.                             |
+                     163     ; |                        All rights reserved.                            |
+                     164     ; |************************************************************************/
+                     165     ; 
+                     166     ; #include "globaldef.h"
+                     167     ; #include "regmap.h"
+                     168     ; #include "globalvar.h"
+                     169     ; #include "util.h"
+                     170     ; 
+                     171     ; // Hex code convert to ASCII code
+                     172     ; BYTE Hextable(BYTE index)
+                     173     
+----                 174             RSEG  ?PR?_Hextable?UTIL
+0000                 175     _Hextable:
+                     176             USING   0
+                     177                             ; SOURCE LINE # 18
+                     178     ;---- Variable 'index?040' assigned to Register 'R7' ----
+                     179     ; {
+                     180                             ; SOURCE LINE # 19
+                     181     ;     if(index < 10){
+                     182                             ; SOURCE LINE # 20
+0000 EF              183             MOV     A,R7
+0001 C3              184             CLR     C
+0002 940A            185             SUBB    A,#0AH
+0004 EF              186             MOV     A,R7
+0005 5004            187             JNC     ?C0001
+                     188     ;         return (index+0x30);
+                     189                             ; SOURCE LINE # 21
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     4
+
+0007 2430            190             ADD     A,#030H
+0009 FF              191             MOV     R7,A
+000A 22              192             RET     
+                     193     ;     }else{
+                     194                             ; SOURCE LINE # 22
+000B                 195     ?C0001:
+                     196     ;         return (index+0x37);
+                     197                             ; SOURCE LINE # 23
+000B 2437            198             ADD     A,#037H
+000D FF              199             MOV     R7,A
+                     200     ;     }
+                     201                             ; SOURCE LINE # 24
+                     202     ; }
+                     203                             ; SOURCE LINE # 25
+000E                 204     ?C0002:
+000E 22              205             RET     
+                     206     ; END OF _Hextable
+                     207     
+                     208     ; // Byte to hex code
+                     209     ; 
+                     210     ; void UartByte2HexNoCR(BYTE idByte)
+                     211     
+----                 212             RSEG  ?PR?_UartByte2HexNoCR?UTIL
+0000                 213     _UartByte2HexNoCR:
+                     214             USING   0
+                     215                             ; SOURCE LINE # 28
+                     216     ;---- Variable 'idByte?141' assigned to Register 'R7' ----
+                     217     ; {
+                     218                             ; SOURCE LINE # 29
+                     219     ;    static BYTE  data bTmp;
+                     220     ;    static BYTE data dByte;
+                     221     ;    dByte = idByte;
+                     222                             ; SOURCE LINE # 32
+0000 8F00     F      223             MOV     dByte?143,R7
+                     224     ;    bTmp=(dByte>>4);
+                     225                             ; SOURCE LINE # 33
+0002 E500     F      226             MOV     A,dByte?143
+0004 C4              227             SWAP    A
+0005 540F            228             ANL     A,#0FH
+0007 F500     F      229             MOV     bTmp?142,A
+                     230     ;    bTmp=Hextable(bTmp);  //first high nibble
+                     231                             ; SOURCE LINE # 34
+0009 FF              232             MOV     R7,A
+000A 120000   F      233             LCALL   _Hextable
+000D 8F00     F      234             MOV     bTmp?142,R7
+                     235     ;    UartChar(bTmp);
+                     236                             ; SOURCE LINE # 35
+000F 120000   F      237             LCALL   _UartChar
+                     238     ;    bTmp=(dByte&0x0f);
+                     239                             ; SOURCE LINE # 36
+0012 E500     F      240             MOV     A,dByte?143
+0014 540F            241             ANL     A,#0FH
+0016 F500     F      242             MOV     bTmp?142,A
+                     243     ;    bTmp=Hextable(bTmp);  //low nibble
+                     244                             ; SOURCE LINE # 37
+0018 FF              245             MOV     R7,A
+0019 120000   F      246             LCALL   _Hextable
+001C 8F00     F      247             MOV     bTmp?142,R7
+                     248     ;    UartChar(bTmp);
+                     249                             ; SOURCE LINE # 38
+001E 020000   F      250             LJMP    _UartChar
+                     251     ; END OF _UartByte2HexNoCR
+                     252     
+                     253     ; 
+                     254     ; }    
+                     255     ; void UartByte2Hex(BYTE dByte)
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     5
+
+                     256     
+----                 257             RSEG  ?PR?_UartByte2Hex?UTIL
+0000                 258     _UartByte2Hex:
+                     259             USING   0
+                     260                             ; SOURCE LINE # 41
+                     261     ;---- Variable 'dByte?244' assigned to Register 'R7' ----
+                     262     ; {
+                     263                             ; SOURCE LINE # 42
+                     264     ;    UartByte2HexNoCR(dByte);
+                     265                             ; SOURCE LINE # 43
+0000 120000   F      266             LCALL   _UartByte2HexNoCR
+                     267     ;    UartCarryReturn();
+                     268                             ; SOURCE LINE # 44
+0003 020000   F      269             LJMP    UartCarryReturn
+                     270     ; END OF _UartByte2Hex
+                     271     
+                     272     ; }
+                     273     ; // Word to hex code
+                     274     ; void UartWord2Hex(WORD idWord)
+                     275     
+----                 276             RSEG  ?PR?_UartWord2Hex?UTIL
+0000                 277     _UartWord2Hex:
+                     278             USING   0
+                     279                             ; SOURCE LINE # 47
+                     280     ;---- Variable 'idWord?345' assigned to Register 'R6/R7' ----
+                     281     ; {
+                     282                             ; SOURCE LINE # 48
+                     283     ;     static WORD data dWord;
+                     284     ;     static BYTE data bTmp;
+                     285     ;     dWord = idWord;
+                     286                             ; SOURCE LINE # 51
+0000 8E00     F      287             MOV     dWord?346,R6
+0002 8F00     F      288             MOV     dWord?346+01H,R7
+                     289     ;     bTmp=(BYTE)(dWord>>8);
+                     290                             ; SOURCE LINE # 52
+0004 E500     F      291             MOV     A,dWord?346
+0006 F500     F      292             MOV     bTmp?347,A
+                     293     ;     UartByte2HexNoCR(bTmp);      //high byte
+                     294                             ; SOURCE LINE # 53
+0008 AF00     F      295             MOV     R7,bTmp?347
+000A 120000   F      296             LCALL   _UartByte2HexNoCR
+                     297     ;     bTmp=(BYTE)(dWord&0x00ff);
+                     298                             ; SOURCE LINE # 54
+000D E500     F      299             MOV     A,dWord?346+01H
+000F F500     F      300             MOV     bTmp?347,A
+                     301     ;     UartByte2Hex(bTmp);      //low byte
+                     302                             ; SOURCE LINE # 55
+0011 AF00     F      303             MOV     R7,bTmp?347
+0013 020000   F      304             LJMP    _UartByte2Hex
+                     305     ; END OF _UartWord2Hex
+                     306     
+                     307     ; }
+                     308     ; // Insert Carry return, New Line feed into UART debug message pool
+                     309     ; void UartCarryReturn(void)
+                     310     
+----                 311             RSEG  ?PR?UartCarryReturn?UTIL
+0000                 312     UartCarryReturn:
+                     313             USING   0
+                     314                             ; SOURCE LINE # 58
+                     315     ; {
+                     316                             ; SOURCE LINE # 59
+                     317     ;     UartChar(0xa);
+                     318                             ; SOURCE LINE # 60
+0000 7F0A            319             MOV     R7,#0AH
+0002 120000   F      320             LCALL   _UartChar
+                     321     ;     UartChar(0xd);
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     6
+
+                     322                             ; SOURCE LINE # 61
+0005 7F0D            323             MOV     R7,#0DH
+0007 020000   F      324             LJMP    _UartChar
+                     325     ; END OF UartCarryReturn
+                     326     
+                     327     ; }
+                     328     ; // **********************************************************************************
+                     329     ; // Function description:
+                     330     ; // Name:     UartChar
+                     331     ; // Created:  Lear Hsieh 2008,Aug,18
+                     332     ; // Parameter: BYTE data dByte
+                     333     ; // Return:  void
+                     334     ; // Comment: Use timer1 for UART baudrate timing control
+                     335     ; //          Timer1 is internal timer mode: One tick time perious =  1/(master clock) 
+                     336     ; //          Timer1 ISR is not necessary for main loop routine busy waiting
+                     337     ; //          DO NOT modify this function except you have measured UART TX signal and it wo
+                             rks 
+                     338     ; //          properly
+                     339     ; //          UART mode, start bit low, 8 bits data, stop bit high, no parity check
+                     340     ; //                    2009,03,25
+                     341     ; //                    Release Timer1, support baudrate to 115200
+                     342     ; //
+                     343     ; // **********************************************************************************
+                     344     ; 
+                     345     ; void UartChar(BYTE data idByte)
+                     346     
+----                 347             RSEG  ?PR?_UartChar?UTIL
+0000                 348     _UartChar:
+                     349                             ; SOURCE LINE # 80
+                     350     ;---- Variable 'idByte?548' assigned to Register 'R7' ----
+                     351     ; {
+                     352                             ; SOURCE LINE # 81
+                     353     ;   static BYTE data bUartTmp;
+                     354     ;   static BYTE data dByte;
+                     355     ;   bUartTmp = 8;
+                     356                             ; SOURCE LINE # 84
+0000 750008   F      357             MOV     bUartTmp?549,#08H
+                     358     ;   dByte = idByte;
+                     359                             ; SOURCE LINE # 85
+0003 8F00     F      360             MOV     dByte?550,R7
+                     361     ;   SetRegBits(REG_GPIO1_DIR, 0x1);
+                     362                             ; SOURCE LINE # 86
+0005 900022          363             MOV     DPTR,#022H
+0008 E0              364             MOVX    A,@DPTR
+0009 4401            365             ORL     A,#01H
+000B F0              366             MOVX    @DPTR,A
+                     367     ;   // SetRegBits(REG_GPIO2_DIR, 0x1);  
+                     368     ; #pragma ASM
+                     369     ;       ; start bit low, 8.6805 us(115200 baudrate)
+                     370               ; start bit low, 8.6805 us(115200 baudrate)
+                     371     ;       MOV             R7, #05H        
+000C 7F05            372               MOV           R7, #05H        
+                     373     ;       MOV     DPTR,#020H      ;GPIO0  
+000E 900020          374               MOV     DPTR,#020H    ;GPIO0  
+                     375     ;       MOVX    A,@DPTR                 
+0011 E0              376               MOVX    A,@DPTR                       
+                     377     ;       ANL     A,#0FEH                 
+0012 54FE            378               ANL     A,#0FEH                       
+                     379     ;       MOVX    @DPTR,A                 
+0014 F0              380               MOVX    @DPTR,A                       
+                     381     ; STARTBITLOW:
+0015                 382               STARTBITLOW:
+                     383     ;       nop
+0015 00              384               nop
+                     385     ;       nop
+0016 00              386               nop
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     7
+
+                     387     ;       nop
+0017 00              388               nop
+                     389     ;       nop
+0018 00              390               nop
+                     391     ;       nop
+0019 00              392               nop
+                     393     ;       nop
+001A 00              394               nop
+                     395     ;       nop
+001B 00              396               nop
+                     397     ;       nop
+001C 00              398               nop
+                     399     ;       nop             
+001D 00              400               nop           
+                     401     ;       DJNZ    R7, STARTBITLOW 
+001E DFF5            402               DJNZ  R7, STARTBITLOW 
+                     403     ; DATABITHIGH:
+0020                 404               DATABITHIGH:
+                     405     ;       MOV     A,dByte?550
+0020 E500     F      406               MOV     A,dByte?550
+                     407     ;       JNB             ACC.0, DATABITLOW
+0022 30E013          408               JNB           ACC.0, DATABITLOW
+                     409     ;       ; Data Bit High
+                     410               ; Data Bit High
+                     411     ;       MOV             DPTR, #020H     ;GPIO0
+0025 900020          412               MOV           DPTR, #020H     ;GPIO0
+                     413     ;       MOVX    A, @DPTR
+0028 E0              414               MOVX  A, @DPTR
+                     415     ;       ORL             A, #01H
+0029 4401            416               ORL           A, #01H
+                     417     ;       MOVX    @DPTR, A
+002B F0              418               MOVX  @DPTR, A
+                     419     ;       MOV             R7, #04H
+002C 7F04            420               MOV           R7, #04H
+                     421     ; HIGHLEVEL:
+002E                 422               HIGHLEVEL:
+                     423     ;       nop
+002E 00              424               nop
+                     425     ;       nop
+002F 00              426               nop
+                     427     ;       nop
+0030 00              428               nop
+                     429     ;       nop
+0031 00              430               nop
+                     431     ;       nop
+0032 00              432               nop
+                     433     ;       nop             
+0033 00              434               nop           
+                     435     ;       DJNZ    R7, HIGHLEVEL
+0034 DFF8            436               DJNZ  R7, HIGHLEVEL
+                     437     ;       JMP             SHIFTDATABIT
+0036 8013            438               JMP           SHIFTDATABIT
+                     439     ; DATABITLOW:
+0038                 440               DATABITLOW:
+                     441     ;       MOV             DPTR,#020H      ;GPIO0
+0038 900020          442               MOV           DPTR,#020H      ;GPIO0
+                     443     ;       MOVX    A,@DPTR
+003B E0              444               MOVX  A,@DPTR
+                     445     ;       ANL             A,#0FEH
+003C 54FE            446               ANL           A,#0FEH
+                     447     ;       MOVX    @DPTR, A
+003E F0              448               MOVX  @DPTR, A
+                     449     ;       MOV             R7, #04H
+003F 7F04            450               MOV           R7, #04H
+                     451     ; LOWLEVEL:
+0041                 452               LOWLEVEL:
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     8
+
+                     453     ;       nop
+0041 00              454               nop
+                     455     ;       nop
+0042 00              456               nop
+                     457     ;       nop
+0043 00              458               nop
+                     459     ;       nop
+0044 00              460               nop
+                     461     ;       nop
+0045 00              462               nop
+                     463     ;       nop
+0046 00              464               nop
+                     465     ;       nop
+0047 00              466               nop
+                     467     ;       nop             
+0048 00              468               nop           
+                     469     ;       DJNZ    R7, LOWLEVEL
+0049 DFF6            470               DJNZ  R7, LOWLEVEL
+                     471     ; SHIFTDATABIT:
+004B                 472               SHIFTDATABIT:
+                     473     ;       MOV     A,dByte?550
+004B E500     F      474               MOV     A,dByte?550
+                     475     ;       CLR     C
+004D C3              476               CLR     C
+                     477     ;       RRC     A
+004E 13              478               RRC     A
+                     479     ;       MOV     dByte?550,A
+004F F500     F      480               MOV     dByte?550,A
+                     481     ;       DJNZ    bUartTmp?549, DATABITHIGH
+0051 D500CC   F      482               DJNZ    bUartTmp?549, DATABITHIGH
+                     483     ;       ; StartBit high
+                     484               ; StartBit high
+                     485     ;       MOV             DPTR,#020H      ;GPIO0
+0054 900020          486               MOV           DPTR,#020H      ;GPIO0
+                     487     ;       MOVX    A,@DPTR
+0057 E0              488               MOVX  A,@DPTR
+                     489     ;       ORL             A,#01H
+0058 4401            490               ORL           A,#01H
+                     491     ;       MOV             R7, #04H
+005A 7F04            492               MOV           R7, #04H
+                     493     ;       MOVX    @DPTR, A
+005C F0              494               MOVX  @DPTR, A
+                     495     ; STOPBITHIGH:  
+005D                 496               STOPBITHIGH:  
+                     497     ;       nop
+005D 00              498               nop
+                     499     ;       nop
+005E 00              500               nop
+                     501     ;       nop
+005F 00              502               nop
+                     503     ;       nop
+0060 00              504               nop
+                     505     ;       DJNZ    R7, STOPBITHIGH
+0061 DFFA            506               DJNZ  R7, STOPBITHIGH
+                     507     ; #pragma ENDASM
+                     508     ; }
+                     509                             ; SOURCE LINE # 159
+0063 22              510             RET     
+                     511     ; END OF _UartChar
+                     512     
+                     513     ; 
+                     514     ; #if 0
+                     515     ; void UartChar(BYTE data idByte)
+                     516     ; {
+                     517     ;   static BYTE data bTmp;
+                     518     ;   static BYTE data dByte;
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE     9
+
+                     519     ;   dByte = idByte;
+                     520     ;   SetRegBits(REG_GPIO1_DIR, 0x1);
+                     521     ;   // SetRegBits(REG_GPIO2_DIR, 0x1);  
+                     522     ;   TMOD = (TMOD & 0x0F) | 0x10;
+                     523     ;   TCON &= 0x3F;                     // Clear TF1, TR1
+                     524     ;   ClrRegBits(REG_GPIO1_DATA, 0x1);  // Start bit low
+                     525     ;   // ClrRegBits(REG_GPIO2_DATA, 0x1);
+                     526     ;   // UART Delay
+                     527     ;   TH1 = 0xFF;                       /* 26 us for 38400 baudrate*/
+                     528     ;   TL1 = 0xEC;   
+                     529     ;   _nop_();_nop_();
+                     530     ;   TR1 = 1;
+                     531     ;   while(TF1 !=1);
+                     532     ;   TCON &= 0x3F;
+                     533     ;   bTmp = 8;
+                     534     ;   do{
+                     535     ;     if(dByte & 0x01){
+                     536     ;         SetRegBits(REG_GPIO1_DATA, 0x1);
+                     537     ;               // SetRegBits(REG_GPIO2_DATA, 0x1);
+                     538     ;         TH1 = 0xFF;                 /* 26 us for 38400 baudrate*/
+                     539     ;         TL1 = 0xEB;    
+                     540     ;     }else{
+                     541     ;               ClrRegBits(REG_GPIO1_DATA, 0x1);
+                     542     ;               // ClrRegBits(REG_GPIO2_DATA, 0x1);
+                     543     ;         TH1 = 0xFF;                 /* 26 us for 38400 baudrate*/
+                     544     ;         TL1 = 0xEB;    
+                     545     ;     }
+                     546     ;     TR1 = 1;
+                     547     ;     while(TF1 !=1);
+                     548     ;     TCON &= 0x3F;
+                     549     ;     dByte>>=1;
+                     550     ;     bTmp--;
+                     551     ;   }while(bTmp!=0);
+                     552     ;   // Stop bit high
+                     553     ;   SetRegBits(REG_GPIO1_DATA, 0x1);
+                     554     ;   // SetRegBits(REG_GPIO2_DATA, 0x1);
+                     555     ; 
+                     556     ;   TH1 = 0xFF;    /* 26 us for 38400 baudrate*/
+                     557     ;   TL1 = 0xEC;    
+                     558     ;   TR1 = 1;
+                     559     ;   while(TF1 !=1);
+                     560     ;   TCON &= 0x3F;
+                     561     ; }
+                     562     ; #endif
+                     563     ; // UART string function
+                     564     ; void UartString(char *ptr)
+                     565     
+----                 566             RSEG  ?PR?_UartString?UTIL
+0000                 567     _UartString:
+                     568             USING   0
+                     569                             ; SOURCE LINE # 211
+                     570     ;---- Variable 'ptr?651' assigned to Register 'R1/R2/R3' ----
+                     571     ; {
+                     572                             ; SOURCE LINE # 212
+                     573     ;      // bTmp assign to R7, do not need to do data overlay correction
+                     574     ;      BYTE data bTmp;
+                     575     ; 
+                     576     ;      bTmp=*ptr;
+                     577                             ; SOURCE LINE # 216
+                     578     ;---- Variable 'bTmp?652' assigned to Register 'R7' ----
+0000 800D            579             SJMP    ?C0025
+0002                 580     ?C0009:
+                     581     ;      while(bTmp)     //last char is "0"
+                     582                             ; SOURCE LINE # 217
+0002 EF              583             MOV     A,R7
+0003 6010            584             JZ      ?C0010
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    10
+
+                     585     ;      {
+                     586                             ; SOURCE LINE # 218
+                     587     ;       UartChar(bTmp);
+                     588                             ; SOURCE LINE # 219
+0005 120000   F      589             LCALL   _UartChar
+                     590     ;       ptr++;
+                     591                             ; SOURCE LINE # 220
+0008 7401            592             MOV     A,#01H
+000A 29              593             ADD     A,R1
+000B F9              594             MOV     R1,A
+000C E4              595             CLR     A
+000D 3A              596             ADDC    A,R2
+000E FA              597             MOV     R2,A
+                     598     ;       bTmp=*ptr;
+                     599                             ; SOURCE LINE # 221
+000F                 600     ?C0025:
+000F 120000   F      601             LCALL   ?C?CLDPTR
+0012 FF              602             MOV     R7,A
+                     603     ;      }
+                     604                             ; SOURCE LINE # 222
+0013 80ED            605             SJMP    ?C0009
+0015                 606     ?C0010:
+                     607     ;      UartCarryReturn();
+                     608                             ; SOURCE LINE # 223
+0015 020000   F      609             LJMP    UartCarryReturn
+                     610     ; END OF _UartString
+                     611     
+                     612     ; }
+                     613     ; // 2009,03,25 Lear modified
+                     614     ; // use nop to delay, release timer 1
+                     615     ; void Delay1MS(BYTE bCnt)
+                     616     
+----                 617             RSEG  ?PR?_Delay1MS?UTIL
+0000                 618     _Delay1MS:
+                     619                             ; SOURCE LINE # 227
+                     620     ;---- Variable 'bCnt?753' assigned to Register 'R7' ----
+                     621     ; {
+                     622                             ; SOURCE LINE # 228
+                     623     ;       bCnt = bCnt;    // prevent compiler warning
+                     624                             ; SOURCE LINE # 229
+                     625     ; #pragma ASM
+                     626     ;       ;bCnt assign to R7
+                     627               ;bCnt assign to R7
+                     628     ; DELAY1MSCNT:
+0000                 629               DELAY1MSCNT:
+                     630     ;       MOV     bUartTmp?549, #03H
+0000 750003   F      631               MOV   bUartTmp?549, #03H
+                     632     ; DEALY1MSINNERLOOP2:   
+0003                 633               DEALY1MSINNERLOOP2:   
+                     634     ;       MOV     dByte?550, #0EBH
+0003 7500EB   F      635               MOV   dByte?550, #0EBH
+                     636     ; DEALY1MSINNERLOOP1:   
+0006                 637               DEALY1MSINNERLOOP1:   
+                     638     ;       nop 
+0006 00              639               nop 
+                     640     ;       nop
+0007 00              641               nop
+                     642     ;       nop
+0008 00              643               nop
+                     644     ;       nop
+0009 00              645               nop
+                     646     ;       nop
+000A 00              647               nop
+                     648     ;       nop
+000B 00              649               nop
+                     650     ;       nop
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    11
+
+000C 00              651               nop
+                     652     ;       nop
+000D 00              653               nop
+                     654     ;       nop
+000E 00              655               nop
+                     656     ;       nop
+000F 00              657               nop
+                     658     ;       DJNZ    dByte?550,      DEALY1MSINNERLOOP1
+0010 D500F3   F      659               DJNZ  dByte?550,      DEALY1MSINNERLOOP1
+                     660     ;       DJNZ    bUartTmp?549,   DEALY1MSINNERLOOP2      
+0013 D500ED   F      661               DJNZ  bUartTmp?549,   DEALY1MSINNERLOOP2      
+                     662     ;       DJNZ    R7,     DELAY1MSCNT
+0016 DFE8            663               DJNZ  R7,     DELAY1MSCNT
+                     664     ; #pragma ENDASM
+                     665     ; }
+                     666                             ; SOURCE LINE # 251
+0018 22              667             RET     
+                     668     ; END OF _Delay1MS
+                     669     
+                     670     ; void Delay10US(BYTE bCnt)
+                     671     
+----                 672             RSEG  ?PR?_Delay10US?UTIL
+0000                 673     _Delay10US:
+                     674                             ; SOURCE LINE # 252
+                     675     ;---- Variable 'bCnt?854' assigned to Register 'R7' ----
+                     676     ; {
+                     677                             ; SOURCE LINE # 253
+                     678     ;       bCnt = bCnt;    // prevent compiler warning
+                     679                             ; SOURCE LINE # 254
+                     680     ; #pragma ASM
+                     681     ;       ;bCnt assign to R7
+                     682               ;bCnt assign to R7
+                     683     ; DELAY10USCNT: 
+0000                 684               DELAY10USCNT: 
+                     685     ;       MOV     dByte?550, #05H
+0000 750005   F      686               MOV   dByte?550, #05H
+                     687     ; DEALY10USINNERLOOP1:  
+0003                 688               DEALY10USINNERLOOP1:  
+                     689     ;       nop
+0003 00              690               nop
+                     691     ;       nop 
+0004 00              692               nop 
+                     693     ;       nop
+0005 00              694               nop
+                     695     ;       nop
+0006 00              696               nop
+                     697     ;       nop
+0007 00              698               nop
+                     699     ;       nop
+0008 00              700               nop
+                     701     ;       nop
+0009 00              702               nop
+                     703     ;       nop
+000A 00              704               nop
+                     705     ;       nop
+000B 00              706               nop
+                     707     ;       nop
+000C 00              708               nop
+                     709     ;       nop
+000D 00              710               nop
+                     711     ;       nop
+000E 00              712               nop
+                     713     ;       nop
+000F 00              714               nop
+                     715     ;       nop
+0010 00              716               nop
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    12
+
+                     717     ;       nop
+0011 00              718               nop
+                     719     ;       nop
+0012 00              720               nop
+                     721     ;       DJNZ    dByte?550,      DEALY10USINNERLOOP1
+0013 D500ED   F      722               DJNZ  dByte?550,      DEALY10USINNERLOOP1
+                     723     ;       DJNZ    R7,     DELAY10USCNT
+0016 DFE8            724               DJNZ  R7,     DELAY10USCNT
+                     725     ; #pragma ENDASM
+                     726     ; 
+                     727     ; }
+                     728                             ; SOURCE LINE # 280
+0018 22              729             RET     
+                     730     ; END OF _Delay10US
+                     731     
+                     732     ; /*
+                     733     ; void Delay1MS(BYTE bCnt)
+                     734     ; {
+                     735     ;     TMOD = (TMOD & 0x0F) | 0x10;; // internal counter
+                     736     ;     TCON &= 0x3F;
+                     737     ;     _nop_();
+                     738     ;     do{
+                     739     ;         if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_12M){
+                     740     ;               // MCU master clock is 12MHz
+                     741     ;               TH1 = 0xFC;    
+                     742     ;             TL1 = 0x20;   
+                     743     ;         }else if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_6M){
+                     744     ;             // MCU master clock is 6MHz
+                     745     ;             TH1 = 0xFE;    
+                     746     ;             TL1 = 0x10;
+                     747     ;         }
+                     748     ;         TR1 = 1;
+                     749     ;         while(TF1 !=1);
+                     750     ;         TCON &= 0x3F;
+                     751     ;         bCnt--;
+                     752     ;     }while(bCnt != 0);
+                     753     ; 
+                     754     ; } 
+                     755     ; */
+                     756     ; 
+                     757     ; /*
+                     758     ; void Delay10US(BYTE bCnt)
+                     759     ; {
+                     760     ;     TMOD = (TMOD & 0x0F) | 0x10;; // internal counter
+                     761     ;     TCON &= 0x3F;
+                     762     ;     _nop_();
+                     763     ;     do{
+                     764     ;         if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_12M){
+                     765     ;               // MCU master clock is 12MHz
+                     766     ;               TH1 = 0xFF;    
+                     767     ;             TL1 = 0xF6;   
+                     768     ;         }else if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_6M){
+                     769     ;             // MCU master clock is 6MHz
+                     770     ;             TH1 = 0xFF;    
+                     771     ;             TL1 = 0xFB;
+                     772     ;         }
+                     773     ;         TR1 = 1;
+                     774     ;         while(TF1 !=1);
+                     775     ;         TCON &= 0x3F;
+                     776     ;         bCnt--;
+                     777     ;     }while(bCnt != 0);
+                     778     ; }
+                     779     ; */
+                     780     ; // Asynchronous timer function
+                     781     ; // Setup Timer 0 for asynchronous delay waiting
+                     782     ; // 16 bits reload and counting mode
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    13
+
+                     783     ; // external source clock is always 5ms
+                     784     ; 
+                     785     ; void EnableAsyncTimer()
+                     786     
+----                 787             RSEG  ?PR?EnableAsyncTimer?UTIL
+0000                 788     EnableAsyncTimer:
+                     789                             ; SOURCE LINE # 334
+                     790     ; {
+                     791                             ; SOURCE LINE # 335
+                     792     ;     // TR2 = 0;        // Stop timer0
+                     793     ;     // T2CON = 0x2;    // event counting mode, 16 bits auto-reload mode
+                     794     ;     TMOD = (TMOD & 0xF0) | 0x05;  /* Set T/C0 Mode 16 bits timer0, external Clock */
+                     795                             ; SOURCE LINE # 338
+0000 E589            796             MOV     A,TMOD
+0002 54F0            797             ANL     A,#0F0H
+0004 4405            798             ORL     A,#05H
+0006 F589            799             MOV     TMOD,A
+                     800     ;     IE |= 0x82; /*EA = 1, ET0 = 1*/
+                     801                             ; SOURCE LINE # 339
+0008 43A882          802             ORL     IE,#082H
+                     803     ; } 
+                     804                             ; SOURCE LINE # 340
+000B 22              805             RET     
+                     806     ; END OF EnableAsyncTimer
+                     807     
+                     808     ;  
+                     809     ; void SetupAsyncTimer(WORD wCnt)
+                     810     
+----                 811             RSEG  ?PR?_SetupAsyncTimer?UTIL
+0000                 812     _SetupAsyncTimer:
+                     813                             ; SOURCE LINE # 342
+                     814     ;---- Variable 'wCnt?1055' assigned to Register 'R6/R7' ----
+                     815     ; {
+                     816                             ; SOURCE LINE # 343
+                     817     ;     TR0 = 0;
+                     818                             ; SOURCE LINE # 344
+0000 C28C            819             CLR     TR0
+                     820     ;     xAsyncTimeOut = FALSE;
+                     821                             ; SOURCE LINE # 345
+0002 C200     F      822             CLR     xAsyncTimeOut
+                     823     ;     wAsyncCnt = wCnt;
+                     824                             ; SOURCE LINE # 346
+0004 8E00     F      825             MOV     wAsyncCnt,R6
+0006 8F00     F      826             MOV     wAsyncCnt+01H,R7
+                     827     ;     TH0 = 0xFE;
+                     828                             ; SOURCE LINE # 347
+0008 758CFE          829             MOV     TH0,#0FEH
+                     830     ;     TL0 = 0x0C;
+                     831                             ; SOURCE LINE # 348
+000B 758A0C          832             MOV     TL0,#0CH
+                     833     ;     TR0 = 1;
+                     834                             ; SOURCE LINE # 349
+000E D28C            835             SETB    TR0
+                     836     ; } 
+                     837                             ; SOURCE LINE # 350
+0010 22              838             RET     
+                     839     ; END OF _SetupAsyncTimer
+                     840     
+----                 841     CSEG    AT      0000BH
+000B 020000   F      842             LJMP    Timer0ISR
+                     843     
+                     844     ; 
+                     845     ; void Timer0ISR(void) interrupt 1 using 1
+                     846     
+----                 847             RSEG  ?PR?Timer0ISR?UTIL
+                     848             USING   1
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    14
+
+0000                 849     Timer0ISR:
+0000 C0E0            850             PUSH    ACC
+                     851                             ; SOURCE LINE # 352
+                     852     ; {
+                     853     ;     if(wAsyncCnt == 0){
+                     854                             ; SOURCE LINE # 354
+0002 E500     F      855             MOV     A,wAsyncCnt+01H
+0004 4500     F      856             ORL     A,wAsyncCnt
+0006 7006            857             JNZ     ?C0016
+                     858     ;         xAsyncTimeOut = TRUE;
+                     859                             ; SOURCE LINE # 355
+0008 D200     F      860             SETB    xAsyncTimeOut
+                     861     ;         TR0 = 0;  
+                     862                             ; SOURCE LINE # 356
+000A C28C            863             CLR     TR0
+                     864     ;     }else{
+                     865                             ; SOURCE LINE # 357
+000C 8010            866             SJMP    ?C0018
+000E                 867     ?C0016:
+                     868     ;         wAsyncCnt--;
+                     869                             ; SOURCE LINE # 358
+000E E500     F      870             MOV     A,wAsyncCnt+01H
+0010 1500     F      871             DEC     wAsyncCnt+01H
+0012 7002            872             JNZ     ?C0024
+0014 1500     F      873             DEC     wAsyncCnt
+0016                 874     ?C0024:
+                     875     ;         TH0 = 0xFE;
+                     876                             ; SOURCE LINE # 359
+0016 758CFE          877             MOV     TH0,#0FEH
+                     878     ;         TL0 = 0x0C;
+                     879                             ; SOURCE LINE # 360
+0019 758A0C          880             MOV     TL0,#0CH
+                     881     ;         TR0 = 1;  
+                     882                             ; SOURCE LINE # 361
+001C D28C            883             SETB    TR0
+                     884     ;     }          
+                     885                             ; SOURCE LINE # 362
+                     886     ; }
+                     887                             ; SOURCE LINE # 363
+001E                 888     ?C0018:
+001E D0E0            889             POP     ACC
+0020 32              890             RETI    
+                     891     ; END OF Timer0ISR
+                     892     
+                     893     ; 
+                     894     ; BOOLEAN IsAsyncTimeOut(void)
+                     895     
+----                 896             RSEG  ?PR?IsAsyncTimeOut?UTIL
+0000                 897     IsAsyncTimeOut:
+                     898             USING   0
+                     899                             ; SOURCE LINE # 365
+                     900     ; {
+                     901                             ; SOURCE LINE # 366
+                     902     ;     if(xAsyncTimeOut == TRUE){
+                     903                             ; SOURCE LINE # 367
+0000 300005   F      904             JNB     xAsyncTimeOut,?C0019
+                     905     ;         xAsyncTimeOut = FALSE;
+                     906                             ; SOURCE LINE # 368
+0003 C200     F      907             CLR     xAsyncTimeOut
+                     908     ;         return TRUE;
+                     909                             ; SOURCE LINE # 369
+0005 7F01            910             MOV     R7,#01H
+0007 22              911             RET     
+                     912     ;     }else{
+                     913                             ; SOURCE LINE # 370
+0008                 914     ?C0019:
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    15
+
+                     915     ;         return FALSE;
+                     916                             ; SOURCE LINE # 371
+0008 7F00            917             MOV     R7,#00H
+                     918     ;     }           
+                     919                             ; SOURCE LINE # 372
+                     920     ; }    
+                     921                             ; SOURCE LINE # 373
+000A                 922     ?C0020:
+000A 22              923             RET     
+                     924     ; END OF IsAsyncTimeOut
+                     925     
+----                 926     CSEG    AT      0001BH
+001B 020000   F      927             LJMP    Timer1ISR
+                     928     
+                     929     ; 
+                     930     ; //Interrupt Number=(interrupt_address - 3) / 8
+                     931     ; 
+                     932     ; void Timer1ISR(void) interrupt 3 using 1
+                     933     
+----                 934             RSEG  ?PR?Timer1ISR?UTIL
+                     935             USING   1
+0000                 936     Timer1ISR:
+0000 C0E0            937             PUSH    ACC
+0002 C0F0            938             PUSH    B
+0004 C083            939             PUSH    DPH
+0006 C082            940             PUSH    DPL
+0008 C0D0            941             PUSH    PSW
+                     942             USING   1
+000A 75D008          943             MOV     PSW,#08H
+                     944                             ; SOURCE LINE # 377
+                     945     ; {
+                     946     ;       pfISROfTime1();
+                     947                             ; SOURCE LINE # 379
+000D 900000   F      948             MOV     DPTR,#pfISROfTime1
+0010 E0              949             MOVX    A,@DPTR
+0011 FE              950             MOV     R6,A
+0012 A3              951             INC     DPTR
+0013 E0              952             MOVX    A,@DPTR
+0014 AA0E            953             MOV     R2,AR6
+0016 F9              954             MOV     R1,A
+0017 120000   F      955             LCALL   ?C?ICALL
+                     956     ; }
+                     957                             ; SOURCE LINE # 380
+001A D0D0            958             POP     PSW
+001C D082            959             POP     DPL
+001E D083            960             POP     DPH
+0020 D0F0            961             POP     B
+0022 D0E0            962             POP     ACC
+0024 32              963             RETI    
+                     964     ; END OF Timer1ISR
+                     965     
+                     966     ; 
+                     967     ; void DWORDBig2Little_f(DWORD *dwDest, DWORD *dwSrc) 
+                     968     
+----                 969             RSEG  ?PR?_DWORDBig2Little_f?UTIL
+0000                 970     _DWORDBig2Little_f:
+                     971             USING   0
+                     972                             ; SOURCE LINE # 382
+0000 8B00     F      973             MOV     dwDest?1456,R3
+0002 8A00     F      974             MOV     dwDest?1456+01H,R2
+0004 8900     F      975             MOV     dwDest?1456+02H,R1
+                     976     ; {
+                     977                             ; SOURCE LINE # 383
+                     978     ;     *((BYTE *)&(*dwDest)) = *((BYTE *)&(*dwSrc)+3);
+                     979                             ; SOURCE LINE # 384
+0006 AB00     F      980             MOV     R3,dwSrc?1457
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    16
+
+0008 AA00     F      981             MOV     R2,dwSrc?1457+01H
+000A A900     F      982             MOV     R1,dwSrc?1457+02H
+000C 900003          983             MOV     DPTR,#03H
+000F 120000   F      984             LCALL   ?C?CLDOPTR
+0012 AB00     F      985             MOV     R3,dwDest?1456
+0014 AA00     F      986             MOV     R2,dwDest?1456+01H
+0016 A900     F      987             MOV     R1,dwDest?1456+02H
+0018 120000   F      988             LCALL   ?C?CSTPTR
+                     989     ;     *((BYTE *)&(*dwDest)+1) = *((BYTE *)&(*dwSrc)+2);
+                     990                             ; SOURCE LINE # 385
+001B AB00     F      991             MOV     R3,dwSrc?1457
+001D AA00     F      992             MOV     R2,dwSrc?1457+01H
+001F A900     F      993             MOV     R1,dwSrc?1457+02H
+0021 900002          994             MOV     DPTR,#02H
+0024 120000   F      995             LCALL   ?C?CLDOPTR
+0027 AB00     F      996             MOV     R3,dwDest?1456
+0029 AA00     F      997             MOV     R2,dwDest?1456+01H
+002B A900     F      998             MOV     R1,dwDest?1456+02H
+002D 900001          999             MOV     DPTR,#01H
+0030 120000   F     1000             LCALL   ?C?CSTOPTR
+                    1001     ;     *((BYTE *)&(*dwDest)+2) = *((BYTE *)&(*dwSrc)+1);
+                    1002                             ; SOURCE LINE # 386
+0033 AB00     F     1003             MOV     R3,dwSrc?1457
+0035 AA00     F     1004             MOV     R2,dwSrc?1457+01H
+0037 A900     F     1005             MOV     R1,dwSrc?1457+02H
+0039 900001         1006             MOV     DPTR,#01H
+003C 120000   F     1007             LCALL   ?C?CLDOPTR
+003F AB00     F     1008             MOV     R3,dwDest?1456
+0041 AA00     F     1009             MOV     R2,dwDest?1456+01H
+0043 A900     F     1010             MOV     R1,dwDest?1456+02H
+0045 900002         1011             MOV     DPTR,#02H
+0048 120000   F     1012             LCALL   ?C?CSTOPTR
+                    1013     ;     *((BYTE *)&(*dwDest)+3) = *((BYTE *)&(*dwSrc));
+                    1014                             ; SOURCE LINE # 387
+004B AB00     F     1015             MOV     R3,dwSrc?1457
+004D AA00     F     1016             MOV     R2,dwSrc?1457+01H
+004F A900     F     1017             MOV     R1,dwSrc?1457+02H
+0051 120000   F     1018             LCALL   ?C?CLDPTR
+0054 AB00     F     1019             MOV     R3,dwDest?1456
+0056 AA00     F     1020             MOV     R2,dwDest?1456+01H
+0058 A900     F     1021             MOV     R1,dwDest?1456+02H
+005A 900003         1022             MOV     DPTR,#03H
+005D 020000   F     1023             LJMP    ?C?CSTOPTR
+                    1024     ; END OF _DWORDBig2Little_f
+                    1025     
+                    1026             END
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    17
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E                      T Y P E  V A L U E   ATTRIBUTES
+
+?C0001. . . . . . . . . . .  C ADDR   000BH   R   SEG=?PR?_HEXTABLE?UTIL
+?C0002. . . . . . . . . . .  C ADDR   000EH   R   SEG=?PR?_HEXTABLE?UTIL
+?C0009. . . . . . . . . . .  C ADDR   0002H   R   SEG=?PR?_UARTSTRING?UTIL
+?C0010. . . . . . . . . . .  C ADDR   0015H   R   SEG=?PR?_UARTSTRING?UTIL
+?C0016. . . . . . . . . . .  C ADDR   000EH   R   SEG=?PR?TIMER0ISR?UTIL
+?C0018. . . . . . . . . . .  C ADDR   001EH   R   SEG=?PR?TIMER0ISR?UTIL
+?C0019. . . . . . . . . . .  C ADDR   0008H   R   SEG=?PR?ISASYNCTIMEOUT?UTIL
+?C0020. . . . . . . . . . .  C ADDR   000AH   R   SEG=?PR?ISASYNCTIMEOUT?UTIL
+?C0024. . . . . . . . . . .  C ADDR   0016H   R   SEG=?PR?TIMER0ISR?UTIL
+?C0025. . . . . . . . . . .  C ADDR   000FH   R   SEG=?PR?_UARTSTRING?UTIL
+?C?CLDOPTR. . . . . . . . .  C ADDR   -----       EXT
+?C?CLDPTR . . . . . . . . .  C ADDR   -----       EXT
+?C?CSTOPTR. . . . . . . . .  C ADDR   -----       EXT
+?C?CSTPTR . . . . . . . . .  C ADDR   -----       EXT
+?C?ICALL. . . . . . . . . .  C ADDR   -----       EXT
+?DT?UTIL. . . . . . . . . .  D SEG    0007H       REL=UNIT
+?DT?_DWORDBIG2LITTLE_F?UTIL  D SEG    0006H       REL=UNIT
+?PR?ENABLEASYNCTIMER?UTIL .  C SEG    000CH       REL=UNIT
+?PR?ISASYNCTIMEOUT?UTIL . .  C SEG    000BH       REL=UNIT
+?PR?TIMER0ISR?UTIL. . . . .  C SEG    0021H       REL=UNIT
+?PR?TIMER1ISR?UTIL. . . . .  C SEG    0025H       REL=UNIT
+?PR?UARTCARRYRETURN?UTIL. .  C SEG    000AH       REL=UNIT
+?PR?_DELAY10US?UTIL . . . .  C SEG    0019H       REL=UNIT
+?PR?_DELAY1MS?UTIL. . . . .  C SEG    0019H       REL=UNIT
+?PR?_DWORDBIG2LITTLE_F?UTIL  C SEG    0060H       REL=UNIT
+?PR?_HEXTABLE?UTIL. . . . .  C SEG    000FH       REL=UNIT
+?PR?_SETUPASYNCTIMER?UTIL .  C SEG    0011H       REL=UNIT
+?PR?_UARTBYTE2HEX?UTIL. . .  C SEG    0006H       REL=UNIT
+?PR?_UARTBYTE2HEXNOCR?UTIL.  C SEG    0021H       REL=UNIT
+?PR?_UARTCHAR?UTIL. . . . .  C SEG    0064H       REL=UNIT
+?PR?_UARTSTRING?UTIL. . . .  C SEG    0018H       REL=UNIT
+?PR?_UARTWORD2HEX?UTIL. . .  C SEG    0016H       REL=UNIT
+?_DWORDBIG2LITTLE_F?BYTE. .  D ADDR   0000H   R   SEG=?DT?_DWORDBIG2LITTLE_F?UTIL
+AC. . . . . . . . . . . . .  B ADDR   00D0H.6 A   
+ACC . . . . . . . . . . . .  D ADDR   00E0H   A   
+AR6 . . . . . . . . . . . .  D ADDR   0006H   A   
+B . . . . . . . . . . . . .  D ADDR   00F0H   A   
+BTMP?142. . . . . . . . . .  D ADDR   0002H   R   SEG=?DT?UTIL
+BTMP?347. . . . . . . . . .  D ADDR   0006H   R   SEG=?DT?UTIL
+BUARTTMP?549. . . . . . . .  D ADDR   0000H   R   SEG=?DT?UTIL
+CKCON . . . . . . . . . . .  D ADDR   008EH   A   
+CP_RL2. . . . . . . . . . .  B ADDR   00C8H.0 A   
+CY. . . . . . . . . . . . .  B ADDR   00D0H.7 A   
+C_T2. . . . . . . . . . . .  B ADDR   00C8H.1 A   
+DATABITHIGH . . . . . . . .  C ADDR   0020H   R   SEG=?PR?_UARTCHAR?UTIL
+DATABITLOW. . . . . . . . .  C ADDR   0038H   R   SEG=?PR?_UARTCHAR?UTIL
+DBYTE?143 . . . . . . . . .  D ADDR   0003H   R   SEG=?DT?UTIL
+DBYTE?550 . . . . . . . . .  D ADDR   0001H   R   SEG=?DT?UTIL
+DEALY10USINNERLOOP1 . . . .  C ADDR   0003H   R   SEG=?PR?_DELAY10US?UTIL
+DEALY1MSINNERLOOP1. . . . .  C ADDR   0006H   R   SEG=?PR?_DELAY1MS?UTIL
+DEALY1MSINNERLOOP2. . . . .  C ADDR   0003H   R   SEG=?PR?_DELAY1MS?UTIL
+DELAY10USCNT. . . . . . . .  C ADDR   0000H   R   SEG=?PR?_DELAY10US?UTIL
+DELAY1MSCNT . . . . . . . .  C ADDR   0000H   R   SEG=?PR?_DELAY1MS?UTIL
+DPH . . . . . . . . . . . .  D ADDR   0083H   A   
+DPL . . . . . . . . . . . .  D ADDR   0082H   A   
+DWDEST?1456 . . . . . . . .  D ADDR   0000H   R   SEG=?DT?_DWORDBIG2LITTLE_F?UTIL
+DWORD?346 . . . . . . . . .  D ADDR   0004H   R   SEG=?DT?UTIL
+DWSRC?1457. . . . . . . . .  D ADDR   0003H   R   SEG=?DT?_DWORDBIG2LITTLE_F?UTIL
+EA. . . . . . . . . . . . .  B ADDR   00A8H.7 A   
+ENABLEASYNCTIMER. . . . . .  C ADDR   0000H   R   SEG=?PR?ENABLEASYNCTIMER?UTIL
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    18
+
+ES. . . . . . . . . . . . .  B ADDR   00A8H.4 A   
+ET0 . . . . . . . . . . . .  B ADDR   00A8H.1 A   
+ET1 . . . . . . . . . . . .  B ADDR   00A8H.3 A   
+ET2 . . . . . . . . . . . .  B ADDR   00A8H.5 A   
+EX0 . . . . . . . . . . . .  B ADDR   00A8H.0 A   
+EX1 . . . . . . . . . . . .  B ADDR   00A8H.2 A   
+EXEN2 . . . . . . . . . . .  B ADDR   00C8H.3 A   
+EXF2. . . . . . . . . . . .  B ADDR   00C8H.6 A   
+F0. . . . . . . . . . . . .  B ADDR   00D0H.5 A   
+HIGHLEVEL . . . . . . . . .  C ADDR   002EH   R   SEG=?PR?_UARTCHAR?UTIL
+IE. . . . . . . . . . . . .  D ADDR   00A8H   A   
+IE0 . . . . . . . . . . . .  B ADDR   0088H.1 A   
+IE1 . . . . . . . . . . . .  B ADDR   0088H.3 A   
+INT0. . . . . . . . . . . .  B ADDR   00B0H.2 A   
+INT1. . . . . . . . . . . .  B ADDR   00B0H.3 A   
+IP. . . . . . . . . . . . .  D ADDR   00B8H   A   
+ISASYNCTIMEOUT. . . . . . .  C ADDR   0000H   R   SEG=?PR?ISASYNCTIMEOUT?UTIL
+IT0 . . . . . . . . . . . .  B ADDR   0088H.0 A   
+IT1 . . . . . . . . . . . .  B ADDR   0088H.2 A   
+LOWLEVEL. . . . . . . . . .  C ADDR   0041H   R   SEG=?PR?_UARTCHAR?UTIL
+OV. . . . . . . . . . . . .  B ADDR   00D0H.2 A   
+P . . . . . . . . . . . . .  B ADDR   00D0H.0 A   
+P0. . . . . . . . . . . . .  D ADDR   0080H   A   
+P1. . . . . . . . . . . . .  D ADDR   0090H   A   
+P2. . . . . . . . . . . . .  D ADDR   00A0H   A   
+P3. . . . . . . . . . . . .  D ADDR   00B0H   A   
+PCON. . . . . . . . . . . .  D ADDR   0087H   A   
+PFISROFTIME1. . . . . . . .  X ADDR   -----       EXT
+PS. . . . . . . . . . . . .  B ADDR   00B8H.4 A   
+PSW . . . . . . . . . . . .  D ADDR   00D0H   A   
+PT0 . . . . . . . . . . . .  B ADDR   00B8H.1 A   
+PT1 . . . . . . . . . . . .  B ADDR   00B8H.3 A   
+PT2 . . . . . . . . . . . .  B ADDR   00B8H.5 A   
+PX0 . . . . . . . . . . . .  B ADDR   00B8H.0 A   
+PX1 . . . . . . . . . . . .  B ADDR   00B8H.2 A   
+RB8 . . . . . . . . . . . .  B ADDR   0098H.2 A   
+RCAP2H. . . . . . . . . . .  D ADDR   00CBH   A   
+RCAP2L. . . . . . . . . . .  D ADDR   00CAH   A   
+RCLK. . . . . . . . . . . .  B ADDR   00C8H.5 A   
+RD. . . . . . . . . . . . .  B ADDR   00B0H.7 A   
+REN . . . . . . . . . . . .  B ADDR   0098H.4 A   
+RI. . . . . . . . . . . . .  B ADDR   0098H.0 A   
+RS0 . . . . . . . . . . . .  B ADDR   00D0H.3 A   
+RS1 . . . . . . . . . . . .  B ADDR   00D0H.4 A   
+RXD . . . . . . . . . . . .  B ADDR   00B0H.0 A   
+SBUF. . . . . . . . . . . .  D ADDR   0099H   A   
+SCON. . . . . . . . . . . .  D ADDR   0098H   A   
+SHIFTDATABIT. . . . . . . .  C ADDR   004BH   R   SEG=?PR?_UARTCHAR?UTIL
+SM0 . . . . . . . . . . . .  B ADDR   0098H.7 A   
+SM1 . . . . . . . . . . . .  B ADDR   0098H.6 A   
+SM2 . . . . . . . . . . . .  B ADDR   0098H.5 A   
+SP. . . . . . . . . . . . .  D ADDR   0081H   A   
+STARTBITLOW . . . . . . . .  C ADDR   0015H   R   SEG=?PR?_UARTCHAR?UTIL
+STOPBITHIGH . . . . . . . .  C ADDR   005DH   R   SEG=?PR?_UARTCHAR?UTIL
+T0. . . . . . . . . . . . .  B ADDR   00B0H.4 A   
+T1. . . . . . . . . . . . .  B ADDR   00B0H.5 A   
+T2. . . . . . . . . . . . .  B ADDR   0090H.0 A   
+T2CON . . . . . . . . . . .  D ADDR   00C8H   A   
+T2EX. . . . . . . . . . . .  B ADDR   0090H.1 A   
+TB8 . . . . . . . . . . . .  B ADDR   0098H.3 A   
+TCLK. . . . . . . . . . . .  B ADDR   00C8H.4 A   
+TCON. . . . . . . . . . . .  D ADDR   0088H   A   
+TF0 . . . . . . . . . . . .  B ADDR   0088H.5 A   
+TF1 . . . . . . . . . . . .  B ADDR   0088H.7 A   
+TF2 . . . . . . . . . . . .  B ADDR   00C8H.7 A   
+TH0 . . . . . . . . . . . .  D ADDR   008CH   A   
+A51 MACRO ASSEMBLER  UTIL                                                                 07/22/2020 17:08:20 PAGE    19
+
+TH1 . . . . . . . . . . . .  D ADDR   008DH   A   
+TH2 . . . . . . . . . . . .  D ADDR   00CDH   A   
+TI. . . . . . . . . . . . .  B ADDR   0098H.1 A   
+TIMER0ISR . . . . . . . . .  C ADDR   0000H   R   SEG=?PR?TIMER0ISR?UTIL
+TIMER1ISR . . . . . . . . .  C ADDR   0000H   R   SEG=?PR?TIMER1ISR?UTIL
+TL0 . . . . . . . . . . . .  D ADDR   008AH   A   
+TL1 . . . . . . . . . . . .  D ADDR   008BH   A   
+TL2 . . . . . . . . . . . .  D ADDR   00CCH   A   
+TMOD. . . . . . . . . . . .  D ADDR   0089H   A   
+TR0 . . . . . . . . . . . .  B ADDR   0088H.4 A   
+TR1 . . . . . . . . . . . .  B ADDR   0088H.6 A   
+TR2 . . . . . . . . . . . .  B ADDR   00C8H.2 A   
+TXD . . . . . . . . . . . .  B ADDR   00B0H.1 A   
+UARTCARRYRETURN . . . . . .  C ADDR   0000H   R   SEG=?PR?UARTCARRYRETURN?UTIL
+UTIL. . . . . . . . . . . .  N NUMB   -----       
+WASYNCCNT . . . . . . . . .  D ADDR   -----       EXT
+WDTCON. . . . . . . . . . .  D ADDR   00D8H   A   
+WR. . . . . . . . . . . . .  B ADDR   00B0H.6 A   
+XASYNCTIMEOUT . . . . . . .  B ADDR   -----       EXT
+_DELAY10US. . . . . . . . .  C ADDR   0000H   R   SEG=?PR?_DELAY10US?UTIL
+_DELAY1MS . . . . . . . . .  C ADDR   0000H   R   SEG=?PR?_DELAY1MS?UTIL
+_DWORDBIG2LITTLE_F. . . . .  C ADDR   0000H   R   SEG=?PR?_DWORDBIG2LITTLE_F?UTIL
+_HEXTABLE . . . . . . . . .  C ADDR   0000H   R   SEG=?PR?_HEXTABLE?UTIL
+_SETUPASYNCTIMER. . . . . .  C ADDR   0000H   R   SEG=?PR?_SETUPASYNCTIMER?UTIL
+_UARTBYTE2HEX . . . . . . .  C ADDR   0000H   R   SEG=?PR?_UARTBYTE2HEX?UTIL
+_UARTBYTE2HEXNOCR . . . . .  C ADDR   0000H   R   SEG=?PR?_UARTBYTE2HEXNOCR?UTIL
+_UARTCHAR . . . . . . . . .  C ADDR   0000H   R   SEG=?PR?_UARTCHAR?UTIL
+_UARTSTRING . . . . . . . .  C ADDR   0000H   R   SEG=?PR?_UARTSTRING?UTIL
+_UARTWORD2HEX . . . . . . .  C ADDR   0000H   R   SEG=?PR?_UARTWORD2HEX?UTIL
+
+
+REGISTER BANK(S) USED: 0 1 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

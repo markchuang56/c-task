@@ -1,0 +1,47 @@
+C51 COMPILER V7.06   XSENSOR                                                               07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE XSENSOR
+OBJECT MODULE PLACED IN .\output\XSensor.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE XSensor.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\XSensor
+                    -.lst) OBJECT(.\output\XSensor.obj)
+
+stmt level    source
+
+   1          /************************************************************************|
+   2          |                  A L C O R   M I C R O,  C O R P.                      |
+   3          |                                                                        |
+   4          |         This source code is classified as confidential and             |
+   5          |         contains trade secrets owned by Alcor Micro, Corp.             |
+   6          |                                                                        |
+   7          |                         (C)Copyright 2008                              |
+   8          |                         Alcor Micro, Corp.                             |
+   9          |                        All rights reserved.                            |
+  10          |************************************************************************/
+  11          
+  12          #ifndef __xsensor_c__
+  13          #define __xsensor_c__
+  14          
+  15          void (code * code cpfExternalInit)(void) = {0};
+  16          
+  17          #endif  //  #ifndef     __xsensor_c__
+  18          
+C51 COMPILER V7.06   XSENSOR                                                               07/22/2020 17:08:20 PAGE 2   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =      2    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,73 @@
+C51 COMPILER V7.06   PROTECT                                                               07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE PROTECT
+OBJECT MODULE PLACED IN .\output\Protect.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Protect.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\Protect
+                    -.lst) OBJECT(.\output\Protect.obj)
+
+stmt level    source
+
+   1          // Protection Module, the implementation is sensor dependent
+   2          #include "globaldef.h"
+   3          #include "regmap.h"
+   4          #include "globalvar.h"
+   5          #include "util.h"
+   6          #include "Protect.h"
+   7          
+   8          
+   9          void HardwareInit(BYTE Setting)
+  10          {
+  11   1          Setting=0;
+  12   1          return;
+  13   1       /*   if(xExFWExist == FALSE){
+  14   1              // If no External code, just disable the protection
+  15   1              xCheckState04 = TRUE;
+  16   1              return;
+  17   1          }else{
+  18   1              xCheckState04 = FALSE;
+  19   1          }
+  20   1          if(xCheckState02 == FALSE){
+  21   1              // This chip is for Taiwan 
+  22   1              if(Setting == 0xF0){
+  23   1                  xCheckState04 = TRUE;
+  24   1              }
+  25   1          }else{
+  26   1              // This chip is for China
+  27   1              if(Setting == 0xF1){
+  28   1                  xCheckState04 = TRUE;
+  29   1              }
+  30   1          }
+  31   1       */   
+  32   1      }
+  33          
+  34          
+C51 COMPILER V7.06   PROTECT                                                               07/22/2020 17:08:20 PAGE 2   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _HardwareInit (BEGIN)
+                                           ; SOURCE LINE # 9
+;---- Variable 'Setting' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 10
+                                           ; SOURCE LINE # 11
+                                           ; SOURCE LINE # 32
+0000         ?C0001:
+0000 22                RET     
+             ; FUNCTION _HardwareInit (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =      1    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

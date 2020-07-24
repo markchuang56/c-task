@@ -1,0 +1,1071 @@
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE INTABLE
+OBJECT MODULE PLACED IN .\output\InTable.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE InTable.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\InTable
+                    -.lst) OBJECT(.\output\InTable.obj)
+
+stmt level    source
+
+   1          #include "globaldef.h"
+   2          #include "regmap.h"
+   3          #include "globalvar.h"
+   4          #include "base.h"
+   5          #include "xsensor.h"
+   6          #include "usbif.h"
+   7          #include "SettingDef.h"
+   8          #include "util.h"
+   9          #include "setintf.h"
+  10          #include "exunit.h"
+  11          #include "InFirmDef.h"
+  12          
+  13          #include "AudioDef.h"
+  14          #include "AudioHandle.h"
+  15          #include "InTable.h"
+  16          
+  17          // Internal setting table
+  18          // This table can be replaced by exnternal table
+  19          code BYTE InternalIdxTable[] =
+  20          {
+  21              // Device Descriptor    (1 byte)
+  22              DEV_DESC,
+  23              // High speed related descriptor ids (20 bytes)
+  24              HIGH_CONFIG_DESC,       IAD_DESC,               INTF0_DESC,             CS_VC_INTF_DESC,    EXUNIT_DES
+             -C,
+  25              VC_CAMERA_TERM_DESC,    VC_PU_DESC,             VC_OUT_TERM_DESC,       HIGH_EP1_DESC,      CS_VC_EP1_
+             -DESC,
+  26              INTF1_ALT0_DECS,        VS_AUTOMATIC_FMTGEN,    INTF1_ALT1_DECS,        HIGH_EP2_ALT1_DESC, INTF1_ALT2
+             -_DECS,
+  27              HIGH_EP2_ALT2_DESC,     INTF1_ALT3_DECS,        HIGH_EP2_ALT3_DESC,     INTF1_ALT4_DECS,    HIGH_EP2_A
+             -LT4_DESC,
+  28              // Full speed related descriptor ids (20 bytes)
+  29              FULL_CONFIG_DESC,       IAD_DESC,               INTF0_DESC,             CS_VC_INTF_DESC,    EXUNIT_DES
+             -C,
+  30              VC_CAMERA_TERM_DESC,    VC_PU_DESC,             VC_OUT_TERM_DESC,       FULL_EP1_DESC,      CS_VC_EP1_
+             -DESC,
+  31              INTF1_ALT0_DECS,        VS_AUTOMATIC_FMTGEN,    INTF1_ALT1_DECS,        FULL_EP2_ALT1_DESC, INTF1_ALT2
+             -_DECS,
+  32              FULL_EP2_ALT2_DESC,     INTF1_ALT3_DECS,        FULL_EP2_ALT3_DESC,     INTF1_ALT4_DECS,    FULL_EP2_A
+             -LT4_DESC,
+  33              // Other speed config descriptor (6 bytes)
+  34              OTHERSP_CONF_DESC,      OTHERSP_IAD_DESC,       OTHERSP_INTF0_DESC,     OTHERSP_CS_VC_INTF_DESC,
+  35              OTHER_VC_CAM_TERM_DESC, OTHER_VC_OUT_TERM_DESC,
+  36              // String Desc  (6 bytes)
+  37              GET_STRING0_DESC,       GET_STRING1_DESC,       GET_STRING2_DESC,       GET_STRING3_DESC,   GET_STRING
+             -4_DESC,
+  38              GET_STRING5_DESC,
+  39              // Device Qaulifier desc (1 byte)
+  40              GET_DEVQUAL_DESC,
+  41              // Get High Speed Generation Table ID   (1 byte)
+  42              GET_HIGH_AUTOMAIC_TAB,
+  43              // Get Full Speed Generation Table ID   (1 byte)
+  44              GET_FULL_AUTOMAIC_TAB, // --->56 byte
+  45              // Processing Unit control  (12 bytes)
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 2   
+
+  46              BRIGHTNESS_CTRL,    CONTRAST_CTRL,  HUE_CTRL, SATURATION_CTRL, SHARPNESS_CTRL, GAMMA_CTRL, WBTEMP_CTRL
+             -,
+  47              GAIN_CTRL,    BACKLIGHT_CTRL, PWLINE_CTRL, WBTEMPAUTO_CTRL, WBCOMPAUTO_CTRL,
+  48              // ISP  (1 byte)
+  49              GAMMA_TAB,
+  50              // Snapshot Lowactive   (1 byte)
+  51              GET_SNAPACTIVE,
+  52              // Get Resolution table          (1 byte)
+  53              GET_RES_TABLE,
+  54              // Init backend         (1 byte)
+  55              GET_BACKENDINIT,
+  56              // Get set file version (1 byte)
+  57              GET_SETTING_VERSION,
+  58              // Probe setting        (4 bytes)
+  59              GET_HSYUVProb, GET_HSMJProb, GET_FSYUVProb, GET_FSMJProb,
+  60              // FrameRate table  (1 bytes)
+  61              GET_FRAMERATE_TABLE,
+  62              // Get Privacy control active status    (1 byte)
+  63              GET_PRIVACY_ACTIVE, 
+  64              // Reserve setting for Sensor Seting Table Index    (10 bytes)
+  65              // offset begin with 79
+  66              GET_SENSETTING_TAB01, GET_SENSETTING_TAB02, GET_SENSETTING_TAB03, GET_SENSETTING_TAB04,
+  67              GET_SENSETTING_TAB05, GET_SENSETTING_TAB06, GET_SENSETTING_TAB07, GET_SENSETTING_TAB08,
+  68              GET_SENSETTING_TAB09, GET_SENSETTING_TAB0A, // Total length is 89 bytes
+  69          
+  70              //Reserved for future
+  71              GET_RESERVED_1,     GET_RESERVED_2,   GET_RESERVED_3,    GET_RESERVED_4,    GET_RESERVED_5,
+  72              GET_RESERVED_6,     
+  73              
+  74               //AUDIO_FUN
+  75              //Audio Configuration Desc
+  76              //Only  MIC descriptor ids (8 bytes)
+  77              AU_IAD_DESC_MIC,
+  78              AU_IF2_DESC,                 AU_HEADER_DESC_MIC,    
+  79              AC_DMIC_IT_DESC,     AC_DMIC_FU_DESC,       AC_DMIC_OT_DESC,
+  80              AU_IF3_ALT0_DESC,    AU_DMIC_GENER_DESC, 
+  81          
+  82               GET_AU_VOLUMN_MIC, GET_AU_FORMAT,GET_MICARRAY, 
+  83               GET_AU_VOLGGAIN,
+  84               GET_AU_COFREM_INDEX, GET_AU_IIRSET,  GET_AU_FIRSET, GET_AU_DELAYTIME,
+  85               0xFF
+  86          };
+  87          
+  88          
+  89          // Bounding option 00
+  90          // PID = 0x3810
+  91          code USB_ST_DEVICE_DESC USBDeviceDesc =
+  92          {
+  93                  sizeof(USB_ST_DEVICE_DESC),                 //0x12
+  94                  DESC_DEVICE,                            //0x01
+  95                  USB_SPECIFICATION,                          //0x0002
+  96                  DEVICE_CLASS,                           //0xEF
+  97                  DEVICE_SUB_CLASS,                       //0x02
+  98                  DEVICE_PROTOCOL,                        //0x01
+  99                  EP_CONTROL_LENGTH,                      //0x40
+ 100                  VENDOR_ID,                              //0x8F05
+ 101                  PRODUCT_ID,                             //0x4038
+ 102                  RELEASE_NUMBER,                         //0x0100
+ 103                  MAN_INDEX,                              //0x01
+ 104                  PROD_INDEX,                             //0x02
+ 105                  SN_INDEX,                                           //0x03
+ 106                  NB_CONFIGURATION                        //0x01
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 3   
+
+ 107          };
+ 108          code USB_ST_DEVICE_DESC USBDeviceDescCN =
+ 109          {
+ 110                  sizeof(USB_ST_DEVICE_DESC),                 //0x12
+ 111                  DESC_DEVICE,                            //0x01
+ 112                  USB_SPECIFICATION,                          //0x0002
+ 113                  DEVICE_CLASS,                           //0xEF
+ 114                  DEVICE_SUB_CLASS,                       //0x02
+ 115                  DEVICE_PROTOCOL,                        //0x01
+ 116                  EP_CONTROL_LENGTH,                      //0x40
+ 117                  VENDOR_ID,                              //0x8F05
+ 118                  PRODUCT_ID_CN,                          //0x3238
+ 119                  RELEASE_NUMBER,                         //0x0100
+ 120                  MAN_INDEX,                              //0x01
+ 121                  PROD_INDEX,                             //0x02
+ 122                  SN_INDEX,                                           //0x03
+ 123                  NB_CONFIGURATION                        //0x01
+ 124          };
+ 125          
+ 126          // Bounding option 10
+ 127          // PID = 0x3830
+ 128          code USB_ST_DEVICE_DESC USBDeviceDesc10 =
+ 129          {
+ 130                  sizeof(USB_ST_DEVICE_DESC),                 //0x12
+ 131                  DESC_DEVICE,                            //0x01
+ 132                  USB_SPECIFICATION,                          //0x0002
+ 133                  DEVICE_CLASS,                           //0xEF
+ 134                  DEVICE_SUB_CLASS,                       //0x02
+ 135                  DEVICE_PROTOCOL,                        //0x01
+ 136                  EP_CONTROL_LENGTH,                      //0x40
+ 137                  VENDOR_ID,                              //0x8F05
+ 138                  PRODUCT_ID_10,                           //0x4138
+ 139                  RELEASE_NUMBER,                         //0x0100
+ 140                  MAN_INDEX,                              //0x01
+ 141                  PROD_INDEX,                             //0x02
+ 142                  SN_INDEX,                                           //0x03
+ 143                  NB_CONFIGURATION                        //0x01
+ 144          };
+ 145          code USB_ST_DEVICE_DESC USBDeviceDesc10CN =
+ 146          {
+ 147                  sizeof(USB_ST_DEVICE_DESC),                 //0x12
+ 148                  DESC_DEVICE,                            //0x01
+ 149                  USB_SPECIFICATION,                          //0x0002
+ 150                  DEVICE_CLASS,                           //0xEF
+ 151                  DEVICE_SUB_CLASS,                       //0x02
+ 152                  DEVICE_PROTOCOL,                        //0x01
+ 153                  EP_CONTROL_LENGTH,                      //0x40
+ 154                  VENDOR_ID,                              //0x8F05
+ 155                  PRODUCT_ID_10_CN,                           //0x3038
+ 156                  RELEASE_NUMBER,                         //0x0100
+ 157                  MAN_INDEX,                              //0x01
+ 158                  PROD_INDEX,                             //0x02
+ 159                  SN_INDEX,                                           //0x03
+ 160                  NB_CONFIGURATION                        //0x01
+ 161          };
+ 162          
+ 163          code USB_ST_INTERFACE_ASSOCI_DESC InterfaceAssociDesc =
+ 164          {
+ 165              sizeof(USB_ST_INTERFACE_ASSOCI_DESC),   //0x08
+ 166                  DESC_INTERFACE_ASSOCIATION,             //0x0B
+ 167                  FIRST_INTERFACE,                        //0x00
+ 168                  INTERFACE_COUNT,                        //0x02
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 4   
+
+ 169                  FUNCTION_CLASS,                         //0x0E
+ 170                  FUNCTION_SUB_CLASS,                         //0x03
+ 171                  FUNCTION_PROTOCOL,                          //0x00
+ 172                  FUNCTION_INDEX                          //0x04
+ 173          };
+ 174          
+ 175          // Interface descriptor
+ 176          code USB_ST_INTERFACE_DESC InterfaceDesc0 =
+ 177          {
+ 178              sizeof(USB_ST_INTERFACE_DESC),          //0x09
+ 179                  DESC_INTERFACE,                         //0x04
+ 180                  INTERFACE_NB0,                          //0x00
+ 181                  IF0_ALTERNATE0,                         //0x00
+ 182                  IF0_ALT0_NB_EP,                         //0x01
+ 183                  INTERFACE0_CLASS,                           //0x0E
+ 184                  INTERFACE0_SUB_CLASS,                   //0x01
+ 185                  INTERFACE0_PROTOCOL,                    //0x00
+ 186                  IF0_ALT0_INDEX                          //0x04
+ 187          
+ 188          };
+ 189          
+ 190          // Class-Specific Video Control Inteface Header
+ 191          code USB_CS_VC_INTERFACE_DESC VCInterfaceDesc =
+ 192          {
+ 193              sizeof(USB_CS_VC_INTERFACE_DESC),       //0x0D
+ 194                  DESC_CS_INTERFACE,                          //0x24
+ 195                  VC_HEADER,                                  //0x01
+ 196                  UVC_SPECIFICATION,                      //0x0001
+ 197                  CS_VC_INTERFACE_LENG,                   //0x4F00
+ 198                  DEV_CLK_FREQ,                           //0x00366E01
+ 199                  CS_VC_COLLECTION,                       //0x01
+ 200                  INTERFACE_NB1                           //0x01
+ 201          };
+ 202          
+ 203          // Video control extension unit descriptor
+ 204          code USB_EXTENSION_UNIT_DESC VCExtensionUnitDesc =
+ 205          {
+ 206              sizeof(USB_EXTENSION_UNIT_DESC),        //0x1C
+ 207                  DESC_CS_INTERFACE,                          //0x24
+ 208                  0x06,                                   //bSubTypeDesc
+ 209                  EXTEN_ID,                               //UnitID
+ 210                  ExtenUnit_GUID,
+ 211                  0x18,                                   //bNumControls
+ 212                  0x01,                                   //bNrInPins
+ 213                  PU_ID,                                  //source ID
+ 214                  0x03,                                   //bCtrlSize
+ 215                  0xFF,                                   //bmControls
+ 216                  0xFF,                                   //bmControls
+ 217                  0xFF,
+ 218                  0x00                                    //iExtenUnitStringIndex
+ 219          };
+ 220          
+ 221          // Video control input terminal descriptor
+ 222          code USB_CAMERA_TERMINAL_DESC CameraTerminal  =
+ 223          {
+ 224              sizeof(USB_CAMERA_TERMINAL_DESC),       //0x12  input terminal Desc
+ 225                  DESC_CS_INTERFACE,                      //0x24
+ 226                  VC_INPUT_TERMINAL,                      //0x02
+ 227                  CT_ID,                                  //0x01 input ID (Camera ID)
+ 228                  ITT_CAMERA,                             //0x0102
+ 229                  0x00,                                   //0x00
+ 230                  0x00,                                   //0x00
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 5   
+
+ 231                  MIN_FOCAL_LENG,                         //0x0000
+ 232                  MAX_FOCAL_LENG,                         //0x0000
+ 233                  OCULAR_FOCAL_LENGTH,                    //0x0000
+ 234                  3,                                      //0x03
+ 235                  {0x00, 0x00, 0x00}                      //0x00,0x00,0x00
+ 236                  //{0x04, 0x00, 0x04}                      //0x00,0x00,0x00, enable privacy control
+ 237                  //{0x0E, 0x00, 0x04}                    //enable AEP and        
+ 238          };
+ 239          
+ 240          // Video control processing unit desciptor
+ 241          code USB_PROCESSING_UNIT_DESC ProcessingUnit =
+ 242          {
+ 243              sizeof(USB_PROCESSING_UNIT_DESC),       //0x0B
+ 244                  DESC_CS_INTERFACE,                      //0x24
+ 245                  VC_PROCESSING_UNIT,                     //0x05
+ 246                  PU_ID,                                  //0x02
+ 247                  CT_ID,                                  //0x01  MAX_MULTIPLIER,
+ 248                  MAX_MULTIPLIER,                         //0x0000
+ 249                  2,                                      //0x02
+ 250                  0x7F15,                                 //0x7F15,0x7F17
+ 251                  0x00                                    //0x00
+ 252          };
+ 253          
+ 254          // Video control output terminal descriptor
+ 255          code USB_OUTPUT_TERMINAL_DESC OutputTerminal =
+ 256          {
+ 257              sizeof(USB_OUTPUT_TERMINAL_DESC),       //0x09
+ 258                  DESC_CS_INTERFACE,                      //0x24
+ 259                  VC_OUTPUT_TERMINAL,                     //0x03
+ 260                  OT_ID,                                  //0x03
+ 261                  TT_STREAMING,                           //0x0101
+ 262                  0x00,                                   //0x00
+ 263                  PU_ID,                                  //0x02
+ 264                  0x00                                    //0x00
+ 265          };
+ 266          
+ 267          // Interrupt endpoint descriptor
+ 268          code USB_ST_ENDPOINT_DESC HighEPoint1 =
+ 269          {
+ 270              sizeof(USB_ST_ENDPOINT_DESC),           //0x07
+ 271                  DESC_ENDPOINT,                          //0x05
+ 272                  ENDPOINT1_NB,                           //0x81
+ 273                  EP1_ATTRIBUTES,                         //0x03
+ 274                  EP1_SIZE,                                   //0x1000
+ 275                  EP1_INTERVAL                            //0x07
+ 276          };
+ 277          
+ 278          code USB_ST_ENDPOINT_DESC FullEPoint1 =
+ 279          {
+ 280              sizeof(USB_ST_ENDPOINT_DESC),           //0x07
+ 281                  DESC_ENDPOINT,                          //0x05
+ 282                  ENDPOINT1_NB,                           //0x81
+ 283                  EP1_ATTRIBUTES,                         //0x03
+ 284                  EP1_SIZE,                                   //0x1000
+ 285                  EP1_INTERVAL_F                          //0x08
+ 286          };
+ 287          
+ 288          // Class specific VC interrupt endpoint descriptor
+ 289          code USB_CS_ENDPOINT_DESC CSEPoint0 =
+ 290          {
+ 291              sizeof(USB_CS_ENDPOINT_DESC),           //0x05
+ 292                  DESC_CS_ENDPOINT,                       //0x25
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 6   
+
+ 293                  EP_INTERRUPT,                           //0x03
+ 294                  MAX_CS_EP1_TRANS_SIZE                   //0x1000
+ 295          };
+ 296          
+ 297          // Video stream Interface Descriptor
+ 298          code USB_ST_INTERFACE_DESC InterfaceDesc1Alt0 =
+ 299          {
+ 300              sizeof(USB_ST_INTERFACE_DESC),          //0x09
+ 301                  DESC_INTERFACE,                         //0x04
+ 302                  INTERFACE_NB1,                          //0x01
+ 303                  IF1_ALTERNATE0,                         //0x00
+ 304                  IF1_ALT0_NB_EP,                         //0x00
+ 305                  INTERFACE1_CLASS,                       //0x0E
+ 306                  INTERFACE1_SUB_CLASS,                   //0x02
+ 307                  INTERFACE1_PROTOCOL,                    //0x00
+ 308                  IF1_ALT0_INDEX                          //0x04
+ 309          };
+ 310          // Interface alternateseting 1
+ 311          code USB_ST_INTERFACE_DESC   USBInterfaceDesc1Alt1 =
+ 312          {
+ 313              sizeof(USB_ST_INTERFACE_DESC),
+ 314              DESC_INTERFACE,
+ 315              INTERFACE_NB1,
+ 316              IF1_ALTERNATE1,
+ 317                  IF1_ALT1_NB_EP,
+ 318                  INTERFACE1_CLASS,
+ 319                  INTERFACE1_SUB_CLASS,
+ 320                  INTERFACE1_PROTOCOL,
+ 321                  IF1_ALT1_INDEX
+ 322          };
+ 323          
+ 324          // EP2 alternate setting 1
+ 325          code USB_ST_ENDPOINT_DESC   HighEPoint2Alt1 =
+ 326          {
+ 327              sizeof(USB_ST_ENDPOINT_DESC),
+ 328              DESC_ENDPOINT,
+ 329              ENDPOINT2_NB,
+ 330              EP2_ATTRIBUTES,
+ 331              EP2_ALT1_SIZE,
+ 332              EP2_INTERVAL
+ 333          };
+ 334          
+ 335          code USB_ST_ENDPOINT_DESC   FullEPoint2Alt1 =
+ 336          {
+ 337              sizeof(USB_ST_ENDPOINT_DESC),
+ 338              DESC_ENDPOINT,
+ 339              ENDPOINT2_NB,
+ 340              EP2_ATTRIBUTES,
+ 341              EP2_ALT1_SIZE_F,
+ 342              EP2_INTERVAL
+ 343          };
+ 344          
+ 345          // Interface alternateseting 2
+ 346          code USB_ST_INTERFACE_DESC   USBInterfaceDesc1Alt2 =
+ 347          {
+ 348              sizeof(USB_ST_INTERFACE_DESC),
+ 349              DESC_INTERFACE,
+ 350              INTERFACE_NB1,
+ 351              IF1_ALTERNATE2,
+ 352                  IF1_ALT2_NB_EP,
+ 353                  INTERFACE1_CLASS,
+ 354                  INTERFACE1_SUB_CLASS,
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 7   
+
+ 355                  INTERFACE1_PROTOCOL,
+ 356                  IF1_ALT2_INDEX
+ 357          };
+ 358          
+ 359          // EP2 alternate setting 2
+ 360          code USB_ST_ENDPOINT_DESC   HighEPoint2Alt2 =
+ 361          {
+ 362              sizeof(USB_ST_ENDPOINT_DESC),
+ 363              DESC_ENDPOINT,
+ 364              ENDPOINT2_NB,
+ 365              EP2_ATTRIBUTES,
+ 366                  EP2_ALT2_SIZE,
+ 367                  EP2_INTERVAL
+ 368          };
+ 369          
+ 370          code USB_ST_ENDPOINT_DESC   FullEPoint2Alt2 =
+ 371          {
+ 372              sizeof(USB_ST_ENDPOINT_DESC),
+ 373              DESC_ENDPOINT,
+ 374              ENDPOINT2_NB,
+ 375              EP2_ATTRIBUTES,
+ 376                  EP2_ALT2_SIZE_F,
+ 377                  EP2_INTERVAL
+ 378          };
+ 379          
+ 380          // Interface alternateseting 3
+ 381          code USB_ST_INTERFACE_DESC   USBInterfaceDesc1Alt3 =
+ 382          {
+ 383              sizeof(USB_ST_INTERFACE_DESC),
+ 384              DESC_INTERFACE,
+ 385              INTERFACE_NB1,
+ 386              IF1_ALTERNATE3,
+ 387                  IF1_ALT3_NB_EP,
+ 388                  INTERFACE1_CLASS,
+ 389                  INTERFACE1_SUB_CLASS,
+ 390                  INTERFACE1_PROTOCOL,
+ 391                  IF1_ALT3_INDEX
+ 392          };
+ 393          
+ 394          // EP2 alternate setting 3
+ 395          code USB_ST_ENDPOINT_DESC   HighEPoint2Alt3 =
+ 396          {
+ 397              sizeof(USB_ST_ENDPOINT_DESC),
+ 398              DESC_ENDPOINT,
+ 399              ENDPOINT2_NB,
+ 400              EP2_ATTRIBUTES,
+ 401                  EP2_ALT3_SIZE,
+ 402                  EP2_INTERVAL
+ 403          };
+ 404          
+ 405          code USB_ST_ENDPOINT_DESC   FullEPoint2Alt3 =
+ 406          {
+ 407              sizeof(USB_ST_ENDPOINT_DESC),
+ 408              DESC_ENDPOINT,
+ 409              ENDPOINT2_NB,
+ 410              EP2_ATTRIBUTES,
+ 411                  EP2_ALT3_SIZE_F,
+ 412                  EP2_INTERVAL
+ 413          };
+ 414          
+ 415          // Interface alternateseting 4
+ 416          code USB_ST_INTERFACE_DESC   USBInterfaceDesc1Alt4 =
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 8   
+
+ 417          {
+ 418              sizeof(USB_ST_INTERFACE_DESC),
+ 419              DESC_INTERFACE,
+ 420              INTERFACE_NB1,
+ 421              IF1_ALTERNATE4,
+ 422                  IF1_ALT4_NB_EP,
+ 423                  INTERFACE1_CLASS,
+ 424                  INTERFACE1_SUB_CLASS,
+ 425                  INTERFACE1_PROTOCOL,
+ 426                  IF1_ALT4_INDEX
+ 427          };
+ 428          
+ 429          code USB_ST_ENDPOINT_DESC   HighEPoint2Alt4 =
+ 430          {
+ 431              sizeof(USB_ST_ENDPOINT_DESC),
+ 432              DESC_ENDPOINT,
+ 433              ENDPOINT2_NB,
+ 434              EP2_ATTRIBUTES,
+ 435                  EP2_ALT4_SIZE,
+ 436                  EP2_INTERVAL
+ 437          };
+ 438          
+ 439          // EP2 alternate setting 4
+ 440          code USB_ST_ENDPOINT_DESC   FullEPoint2Alt4 =
+ 441          {
+ 442              sizeof(USB_ST_ENDPOINT_DESC),
+ 443              DESC_ENDPOINT,
+ 444              ENDPOINT2_NB,
+ 445              EP2_ATTRIBUTES,
+ 446                  EP2_ALT4_SIZE_F,
+ 447                  EP2_INTERVAL
+ 448          };
+ 449          code USB_ST_OTHER_SPD_CONFIG_DESC OtherSpConfigDesc =
+ 450          {
+ 451            sizeof(USB_ST_OTHER_SPD_CONFIG_DESC),
+ 452                  DESC_OTHER_SPEED_CONFIG,
+ 453                  CONF_OSPD_LENGTH,
+ 454                  NB_INTERFACE_OSPD,
+ 455                  CONF_NB,
+ 456                  CONF_INDEX,
+ 457                  CONF_ATTRIBUTES,
+ 458                  MAX_POWER
+ 459          };
+ 460          
+ 461          code USB_ST_INTERFACE_ASSOCI_DESC OtherSpIAD =
+ 462          {
+ 463              sizeof(USB_ST_INTERFACE_ASSOCI_DESC),       //0x08
+ 464                  DESC_INTERFACE_ASSOCIATION,             //0x0B
+ 465                  FIRST_INTERFACE,                        //0X00
+ 466                  OSPD_INTERFACE_COUNT,                   //0X01
+ 467                  FUNCTION_CLASS,                         //0x0e
+ 468                  FUNCTION_SUB_CLASS,                     //0x03
+ 469                  FUNCTION_PROTOCOL,                      //0x00
+ 470                  FUNCTION_INDEX                          //0x04
+ 471          };
+ 472          
+ 473          code USB_ST_INTERFACE_DESC  OtherSpIntf0Desc =
+ 474          {
+ 475              sizeof(USB_ST_INTERFACE_DESC),
+ 476                  DESC_INTERFACE,
+ 477                  INTERFACE_NB0,
+ 478                  IF0_ALTERNATE0,
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 9   
+
+ 479                  OSPD_NB_EP,
+ 480                  INTERFACE0_CLASS,
+ 481                  INTERFACE0_SUB_CLASS,
+ 482                  INTERFACE0_PROTOCOL,
+ 483                  IF0_ALT0_INDEX
+ 484          };
+ 485          
+ 486          code USB_CS_VC_OSPD_INTERFACE_DESC  OtherSpCSIntf0Desc =
+ 487          {
+ 488              sizeof(USB_CS_VC_OSPD_INTERFACE_DESC),
+ 489                  DESC_CS_INTERFACE,
+ 490                  VC_HEADER,
+ 491                  UVC_SPECIFICATION,
+ 492                  CS_VC_OSPD_IF_LENG,
+ 493                  DEV_CLK_FREQ,
+ 494                  CS_VC_OSPD_COLLECTION,
+ 495          };
+ 496          
+ 497          code USB_CAMERA_TERMINAL_DESC OtherSpCameraTerm =
+ 498          {
+ 499              sizeof(USB_CAMERA_TERMINAL_DESC),
+ 500                  DESC_CS_INTERFACE,
+ 501                  VC_INPUT_TERMINAL,
+ 502                  CT_ID,
+ 503                  ITT_CAMERA,
+ 504                  0x00,
+ 505                  0x00,
+ 506                  MIN_FOCAL_LENG,
+ 507                  MAX_FOCAL_LENG,
+ 508                  OCULAR_FOCAL_LENGTH,
+ 509                  3,
+ 510                  {0x00, 0x00, 0x00}
+ 511          };
+ 512          
+ 513          code USB_OUTPUT_TERMINAL_DESC OtherSpOutputTerm =
+ 514          {
+ 515              sizeof(USB_OUTPUT_TERMINAL_DESC),
+ 516                  DESC_CS_INTERFACE,
+ 517                  VC_OUTPUT_TERMINAL,
+ 518                  OT_ID,
+ 519                  TT_STREAMING,
+ 520                  0x00,
+ 521                  CT_ID,
+ 522                  0x00
+ 523          };
+ 524          
+ 525          // Length can not exceed 11 bytes, because of extension unit control length limitation
+ 526          code BYTE SET_VERSION[EXTENSION_MAX_SIZE] =
+ 527          {
+ 528              {"In-Set00\0"}
+ 529          };
+ 530          
+ 531          code USB_ST_STRING_LANG_DESC USBStringLangDesc =
+ 532          {
+ 533               sizeof(USB_ST_STRING_LANG_DESC),
+ 534               DESC_STRING,
+ 535               LANGUAGE_ID
+ 536          };
+ 537          
+ 538          code USB_ST_STRING_MFG USBStringMfg =
+ 539          {
+ 540               sizeof(USB_ST_STRING_MFG),
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 10  
+
+ 541               DESC_STRING,
+ 542               USB_MANUFACTURER_NAME
+ 543          };
+ 544          
+ 545          code USB_ST_STRING_PROD USBStringProd =
+ 546          {
+ 547               sizeof(USB_ST_STRING_PROD),
+ 548               DESC_STRING,
+ 549               USB_PRODUCT_NAME
+ 550          };
+ 551          
+ 552          code USB_ST_STRING_SN USBStringSN =
+ 553          {
+ 554                  sizeof(USB_ST_STRING_SN),
+ 555                  DESC_STRING,
+ 556                  USB_SERIAL_NUMBER
+ 557          };
+ 558          
+ 559          code USB_ST_STRING_VD USBStringVD =
+ 560          {
+ 561                  sizeof(USB_ST_STRING_VD),
+ 562                  DESC_STRING,
+ 563                  USB_VIDEO_DEVICE_NAME
+ 564          };
+ 565          
+ 566          
+ 567          code USB_ST_DEVICE_QUALIFIER_DESC USBDeviceQualDesc =
+ 568          {
+ 569                  sizeof(USB_ST_DEVICE_QUALIFIER_DESC),   //0x0A
+ 570                  DESC_DEVICE_QUALIFIER,                  //0x06
+ 571                  USB_SPECIFICATION,                      //0x0002
+ 572                  DEVICE_CLASS,                           //0xEF
+ 573                  DEVICE_SUB_CLASS,                               //0x02
+ 574                  DEVICE_PROTOCOL,                            //0x01
+ 575                  EP_CONTROL_LENGTH,                      //0x40
+ 576                  NB_CONFIGURATION,                       //0x01
+ 577                  0x00                                    //0x00
+ 578          };
+ 579          
+ 580          // High Speed Format and frame support list table
+ 581          code VS_STREAM_FMT_TAB   HighStrmFormatTab =
+ 582          {
+ 583              YUY2_MJPEG,                             // YUY2 format idx 1, MJPEG format idx 2
+ 584              7,                                      // support 8 different size YUY2 frame resolution
+ 585              3,                                      // still frame resolution count
+ 586              3,                                      // support 8 different size mJPEG frame resolution
+ 587              3,                                                  // Still frame resolution count 
+ 588              {VGA, SVGA,VGA_SUP,QQVGA, QCIF, QVGA, CIF,
+ 589              VGA, SVGA,VGA_SUP, 
+ 590               VGA, SVGA,VGA_SUP,
+ 591              VGA, SVGA, VGA_SUP }
+ 592              
+ 593          };
+ 594          
+ 595          // Full Speed
+ 596          code VS_STREAM_FMT_TAB   FullStrmFormatTab =
+ 597          {
+ 598            /*  MJPEGONLY,
+ 599              5,   // preview frame resolution count
+ 600              5,   // Still resolution count
+ 601              0,
+ 602              0,
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 11  
+
+ 603              {VGA, QQVGA, QCIF, QVGA, CIF,
+ 604               VGA, QQVGA, QCIF, QVGA, CIF}
+ 605              */
+ 606              YUY2_MJPEG,                             // YUY2 format idx 1, MJPEG format idx 2
+ 607              4,                                      // support 8 different size YUY2 frame resolution
+ 608              1,                                      // still frame resolution count
+ 609              7,                                      // support 8 different size mJPEG frame resolution
+ 610              3,                                                  // Still frame resolution count 
+ 611              {QQVGA, QCIF, QVGA, CIF,
+ 612              CIF, 
+ 613               VGA, SVGA,VGA_SUP,QQVGA, QCIF, QVGA, CIF,
+ 614              VGA, SVGA, VGA_SUP }
+ 615          };
+ 616          
+ 617          
+ 618          //For AX chip
+ 619          code VS_STREAM_FMT_TAB   HighStrmFormatTab_AX =
+ 620          {
+ 621                  YUY2ONLY,                                                         // YUY2 format idx 1, MJPEG format idx 2
+ 622                  5,                                                                              // support 8 different size YUY2 frame resolution
+ 623                  5,                                                                              // still frame resolution count
+ 624                  0,                                                                              // support 8 different size mJPEG frame resolution
+ 625                  0,        // Still frame resolution count
+ 626                  {VGA, CIF, QVGA, QCIF, QQVGA,
+ 627                   VGA, CIF, QVGA, QCIF, QQVGA}
+ 628          };
+ 629          // Full Speed
+ 630          code VS_STREAM_FMT_TAB   FullStrmFormatTab_AX =
+ 631          {
+ 632                  YUY2ONLY,
+ 633                  3,       // preview frame resolution count
+ 634                  3,       // Still resolution count
+ 635                  0,
+ 636                  0,
+ 637                  {QVGA, QCIF, QQVGA,
+ 638                   QVGA, QCIF, QQVGA}
+ 639          };
+ 640          
+ 641          code VCTRL_PARA_RANGE_UNSIGNED BacklightCtrl =
+ 642          {
+ 643                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,       //Info  //0x03 get inf use
+ 644                  0,      2,              1,              1         //min ,max, resolution, defaul
+ 645          };
+ 646          code VCTRL_PARA_RANGE_SIGNED BrightnessCtrl =              //have signed so use word
+ 647          {
+ 648                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,       //Info (byte)
+ 649                  -255,           255,            1,              0  //min(word), max(word), resolution(word), default(word)
+ 650          };
+ 651          code VCTRL_PARA_RANGE_UNSIGNED ContrastCtrl =
+ 652          {
+ 653                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 654                  0,              30,             1,              15
+ 655          };
+ 656          code VCTRL_PARA_RANGE_UNSIGNED PwrLineCtrl =
+ 657          {
+ 658          //      INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT |INFO_DISABLE_BIT,       //Info
+ 659                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,       //Info, remove INFO_DISABLE_BIT
+ 660                  0x0001,       0x0002,           0x0001,            0x0002
+ 661          };
+ 662          
+ 663          code VCTRL_PARA_RANGE_UNSIGNED PwrLineCtrlCN =
+ 664          {
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 12  
+
+ 665          //      INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT |INFO_DISABLE_BIT,       //Info
+ 666                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,       //Info, remove INFO_DISABLE_BIT
+ 667                  0x0001,       0x0002,           0x0001,            0x0001
+ 668          };
+ 669          
+ 670          
+ 671          code VCTRL_PARA_RANGE_SIGNED HueCtrl =
+ 672          {
+ 673                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 674                  -16000,         16000,          100,            0
+ 675          };
+ 676          code VCTRL_PARA_RANGE_UNSIGNED SaturationCtrl =
+ 677          {
+ 678                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 679                  0,              127,            1,              32
+ 680          };
+ 681          code VCTRL_PARA_RANGE_UNSIGNED SharpnessCtrl =
+ 682          {
+ 683                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 684                  0,              15,             1,              2
+ 685          };
+ 686          code VCTRL_PARA_RANGE_UNSIGNED GammaCtrl =
+ 687          {
+ 688                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 689                  20,     250,        1,      100  //  conservative range in a subset of 1 to 500, typically president as g
+             -amma x 100
+ 690          };
+ 691          
+ 692          code VCTRL_PARA_RANGE_UNSIGNED WBTempCtrl =
+ 693          {
+ 694                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT | INFO_AUTOUPDATE_BIT,
+ 695                  2500,           7000,           1,              5000  //  conservative range 2800(incandescent) to 6500(daylight)
+ 696          
+ 697          };
+ 698          code VCTRL_PARA_AUTO WBTempAutoCtrl =
+ 699          {
+ 700                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 701                  1
+ 702          };
+ 703          
+ 704          // 2009,05, 25 Lear add Processing Unit Gain Control
+ 705          code VCTRL_PARA_RANGE_UNSIGNED GainCtrl =
+ 706          {
+ 707                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT,
+ 708                  0,     100,        1,      0  //  conservative range in a subset of 1 to 500, typically president as gamm
+             -a x 100
+ 709          };
+ 710          
+ 711          // 2009,05, 25 Lear add Camera Terminal ExposureTime Control (Absolute)
+ 712          
+ 713          code VCTRL_PARA_RANGE_AET AETimeCtrl =
+ 714          {
+ 715                  AEMODE_MANUAL|AEMODE_APERTURE,  //AE mode bitmap
+ 716                  AEMODE_APERTURE,                                        //AE default mode
+ 717                  0,                                                              //AE default priority                                           
+ 718                  INFO_SUP_GET_VAL_BIT | INFO_SUP_SET_VAL_BIT|INFO_AUTOUPDATE_BIT,
+ 719                  //0x64, 0x960,0x64,0x012c
+ 720                   1,     5000,        1,      0x14d//0x12C  //  conservative range in a subset of 1 to 500, typically pres
+             -ident as gamma x 100
+ 721          };
+ 722          
+ 723          
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 13  
+
+ 724          
+ 725          
+ 726          // Processing Unit Gain Control
+ 727          
+ 728          code BYTE GammaTable[GAMMATAB_LEN]=
+ 729          {
+ 730          0x00,0x93,0xA8,0xB7,0xC1,0xCA,0xD2,0xD8,0xDE,0xE3,0xE8,0xED,0xF1,0xF5,0xF8,0xFC,0xFF, //  20
+ 731          0x00,0x6F,0x89,0x9B,0xA8,0xB4,0xBE,0xC7,0xCF,0xD7,0xDE,0xE4,0xEA,0xF0,0xF5,0xFA,0xFF, //  30
+ 732          0x00,0x54,0x6F,0x83,0x93,0xA0,0xAD,0xB7,0xC2,0xCB,0xD4,0xDC,0xE4,0xEB,0xF2,0xF9,0xFF, //  40
+ 733          0x00,0x40,0x5A,0x6F,0x80,0x8F,0x9C,0xA9,0xB5,0xC0,0xCA,0xD4,0xDD,0xE6,0xEF,0xF7,0xFF, //  50
+ 734          0x00,0x30,0x49,0x5E,0x6F,0x7F,0x8E,0x9C,0xA9,0xB5,0xC1,0xCC,0xD7,0xE2,0xEC,0xF6,0xFF, //  60
+ 735          0x00,0x25,0x3C,0x4F,0x61,0x71,0x81,0x8F,0x9D,0xAB,0xB8,0xC5,0xD1,0xDD,0xE9,0xF4,0xFF, //  70
+ 736          0x00,0x1C,0x30,0x43,0x54,0x65,0x75,0x84,0x93,0xA1,0xB0,0xBE,0xCB,0xD9,0xE6,0xF3,0xFF, //  80
+ 737          0x00,0x15,0x27,0x39,0x49,0x5A,0x6A,0x7A,0x89,0x98,0xA8,0xB7,0xC6,0xD4,0xE3,0xF1,0xFF, //  90
+ 738          0x00,0x10,0x20,0x30,0x40,0x50,0x60,0x70,0x80,0x90,0xA0,0xB0,0xC0,0xD0,0xE0,0xF0,0xFF, // 100
+ 739          0x00,0x0C,0x1A,0x29,0x38,0x47,0x57,0x67,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEF,0xFF, // 110
+ 740          0x00,0x09,0x15,0x22,0x31,0x3F,0x4F,0x5F,0x70,0x80,0x92,0xA3,0xB5,0xC8,0xDA,0xED,0xFF, // 120
+ 741          0x00,0x07,0x11,0x1D,0x2A,0x39,0x48,0x58,0x68,0x79,0x8B,0x9D,0xB0,0xC4,0xD7,0xEC,0xFF, // 130
+ 742          0x00,0x05,0x0E,0x19,0x25,0x32,0x41,0x51,0x61,0x73,0x85,0x98,0xAB,0xC0,0xD5,0xEA,0xFF, // 140
+ 743          0x00,0x04,0x0B,0x15,0x20,0x2D,0x3B,0x4A,0x5B,0x6C,0x7F,0x92,0xA7,0xBC,0xD2,0xE9,0xFF, // 150
+ 744          0x00,0x03,0x09,0x12,0x1C,0x28,0x35,0x44,0x55,0x66,0x79,0x8D,0xA2,0xB8,0xCF,0xE7,0xFF, // 160
+ 745          0x00,0x02,0x07,0x0F,0x18,0x24,0x30,0x3F,0x4F,0x61,0x73,0x88,0x9D,0xB4,0xCD,0xE6,0xFF, // 170
+ 746          0x00,0x02,0x06,0x0D,0x15,0x20,0x2C,0x3A,0x4A,0x5B,0x6E,0x83,0x99,0xB1,0xCA,0xE5,0xFF, // 180
+ 747          0x00,0x01,0x05,0x0B,0x12,0x1C,0x28,0x35,0x45,0x56,0x69,0x7E,0x95,0xAD,0xC7,0xE3,0xFF, // 190
+ 748          0x00,0x01,0x04,0x09,0x10,0x19,0x24,0x31,0x40,0x51,0x64,0x79,0x91,0xAA,0xC5,0xE2,0xFF, // 200
+ 749          0x00,0x01,0x03,0x08,0x0E,0x16,0x21,0x2D,0x3C,0x4D,0x60,0x75,0x8D,0xA6,0xC2,0xE1,0xFF, // 210
+ 750          0x00,0x01,0x03,0x06,0x0C,0x14,0x1E,0x2A,0x38,0x49,0x5B,0x71,0x89,0xA3,0xC0,0xDF,0xFF, // 220
+ 751          0x00,0x00,0x02,0x05,0x0B,0x12,0x1B,0x26,0x34,0x45,0x57,0x6D,0x85,0xA0,0xBD,0xDE,0xFF, // 230
+ 752          0x00,0x00,0x02,0x05,0x09,0x10,0x18,0x23,0x31,0x41,0x53,0x69,0x81,0x9C,0xBB,0xDC,0xFF, // 240
+ 753          0x00,0x00,0x01,0x04,0x08,0x0E,0x16,0x21,0x2E,0x3D,0x50,0x65,0x7D,0x99,0xB8,0xDB,0xFF  // 250
+ 754          };
+ 755          code BYTE SNAP_ACTIVE [1] =
+ 756          {
+ 757              0x0
+ 758          };
+ 759          code BYTE PRIVACY_ACTIVE[1] = 
+ 760          {
+ 761              0x0
+ 762          };
+ 763          code BYTE BACKENDINIT_TAB[2] =
+ 764          {
+ 765              0x00,0x02
+ 766          };
+ 767          
+ 768          
+ 769          code BYTE HSYUVProb_TAB[4] =
+ 770          {
+ 771              0x00,0x0C,0x00,0x00
+ 772          };
+ 773          code BYTE HSMJProb_TAB[4] =
+ 774          {
+ 775              0x00,0x0C,0x00,0x00
+ 776          };
+ 777          code BYTE FSYUVProb_TAB[4] =
+ 778          {
+ 779              0x20,0x03,0x00,0x00
+ 780          };
+ 781          code BYTE FSMJProb_TAB[4] =
+ 782          {
+ 783              0x20,0x03,0x00,0x00
+ 784          };
+ 785          
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 14  
+
+ 786          // Frame rate to timing interval mapping
+ 787          // 2009,04,30 Lear expaned framerate to 60Frames/SEC
+ 788          code DWORD      FPS_Table[66] =
+ 789          {
+ 790                  FI_1, FI_2, FI_3, FI_4, FI_5, FI_6, FI_7, FI_8, FI_9, FI_10, FI_11,
+ 791                  FI_12, FI_13, FI_14, FI_15, FI_16, FI_17, FI_18, FI_19, FI_20, FI_21,
+ 792                  FI_22, FI_23, FI_24, FI_25, FI_26, FI_27, FI_28, FI_29, FI_30, FI_31,
+ 793                  FI_32, FI_33, FI_34, FI_35, FI_36, FI_37, FI_38, FI_39, FI_40, FI_41,
+ 794                  FI_42, FI_43, FI_44, FI_45, FI_46, FI_47, FI_48, FI_49, FI_50, FI_51,
+ 795                  FI_52, FI_53, FI_54, FI_55, FI_56, FI_57, FI_58, FI_59, FI_60,  
+ 796                  FI_70,FI_80,FI_90,FI_100,FI_110,FI_120
+ 797          };
+ 798          
+ 799          
+ 800          code BYTE       HS_FrameRate_Tab[MAX_SUPPORT_FRAME_NUM*2+2] =
+ 801          {
+ 802                  //30, 30, 30, 30, 30,   30, 15, 
+ 803                  //30, 30, 30, 30, 30,   30, 15, 
+ 804                  30, 30, 30, 30, 30, 15, 15, 12, 9, 8, 6, 3, 2,7,0,0,
+ 805          //      30, 30, 30, 30, 30, 30, 18, 13, 10, 8, 7, 6, 3, // 16:9-->YUV
+ 806          //      30, 30, 30, 30, 30, 30, 18, 12, 9, 7, 6, 5, 3, // 16:10-->YUV
+ 807          
+ 808                  30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30,30,0,0, // 4:3-->MJ
+ 809                  0,
+ 810                  0
+ 811          //      30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 17, // 16:9-->MJ
+ 812          //      30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 28, 15, // 16:10-->MJ
+ 813          };
+ 814          
+ 815          // Should be imported from external non-volatile memory for customized stream table
+ 816          // The resolution index should be sycn with FrameSize Table
+ 817          code RES_TABLE Res_Table[MAX_SUPPORT_FRAME_NUM] =
+ 818          {
+ 819            // Width, height, HSYUY_FPS, FS_YUY_FPS, HSMJ_FPS, FS_MJ_FPS
+ 820               // 4:3
+ 821               {160,      120},   //QQVGA
+ 822               {176,      144},
+ 823               {320,      240},
+ 824               {352,      288},
+ 825               {640,      480},
+ 826               {800,      600},
+ 827               {1024,     768},
+ 828               {1152,     864},
+ 829               {1280,    1024}, //SXGA
+ 830               {1400,    1050},
+ 831               {1600,    1200},
+ 832               {2048,    1536},
+ 833               {2592,    1944},
+ 834               {1280,     960},   //VGA_SUP    
+ 835               {     0,        0}, 
+ 836               {  0,       0}
+ 837          #if 0
+                   // 16:9
+                   {160,      90},
+                   {176,      99},
+                   {320,      180},
+                   {352,      198},
+                   {640,      360},
+                   {800,      450},
+                   {1024,     600},
+                   {1280,     720},
+                   {1440,     810},
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 15  
+
+                   {1600,     900},
+                   {1680,     945},
+                   {1920,    1080},
+                   {2560,    1440},
+                   // 16:10
+                   {160,      100},
+                   {176,      110},
+                   {320,      200},
+                   {352,      220},
+                   {640,      400},
+                   {800,      500},
+                   {1024,     640},
+                   {1280,     800},
+                   {1440,     900},
+                   {1600,    1024},
+                   {1680,    1050},
+                   {1920,    1200},
+                   {2560,    1600}
+              #endif
+ 867          
+ 868          };
+ 869          
+ 870          //======================= Audio ==========================//
+ 871          // DMIC INPUT TERMINAL  
+ 872          code USB_AUDIO_INPUT_TERMINAL_DESC AU_DMIC_ARRAY_IT_Desc =
+ 873          {
+ 874                  sizeof(USB_AUDIO_INPUT_TERMINAL_DESC),  //0x0C  input terminal Desc
+ 875                  DESC_CS_INTERFACE,                                              //0x24
+ 876                  AC_INPUT_TERMINAL,                                              //0x02
+ 877                  AU_DMIC_IT_ID,                                                          //0x01 input ID
+ 878                  ITT_MICROPHONE_ARRAY,                                   //0x0502        
+ 879                  AU_IT_ASSOCTERM,                                                //0x00
+ 880                  AU_IT_CH_NUM,                                                   //0x02
+ 881                  AU_IT_CH_CONFIG,                                                //0x0300
+ 882                  AU_IT_CH_NAME,                                                  //0x00
+ 883                  AU_IT_INDEX                                                     //0x00, index of string desc
+ 884          };
+ 885          
+ 886          //===== Audio Control Interface:2 =====//
+ 887          // Interface descriptor for audio control
+ 888          code USB_ST_INTERFACE_DESC InterfaceDesc2 =
+ 889          {
+ 890                  sizeof(USB_ST_INTERFACE_DESC),                  //0x09
+ 891                  DESC_INTERFACE,                                                         //0x04
+ 892                  INTERFACE_NB2,                                                  //0x02
+ 893                  IF2_ALTERNATE0,                                                         //0x00
+ 894                  IF2_ALT0_NB_EP,                                                         //0x00
+ 895                  INTERFACE2_CLASS,                                               //0x01
+ 896                  INTERFACE2_SUB_CLASS,                                   //0x01
+ 897                  INTERFACE2_PROTOCOL,                                    //0x00
+ 898                  IF2_ALT0_INDEX                                                  //0x00
+ 899          };
+ 900          
+ 901          
+ 902          // Interface associated descriptor,IAD_MIC
+ 903          code USB_ST_INTERFACE_ASSOCI_DESC AU_InterfaceAssociDesc_MIC =
+ 904          {
+ 905                  sizeof(USB_ST_INTERFACE_ASSOCI_DESC),   //0x08
+ 906                  DESC_INTERFACE_ASSOCIATION,                     //0x0B
+ 907                  AU_FIRST_INTERFACE,                                     //0x02,first interface number
+ 908                  0x02,                                   //0x02,interface number
+ 909                  AU_FUNCTION_CLASS,                                              //0x01,class    
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 16  
+
+ 910                  AU_FUNCTION_SUB_CLASS,                                  //0x00,subclass
+ 911                  AU_FUNCTION_PROTOCOL,                                   //0x00,protocol
+ 912                  DMIC_FUNCTION_INDEX                                     //0x05, index of string descriptor
+ 913          };
+ 914          
+ 915          
+ 916          // Class-Specific Audio Control Inteface Header,AU_HEADER_MIC
+ 917          code BYTE ACInterfaceDesc_MIC[0x09] =              // for only MIC
+ 918          {
+ 919                  0x09,                                                                   //bLength       
+ 920                  DESC_CS_INTERFACE,                                              //bDescriptorType;              
+ 921                  AC_HEADER,                                                              //bDescriptorSubType;   
+ 922                  0x00,0x01,                                                              //bcdADC;                                */
+ 923                  0x2B,0x00,                                                              //wTotalLength;         
+ 924                  0x01,                                                                   //bInCollection;                
+ 925                  INTERFACE_NB3                                                   //bInterfaceNr;
+ 926          };
+ 927          
+ 928          // DMIC INPUT TERMINAL  
+ 929          code USB_AUDIO_INPUT_TERMINAL_DESC AU_DMIC_IT_Desc =
+ 930          {
+ 931              sizeof(USB_AUDIO_INPUT_TERMINAL_DESC),  //0x0C  input terminal Desc
+ 932              DESC_CS_INTERFACE,                      //0x24
+ 933              AC_INPUT_TERMINAL,                      //0x02
+ 934              AU_DMIC_IT_ID,                              //0x01 input ID
+ 935              ITT_MICROPHONE,                         //0x0102
+ 936              AU_IT_ASSOCTERM,                        //0x00
+ 937              AU_IT_CH_NUM,                           //0x02
+ 938              AU_IT_CH_CONFIG,                        //0x0300
+ 939              AU_IT_CH_NAME,                          //0x00
+ 940              AU_IT_INDEX                             //0x00, index of string desc
+ 941          };
+ 942          
+ 943          //DMIC Feature Unit
+ 944          code USB_AUDIO_FEATURE_UNIT_DESC AU_DMIC_FU_Desc=
+ 945          {
+ 946                  sizeof(USB_AUDIO_FEATURE_UNIT_DESC),    //0x0D
+ 947                  DESC_CS_INTERFACE,                                              //0x24
+ 948                  AC_FEATURE_UNIT,                                                //0x06
+ 949                  AU_DMIC_FU_ID,                                                          //0x05
+ 950                  AU_FU_SOURCEID,                                                 //0x01
+ 951                  AU_FU_CTRLSIZE,                                                 //0x02  
+ 952                  AU_FU_CTRLCONFIG_MAS,
+ 953                  AU_FU_CTRLCONFIG_L,                                     //0x0300
+ 954                  AU_FU_CTRLCONFIG_R,                                     //0x0300
+ 955                  AU_FU_INDEX                                                     //0x00
+ 956          };
+ 957          
+ 958          //DMIC Output Terminal
+ 959          code USB_OUTPUT_TERMINAL_DESC AU_DMIC_OT_Desc =
+ 960          {
+ 961                  sizeof(USB_OUTPUT_TERMINAL_DESC),               //0x09
+ 962                  DESC_CS_INTERFACE,                                              //0x24
+ 963                  AC_OUTPUT_TERMINAL,                                     //0x03
+ 964                  AU_DMIC_OT_ID,                                                          //0x03
+ 965                  TT_STREAMING,                                                   //0x0101
+ 966                  0x00,                                                                   //0x00,accessing terminal
+ 967                  AU_OT_SOURCEID,                                                 //0x02
+ 968                  AU_OT_INDEX                                                     //0x00
+ 969          };
+ 970          
+ 971          //===== Audio Streaming Interface:3 =====//
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 17  
+
+ 972          // Interface descriptor for audio streaming
+ 973          code USB_ST_INTERFACE_DESC InterfaceDesc3Alt0 =
+ 974          {
+ 975                  sizeof(USB_ST_INTERFACE_DESC),                  //0x09
+ 976                  DESC_INTERFACE,                                                         //0x04
+ 977                  INTERFACE_NB3,                                                  //0x03
+ 978                  IF3_ALTERNATE0,                                                         //0x00
+ 979                  IF3_ALT0_NB_EP,                                                         //0x00
+ 980                  INTERFACE3_CLASS,                                               //0x01
+ 981                  INTERFACE3_SUB_CLASS,                                   //0x02
+ 982                  INTERFACE3_PROTOCOL,                                    //0x00
+ 983                  IF3_ALT0_INDEX                                                  //0x00
+ 984          };
+ 985          
+ 986          
+ 987          //===== Audio Streaming Name =====//
+ 988          code BYTE USBStringADF[24] =
+ 989          {
+ 990                  24,
+ 991                  DESC_STRING,
+ 992                  'M',0, 'a',0,'g',0,'i',0,'c',0,' ',0, 
+ 993                  'S',0, 'o',0,'u',0,'n',0,'d',0
+ 994          };
+ 995          
+ 996          
+ 997          
+C51 COMPILER V7.06   INTABLE                                                               07/22/2020 17:08:20 PAGE 18  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   1890    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

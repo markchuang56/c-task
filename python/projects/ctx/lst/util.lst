@@ -1,0 +1,425 @@
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE UTIL
+OBJECT MODULE PLACED IN util.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE util.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\util.lst) 
+                    -SRC(.\output\util.SRC)
+
+stmt level    source
+
+   1          /************************************************************************|
+   2          |                  A L C O R   M I C R O,  C O R P.                      |
+   3          |                                                                        |
+   4          |         This source code is classified as confidential and             |
+   5          |         contains trade secrets owned by Alcor Micro, Corp.             |
+   6          |                                                                        |
+   7          |                         (C)Copyright 2008                              |
+   8          |                         Alcor Micro, Corp.                             |
+   9          |                        All rights reserved.                            |
+  10          |************************************************************************/
+  11          
+  12          #include "globaldef.h"
+  13          #include "regmap.h"
+  14          #include "globalvar.h"
+  15          #include "util.h"
+  16          
+  17          // Hex code convert to ASCII code
+  18          BYTE Hextable(BYTE index)
+  19          {
+  20   1          if(index < 10){
+  21   2              return (index+0x30);
+  22   2          }else{
+  23   2              return (index+0x37);
+  24   2          }
+  25   1      }
+  26          // Byte to hex code
+  27          
+  28          void UartByte2HexNoCR(BYTE idByte)
+  29          {
+  30   1         static BYTE  data bTmp;
+  31   1         static BYTE data dByte;
+  32   1         dByte = idByte;
+  33   1         bTmp=(dByte>>4);
+  34   1         bTmp=Hextable(bTmp);  //first high nibble
+  35   1         UartChar(bTmp);
+  36   1         bTmp=(dByte&0x0f);
+  37   1         bTmp=Hextable(bTmp);  //low nibble
+  38   1         UartChar(bTmp);
+  39   1      
+  40   1      }    
+  41          void UartByte2Hex(BYTE dByte)
+  42          {
+  43   1         UartByte2HexNoCR(dByte);
+  44   1         UartCarryReturn();
+  45   1      }
+  46          // Word to hex code
+  47          void UartWord2Hex(WORD idWord)
+  48          {
+  49   1          static WORD data dWord;
+  50   1          static BYTE data bTmp;
+  51   1          dWord = idWord;
+  52   1          bTmp=(BYTE)(dWord>>8);
+  53   1          UartByte2HexNoCR(bTmp);      //high byte
+  54   1          bTmp=(BYTE)(dWord&0x00ff);
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 2   
+
+  55   1          UartByte2Hex(bTmp);      //low byte
+  56   1      }
+  57          // Insert Carry return, New Line feed into UART debug message pool
+  58          void UartCarryReturn(void)
+  59          {
+  60   1          UartChar(0xa);
+  61   1          UartChar(0xd);
+  62   1      }
+  63          // **********************************************************************************
+  64          // Function description:
+  65          // Name:     UartChar
+  66          // Created:  Lear Hsieh 2008,Aug,18
+  67          // Parameter: BYTE data dByte
+  68          // Return:  void
+  69          // Comment: Use timer1 for UART baudrate timing control
+  70          //          Timer1 is internal timer mode: One tick time perious =  1/(master clock) 
+  71          //          Timer1 ISR is not necessary for main loop routine busy waiting
+  72          //          DO NOT modify this function except you have measured UART TX signal and it works 
+  73          //          properly
+  74          //          UART mode, start bit low, 8 bits data, stop bit high, no parity check
+  75          //                      2009,03,25
+  76          //                      Release Timer1, support baudrate to 115200
+  77          //
+  78          // **********************************************************************************
+  79          
+  80          void UartChar(BYTE data idByte)
+  81          {
+  82   1        static BYTE data bUartTmp;
+  83   1        static BYTE data dByte;
+  84   1        bUartTmp = 8;
+  85   1        dByte = idByte;
+  86   1        SetRegBits(REG_GPIO1_DIR, 0x1);
+  87   1        // SetRegBits(REG_GPIO2_DIR, 0x1);    
+  88   1      #pragma ASM
+  89   1              ; start bit low, 8.6805 us(115200 baudrate)
+  90   1              MOV             R7, #05H        
+  91   1              MOV     DPTR,#020H      ;GPIO0  
+  92   1              MOVX    A,@DPTR                 
+  93   1              ANL     A,#0FEH                 
+  94   1              MOVX    @DPTR,A                 
+  95   1      STARTBITLOW:
+  96   1              nop
+  97   1              nop
+  98   1              nop
+  99   1              nop
+ 100   1              nop
+ 101   1              nop
+ 102   1              nop
+ 103   1              nop
+ 104   1              nop             
+ 105   1              DJNZ    R7, STARTBITLOW 
+ 106   1      DATABITHIGH:
+ 107   1              MOV     A,dByte?550
+ 108   1              JNB             ACC.0, DATABITLOW
+ 109   1              ; Data Bit High
+ 110   1              MOV             DPTR, #020H     ;GPIO0
+ 111   1              MOVX    A, @DPTR
+ 112   1              ORL             A, #01H
+ 113   1              MOVX    @DPTR, A
+ 114   1              MOV             R7, #04H
+ 115   1      HIGHLEVEL:
+ 116   1              nop
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 3   
+
+ 117   1              nop
+ 118   1              nop
+ 119   1              nop
+ 120   1              nop
+ 121   1              nop             
+ 122   1              DJNZ    R7, HIGHLEVEL
+ 123   1              JMP             SHIFTDATABIT
+ 124   1      DATABITLOW:
+ 125   1              MOV             DPTR,#020H      ;GPIO0
+ 126   1              MOVX    A,@DPTR
+ 127   1              ANL             A,#0FEH
+ 128   1              MOVX    @DPTR, A
+ 129   1              MOV             R7, #04H
+ 130   1      LOWLEVEL:
+ 131   1              nop
+ 132   1              nop
+ 133   1              nop
+ 134   1              nop
+ 135   1              nop
+ 136   1              nop
+ 137   1              nop
+ 138   1              nop             
+ 139   1              DJNZ    R7, LOWLEVEL
+ 140   1      SHIFTDATABIT:
+ 141   1              MOV     A,dByte?550
+ 142   1              CLR     C
+ 143   1              RRC     A
+ 144   1              MOV     dByte?550,A
+ 145   1              DJNZ    bUartTmp?549, DATABITHIGH
+ 146   1              ; StartBit high
+ 147   1              MOV             DPTR,#020H      ;GPIO0
+ 148   1              MOVX    A,@DPTR
+ 149   1              ORL             A,#01H
+ 150   1              MOV             R7, #04H
+ 151   1              MOVX    @DPTR, A
+ 152   1      STOPBITHIGH:    
+ 153   1              nop
+ 154   1              nop
+ 155   1              nop
+ 156   1              nop
+ 157   1              DJNZ    R7, STOPBITHIGH
+ 158   1      #pragma ENDASM
+ 159   1      }
+ 160          
+ 161          #if 0
+              void UartChar(BYTE data idByte)
+              {
+                static BYTE data bTmp;
+                static BYTE data dByte;
+                dByte = idByte;
+                SetRegBits(REG_GPIO1_DIR, 0x1);
+                // SetRegBits(REG_GPIO2_DIR, 0x1);    
+                TMOD = (TMOD & 0x0F) | 0x10;
+                TCON &= 0x3F;                     // Clear TF1, TR1
+                ClrRegBits(REG_GPIO1_DATA, 0x1);  // Start bit low
+                // ClrRegBits(REG_GPIO2_DATA, 0x1);
+                // UART Delay
+                TH1 = 0xFF;                       /* 26 us for 38400 baudrate*/
+                TL1 = 0xEC;   
+                _nop_();_nop_();
+                TR1 = 1;
+                while(TF1 !=1);
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 4   
+
+                TCON &= 0x3F;
+                bTmp = 8;
+                do{
+                  if(dByte & 0x01){
+                      SetRegBits(REG_GPIO1_DATA, 0x1);
+                              // SetRegBits(REG_GPIO2_DATA, 0x1);
+                      TH1 = 0xFF;                 /* 26 us for 38400 baudrate*/
+                      TL1 = 0xEB;    
+                  }else{
+                      ClrRegBits(REG_GPIO1_DATA, 0x1);
+                              // ClrRegBits(REG_GPIO2_DATA, 0x1);
+                      TH1 = 0xFF;                 /* 26 us for 38400 baudrate*/
+                      TL1 = 0xEB;    
+                  }
+                  TR1 = 1;
+                  while(TF1 !=1);
+                  TCON &= 0x3F;
+                  dByte>>=1;
+                  bTmp--;
+                }while(bTmp!=0);
+                // Stop bit high
+                SetRegBits(REG_GPIO1_DATA, 0x1);
+                // SetRegBits(REG_GPIO2_DATA, 0x1);
+              
+                TH1 = 0xFF;    /* 26 us for 38400 baudrate*/
+                TL1 = 0xEC;    
+                TR1 = 1;
+                while(TF1 !=1);
+                TCON &= 0x3F;
+              }
+              #endif
+ 210          // UART string function
+ 211          void UartString(char *ptr)
+ 212          {
+ 213   1           // bTmp assign to R7, do not need to do data overlay correction
+ 214   1           BYTE data bTmp;
+ 215   1      
+ 216   1           bTmp=*ptr;
+ 217   1           while(bTmp)     //last char is "0"
+ 218   1           {
+ 219   2              UartChar(bTmp);
+ 220   2              ptr++;
+ 221   2              bTmp=*ptr;
+ 222   2           }
+ 223   1           UartCarryReturn();
+ 224   1      }
+ 225          // 2009,03,25 Lear modified
+ 226          // use nop to delay, release timer 1
+ 227          void Delay1MS(BYTE bCnt)
+ 228          {
+ 229   1              bCnt = bCnt;    // prevent compiler warning
+ 230   1      #pragma ASM
+ 231   1              ;bCnt assign to R7
+ 232   1      DELAY1MSCNT:
+ 233   1              MOV     bUartTmp?549, #03H
+ 234   1      DEALY1MSINNERLOOP2:     
+ 235   1              MOV     dByte?550, #0EBH
+ 236   1      DEALY1MSINNERLOOP1:     
+ 237   1              nop 
+ 238   1              nop
+ 239   1              nop
+ 240   1              nop
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 5   
+
+ 241   1              nop
+ 242   1              nop
+ 243   1              nop
+ 244   1              nop
+ 245   1              nop
+ 246   1              nop
+ 247   1              DJNZ    dByte?550,      DEALY1MSINNERLOOP1
+ 248   1              DJNZ    bUartTmp?549,   DEALY1MSINNERLOOP2      
+ 249   1              DJNZ    R7,     DELAY1MSCNT
+ 250   1      #pragma ENDASM
+ 251   1      }
+ 252          void Delay10US(BYTE bCnt)
+ 253          {
+ 254   1              bCnt = bCnt;    // prevent compiler warning
+ 255   1      #pragma ASM
+ 256   1              ;bCnt assign to R7
+ 257   1      DELAY10USCNT:   
+ 258   1              MOV     dByte?550, #05H
+ 259   1      DEALY10USINNERLOOP1:    
+ 260   1              nop
+ 261   1              nop 
+ 262   1              nop
+ 263   1              nop
+ 264   1              nop
+ 265   1              nop
+ 266   1              nop
+ 267   1              nop
+ 268   1              nop
+ 269   1              nop
+ 270   1              nop
+ 271   1              nop
+ 272   1              nop
+ 273   1              nop
+ 274   1              nop
+ 275   1              nop
+ 276   1              DJNZ    dByte?550,      DEALY10USINNERLOOP1
+ 277   1              DJNZ    R7,     DELAY10USCNT
+ 278   1      #pragma ENDASM
+ 279   1      
+ 280   1      }
+ 281          /*
+ 282          void Delay1MS(BYTE bCnt)
+ 283          {
+ 284              TMOD = (TMOD & 0x0F) | 0x10;; // internal counter
+ 285              TCON &= 0x3F;
+ 286              _nop_();
+ 287              do{
+ 288                  if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_12M){
+ 289                          // MCU master clock is 12MHz
+ 290                          TH1 = 0xFC;    
+ 291                      TL1 = 0x20;   
+ 292                  }else if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_6M){
+ 293                      // MCU master clock is 6MHz
+ 294                      TH1 = 0xFE;    
+ 295                      TL1 = 0x10;
+ 296                  }
+ 297                  TR1 = 1;
+ 298                  while(TF1 !=1);
+ 299                  TCON &= 0x3F;
+ 300                  bCnt--;
+ 301              }while(bCnt != 0);
+ 302          
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 6   
+
+ 303          } 
+ 304          */
+ 305          
+ 306          /*
+ 307          void Delay10US(BYTE bCnt)
+ 308          {
+ 309              TMOD = (TMOD & 0x0F) | 0x10;; // internal counter
+ 310              TCON &= 0x3F;
+ 311              _nop_();
+ 312              do{
+ 313                  if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_12M){
+ 314                          // MCU master clock is 12MHz
+ 315                          TH1 = 0xFF;    
+ 316                      TL1 = 0xF6;   
+ 317                  }else if((Reg[REG_MCU_CLK] & 0x3) == OSC_FREQ_6M){
+ 318                      // MCU master clock is 6MHz
+ 319                      TH1 = 0xFF;    
+ 320                      TL1 = 0xFB;
+ 321                  }
+ 322                  TR1 = 1;
+ 323                  while(TF1 !=1);
+ 324                  TCON &= 0x3F;
+ 325                  bCnt--;
+ 326              }while(bCnt != 0);
+ 327          }
+ 328          */
+ 329          // Asynchronous timer function
+ 330          // Setup Timer 0 for asynchronous delay waiting
+ 331          // 16 bits reload and counting mode
+ 332          // external source clock is always 5ms
+ 333          
+ 334          void EnableAsyncTimer()
+ 335          {
+ 336   1          // TR2 = 0;        // Stop timer0
+ 337   1          // T2CON = 0x2;    // event counting mode, 16 bits auto-reload mode
+ 338   1          TMOD = (TMOD & 0xF0) | 0x05;  /* Set T/C0 Mode 16 bits timer0, external Clock */
+ 339   1          IE |= 0x82; /*EA = 1, ET0 = 1*/
+ 340   1      } 
+ 341           
+ 342          void SetupAsyncTimer(WORD wCnt)
+ 343          {
+ 344   1          TR0 = 0;
+ 345   1          xAsyncTimeOut = FALSE;
+ 346   1          wAsyncCnt = wCnt;
+ 347   1          TH0 = 0xFE;
+ 348   1          TL0 = 0x0C;
+ 349   1          TR0 = 1;
+ 350   1      } 
+ 351          
+ 352          void Timer0ISR(void) interrupt 1 using 1
+ 353          {
+ 354   1          if(wAsyncCnt == 0){
+ 355   2              xAsyncTimeOut = TRUE;
+ 356   2              TR0 = 0;  
+ 357   2          }else{
+ 358   2              wAsyncCnt--;
+ 359   2              TH0 = 0xFE;
+ 360   2              TL0 = 0x0C;
+ 361   2              TR0 = 1;  
+ 362   2          }          
+ 363   1      }
+ 364          
+C51 COMPILER V7.06   UTIL                                                                  07/22/2020 17:08:20 PAGE 7   
+
+ 365          BOOLEAN IsAsyncTimeOut(void)
+ 366          {
+ 367   1          if(xAsyncTimeOut == TRUE){
+ 368   2              xAsyncTimeOut = FALSE;
+ 369   2              return TRUE;
+ 370   2          }else{
+ 371   2              return FALSE;
+ 372   2          }           
+ 373   1      }    
+ 374          
+ 375          //Interrupt Number=(interrupt_address - 3) / 8
+ 376          
+ 377          void Timer1ISR(void) interrupt 3 using 1
+ 378          {
+ 379   1              pfISROfTime1();
+ 380   1      }
+ 381          
+ 382          void DWORDBig2Little_f(DWORD *dwDest, DWORD *dwSrc) 
+ 383          {
+ 384   1          *((BYTE *)&(*dwDest)) = *((BYTE *)&(*dwSrc)+3);
+ 385   1          *((BYTE *)&(*dwDest)+1) = *((BYTE *)&(*dwSrc)+2);
+ 386   1          *((BYTE *)&(*dwDest)+2) = *((BYTE *)&(*dwSrc)+1);
+ 387   1          *((BYTE *)&(*dwDest)+3) = *((BYTE *)&(*dwSrc));
+ 388   1      }
+ 389          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    661    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,3461 @@
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE DISPATCHER
+OBJECT MODULE PLACED IN .\output\Dispatcher.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Dispatcher.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\Disp
+                    -atcher.lst) OBJECT(.\output\Dispatcher.obj)
+
+stmt level    source
+
+   1          /************************************************************************|
+   2          |                  A L C O R   M I C R O,  C O R P.                      |
+   3          |                                                                        |
+   4          |         This source code is classified as confidential and             |
+   5          |         contains trade secrets owned by Alcor Micro, Corp.             |
+   6          |                                                                        |
+   7          |                         (C)Copyright 2008                              |
+   8          |                         Alcor Micro, Corp.                             |
+   9          |                        All rights reserved.                            |
+  10          |************************************************************************/
+  11          
+  12          #ifndef __dispatcher_c__
+  13          #define __dispatcher_c__
+  14          
+  15          #include "globaldef.h"
+  16          #include "regmap.h"
+  17          #include "globalvar.h"
+  18          #include "InternalReservedVar.h"
+  19          #include "base.h"
+  20          #include "usbif.h"
+  21          #include "xsensor.h"
+  22          #include "SettingDef.h"
+  23          #include "util.h"
+  24          #include "setintf.h"
+  25          #include "dummy.h"
+  26          #include "CamTermCtrl.h"
+  27          #include "Protect.h"
+  28          //mush add
+  29          #include "isp.h"
+  30          
+  31          #include "AudioDef.h"
+  32          #include "AudioHandle.h"
+  33          
+  34          // void main(void);
+  35          void SnapshotTrigger(void);
+  36          void SetIspPropertyControl(void);
+  37          void StateFunction(void);
+  38          void SelecStreamDimension(WORD wIncomingWidth,WORD wIncomingHeight);
+  39          void SelecStreamFormat(BYTE bIncomingFormat);
+  40          void ScaleUpSetting(BYTE bIncomingFormat);
+  41          //void CalFrameDrop(void);
+  42          
+  43          static void SetIntefaceFunc(void)
+  44          {   
+  45   1          pfIspSetPropertyBrightness  = IspSetPropertyBrightness;
+  46   1          pfIspSetPropertyContrast    = IspSetPropertyContrast;
+  47   1          pfIspSetPropertyHue         = IspSetPropertyHue;
+  48   1          pfIspSetPropertySaturation  = IspSetPropertySaturation;
+  49   1         // pfIspSetPropertySharpness   = IspSetPropertySharpness;
+  50   1          pfIspSetPropertyGamma       = IspSetPropertyGamma;
+  51   1              /*
+  52   1          pfIspGetSin                 = IspGetSin;
+  53   1          pfIspGetCos                 = IspGetCos;
+  54   1          pfIspGetInterpolate         = IspGetInterpolate;
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 2   
+
+  55   1          pfIspGetDataSum             = IspGetDataSum;
+  56   1          pfIspGetCT                  = IspGetCT;
+  57   1          pfIspMMult_3x3              = IspMMult_3x3;
+  58   1          pfIspAutoContrast           = IspAutoContrast;
+  59   1          */
+  60   1          pfSetPtrTab                 = SetPtrTabEx;
+  61   1          pfGetTab                    = GetTab;
+  62   1          pfGetTabW                   = GetTabW;
+  63   1          pfDelay1MS                  = Delay1MS;
+  64   1          pfDelay10US                 = Delay10US;
+  65   1          pfUartByte2Hex              = UartByte2Hex;
+  66   1          pfUartWord2Hex              = UartWord2Hex;
+  67   1          pfUartString                = UartString; 
+  68   1          pfSetupAsyncTimer           = SetupAsyncTimer;
+  69   1          pfIsAsyncTimeOut            = IsAsyncTimeOut;
+  70   1          pfHwInit                    = HardwareInit;
+  71   1          
+  72   1          pfSensorI2CReadData         = SensorI2CReadData;
+  73   1          pfSensorI2CWriteData        = SensorI2CWriteData;
+  74   1      
+  75   1              pfExSetUpHookFunc                       = ExSetupHookFunc;
+  76   1              pfExMainHookFunc                        = ExMainHookFunc;
+  77   1            //USBIST fp
+  78   1              pfAddDesc                                       = AddDesc;
+  79   1              pfDeepSetupHook                         = ExDeepSetupHook;
+  80   1              pfHookGetStringDesc                     = HookGetStringDesc;
+  81   1      
+  82   1              pfISROfTime1=ISROfTime1;
+  83   1      
+  84   1              pfI2CEEPROMReadData=I2CEEPROMReadData;
+  85   1              pfI2CEEPROMWriteData=I2CEEPROMWriteData;
+  86   1      
+  87   1              //External Code will call
+  88   1              MainFP2Dummy();
+  89   1              /*
+  90   1              pfExternalReset=inExternalReset;
+  91   1            pfControlInterruptRoutine=inControlInterruptRoutine;
+  92   1              pfSensorExtenUnitCtrl=inSensorExtenUnitCtrl;
+  93   1              pfExStateFunction=inExStateFunction;
+  94   1              */
+  95   1          
+  96   1              //Dummy HID related Function
+  97   1              pfUSBHIDClassCtrl= ExMainHookFunc;
+  98   1              pfUSBHIDStandCtrl= DummyHIDStandCtrl;
+  99   1              pfUSBHIDConfigDesc= ExDeepSetupHook;
+ 100   1              pfHIDExtenUnitCtrl=ExMainHookFunc;
+ 101   1      
+ 102   1             //Audio callback functions
+ 103   1             pfAUEnableDMIC=ExDeepSetupHook;
+ 104   1             pfAUEnableDMIC2=ExDeepSetupHook;
+ 105   1             pfAUDisableDMIC=ExDeepSetupHook;
+ 106   1              
+ 107   1              //scale up 
+ 108   1              pfScaleupFun=ScaleUpSetting;
+ 109   1      }
+ 110          
+ 111          static void PrivacyCtrlTrigger(void)
+ 112          {
+ 113   1          // xPrivBtnState is initialed as inactive state when DeviceReset
+ 114   1          if(GPIOGroup1State(bPrivacyCtrlGPIO) ^ xPrivBtnState){
+ 115   2              bSusPrivTrigCnt++;
+ 116   2              if(bSusPrivTrigCnt > 6){
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 3   
+
+ 117   3                  // button toggle
+ 118   3                  if(xPrivBtnState == xPrivActive){
+ 119   4                      xPrivBtnState = (!xPrivActive);
+ 120   4                  }else{
+ 121   4                      xPrivBtnState = (xPrivActive);
+ 122   4                  }
+ 123   3                  if(xPrivBtnState == xPrivActive){
+ 124   4                      xPrivBtnToggle = TRUE;
+ 125   4                  }
+ 126   3                  // Clear privacy control trigger count
+ 127   3                  bSusPrivTrigCnt = 0;
+ 128   3              }
+ 129   2          }else{
+ 130   2              bSusPrivTrigCnt = 0;
+ 131   2          }
+ 132   1          if(xPrivBtnToggle == TRUE){
+ 133   2              if(xGPIO5BtnSupport == TRUE){
+ 134   3                  // should be clear by external fimrware
+ 135   3                  xGPIO5BtnTriger = TRUE;
+ 136   3                  xPrivBtnToggle = FALSE;
+ 137   3                  return;
+ 138   3              }
+ 139   2              if(xPrivacyControl == FALSE){
+ 140   3                  //SetPrivacyCtrl(TRUE);
+ 141   3                  xPrivacyControl = TRUE;
+ 142   3                  PrivacyCtrlInterrupt();
+ 143   3              }else{          
+ 144   3                  //SetPrivacyCtrl(FALSE); 
+ 145   3                  xPrivacyControl = FALSE;
+ 146   3                          PrivacyCtrlInterrupt();
+ 147   3              }
+ 148   2              xPrivBtnToggle = FALSE;
+ 149   2          }
+ 150   1      }
+ 151          // NOTE!NOTE!NOTE!
+ 152          // To prevent data overlay incorrect issue, DO NOT define local variable in main routine
+ 153          // NOTE!NOTE!NOTE!
+ 154          void main(void)
+ 155          {
+ 156   1          //Add PowerON Suspend Function.
+ 157   1          Reg[0x15]|=0x01;
+ 158   1          // TODO: Add global variable for Master clock setting switch
+ 159   1          //Avoid erro bit be cleared
+ 160   1          Reg[REG_MCU_CLK] = (Reg[REG_MCU_CLK]&0xFC)|OSC_FREQ_12M;  // run at 12MHz
+ 161   1          // Reg[REG_MCU_CLK] = OSC_FREQ_6M;
+ 162   1          _nop_();_nop_();_nop_();
+ 163   1      
+ 164   1          HWInit();
+ 165   1          FWInit();
+ 166   1          EnableAsyncTimer();
+ 167   1          SetIntefaceFunc();  // Assign function ptr
+ 168   1      
+ 169   1      //    P1=0x00;    
+ 170   1          if((!(ReadReg(REG_MCU_CLK)&ERR_EEPROM_SEGFW))&& FWLoadXFirmware()){
+ 171   2              if(xExFWExist == TRUE){
+ 172   3                //load FW success
+ 173   3                      xFWPartialLoad=TRUE;   
+ 174   3               //   FWAppendCodeEnable();
+ 175   3               //   _nop_();_nop_();_nop_();
+ 176   3              }
+ 177   2          }else{
+ 178   2              //EEPROM load failed or Partial loading failed        
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 4   
+
+ 179   2              xExFWExist=FALSE;
+ 180   2              xSetFileExist=FALSE;
+ 181   2              bPrpSaveMethod=0;
+ 182   2              // restore to default address
+ 183   2              bEEPROMID = 0xA0;
+ 184   2               bIICClock=I2C_CLK_400K;
+ 185   2          }
+ 186   1              
+ 187   1      #ifdef OTPFUNENABLE
+ 188   1      
+ 189   1         #ifdef OTP_TEST_PRINT        
+                  UARTString("OTP Test");
+                 #endif       
+ 192   1          ClrRegBits(REG_OTP_CTRL, EN_AUTOR);  //auto read must disable in OTP   
+ 193   1          if((xExFWExist == FALSE ))//|| (xSetFileExist==FALSE))
+ 194   1          {    //check OTP        
+ 195   2                      if((FWLoadOTP()==TRUE) && (!(ReadReg(REG_MCU_CLK)&ERR_OTP_SEGFW)))
+ 196   2                      {       //OTP code exist
+ 197   3                  //xCheckState04=FALSE;
+ 198   3                              xFWPartialLoad=TRUE;  
+ 199   3                              
+ 200   3                              #ifdef OTP_TEST_PRINT
+                                      UARTString("FWLoadOTP Success");
+                                      UARTString("SetAddr");
+                                      UARTWord2Hex(wSetStartAddr);
+                                      UARTString("offset");
+                                      UARTWord2Hex(wIdxTabAddrOffset);
+                                      UARTString("setStart");
+                                      UARTWord2Hex(wSetFileDataAddr);                 
+                                      #endif
+ 209   3                      }else
+ 210   2                      {       // load OTP failed or no OTP code exist
+ 211   3                              #ifdef OTP_TEST_PRINT
+                                      UARTString("FWLoadOTP Failed");
+                                      UARTByte2Hex(bOTPCodeIndex);
+                                      #endif
+ 215   3                      
+ 216   3                              xFWPartialLoad=FALSE;    
+ 217   3                              //xCheckState04 = TRUE;
+ 218   3                              xOTPSettingExist=FALSE;
+ 219   3                              xSetFileExist=FALSE;
+ 220   3                              bPrpSaveMethod=0;
+ 221   3                      }
+ 222   2          }
+ 223   1      #endif  
+ 224   1              
+ 225   1              // 2009,06,15 Lear modified begin
+ 226   1              // Check framerate version
+ 227   1              // CheckFrameRateSetVer();
+ 228   1              // Check external resolution table
+ 229   1              xExResTable = TRUE;
+ 230   1              SetPtrTabEx(path_ResTable);
+ 231   1              // 2009,06,15 Lear modified end
+ 232   1      
+ 233   1          //Audio Fun Default Setting after load Setting File
+ 234   1          AudioDefaultFormat();  //format can be revised in cpfExternalInit() 
+ 235   1      
+ 236   1              Reg[REG_ROMSEG_MODE]=0x00;      //rom code is only one seg
+ 237   1              #ifndef OTPFUNENABLE
+                  if(xExFWExist == FALSE )        //no sensor module code exist
+                      {               xFWPartialLoad=FALSE;
+                                      cpfExternalInit();              //for run internal sensor code
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 5   
+
+                      }else
+                      {
+                      #endif  
+ 244   1          
+ 245   1              //===== Load to Upgraded RAM End of Common =====//      
+ 246   1              if(xFWPartialLoad)
+ 247   1              {       //The ExFW code exist
+ 248   2                      //Transf Upgraded RAM to ROM
+ 249   2                      FWAppendCodeEnable();
+ 250   2              _nop_();_nop_();_nop_();        
+ 251   2                      _nop_();_nop_();_nop_();
+ 252   2                      _nop_();_nop_();_nop_();
+ 253   2      
+ 254   2                      bPartialSeg=SEG_COMMON;
+ 255   2                      cpfExternalInit();      //descide whether to use partial Mem loading
+ 256   2      
+ 257   2                      //descide ROM Segment
+ 258   2                      Reg[REG_ROMSEG_MODE]=(xFWPartialLoad)?(ROMSEG_TWO):(0x00);
+ 259   2               // Reg[REG_ROMSEG_SHIFTTO_L]=LoByteOfWord(  PartialMemSet.wPartialShiftAddr);
+ 260   2                 //   Reg[REG_ROMSEG_SHIFTTO_H]=HiByteOfWord(  PartialMemSet.wPartialShiftAddr);              
+ 261   2              Reg[REG_ROMSEG_SHIFTFROM_L]=0x00;
+ 262   2                  Reg[REG_ROMSEG_SHIFTFROM_H]=0xC0;   
+ 263   2              }
+ 264   1      
+ 265   1              #ifndef OTPFUNENABLE
+                      }     
+                      #endif
+ 268   1      //In this space, don't use SetPtrTabEx to avoid addr shift problem
+ 269   1              bFWLoadState=FWS_NORM;
+ 270   1              //===== Load Partial FW:init =====//
+ 271   1              do{
+ 272   2                      ReplaceFW(SEG_INIT);
+ 273   2                      //UARTByte2Hex(bInSegCount);
+ 274   2                      /*UARTString("Init");
+ 275   2                      UARTByte2Hex(Reg[REG_ROMSEG_SHIFTTO_L]);
+ 276   2                      UARTByte2Hex(Reg[REG_ROMSEG_SHIFTTO_H]);
+ 277   2                      UARTByte2Hex(Reg[REG_ROMSEG_SHIFTFROM_L]);
+ 278   2                      UARTByte2Hex(Reg[REG_ROMSEG_SHIFTFROM_H]);
+ 279   2                      UARTByte2Hex(bPartialSeg);      */
+ 280   2                      ErrHandleSEGFW();
+ 281   2              }while(!isMEMReplacedEnd());    
+ 282   1              
+ 283   1              //AUDIO_FUN set initial variable 
+ 284   1              AudioInitialize();     
+ 285   1      
+ 286   1              DeviceReset();
+ 287   1                  pfExternalReset();
+ 288   1              
+ 289   1              //===== Load Partial FW:StandBy =====//
+ 290   1              do{
+ 291   2                      ReplaceFW(SEG_STANDBY);
+ 292   2              ErrHandleSEGFW();
+ 293   2              }while(!isMEMReplacedEnd());    
+ 294   1      
+ 295   1              EnableConnection();     
+ 296   1      
+ 297   1          //===== watch dog funciton Enable =====//   
+ 298   1               if(xWatchDogEnable==TRUE)
+ 299   1               {
+ 300   2                      if(ISWDTRESET()){   //WatchDog Reset
+ 301   3                              DISABLE_WDT();
+ 302   3                              //UARTString("WDReset");
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 6   
+
+ 303   3                              // Software Reset
+ 304   3                      SetRegBits(REG_MCU_CLK, SOFT_RESET);
+ 305   3                  }           
+ 306   2                        ENABLE_WDT();
+ 307   2               }
+ 308   1      
+ 309   1          Int0Disable(); 
+ 310   1          Int1Disable();  
+ 311   1          Int0Enable();
+ 312   1          Int1Enable();
+ 313   1          bIdleCnt = 0;
+ 314   1      
+ 315   1              //for debug time
+ 316   1              #ifdef TestTime
+                      SetRegBits(REG_GPIO1_DIR,GPIO6_BIT|GPIO7_BIT );
+                      ClrRegBits(REG_GPIO1_DATA, GPIO6_BIT|GPIO7_BIT);
+                      #endif
+ 320   1      
+ 321   1      //==================== While Loop ====================//
+ 322   1          while(1) {
+ 323   2              #ifdef TestTime 
+                      ClrRegBits(REG_GPIO1_DATA, GPIO6_BIT);
+                      SetRegBits(REG_GPIO1_DATA, GPIO6_BIT);  
+                      #endif
+ 327   2      
+ 328   2                //Enable WatchDog Function
+ 329   2                if(xWatchDogEnable) { 
+ 330   3                      RESET_WDT();     
+ 331   3               }      
+ 332   2              // Debug purpose
+ 333   2      
+ 334   2      ///////////////////   Reset mode   ///////////////////               
+ 335   2              if((!(ReadReg(REG_MCU_CLK)&NORECONNECT_RESET))&&
+ 336   2                  (bInt0State & USB_RESET_BIT)
+ 337   2                )  
+ 338   2              {
+ 339   3                  // UARTString("Reset!");
+ 340   3                  bInt0State&=~USB_RESET_BIT;
+ 341   3               
+ 342   3                      //===== Load Partial FW:init =====//
+ 343   3                       bFWLoadState=FWS_NORM;
+ 344   3                      do{
+ 345   4                              ReplaceFW(SEG_INIT);
+ 346   4                      ErrHandleSEGFW();
+ 347   4                      }while(!isMEMReplacedEnd());
+ 348   3                  
+ 349   3                      DeviceReset();
+ 350   3                      pfExternalReset();   
+ 351   3      
+ 352   3                   //===== Load Partial FW:StandBy =====//
+ 353   3                      do{
+ 354   4                              ReplaceFW(SEG_STANDBY);
+ 355   4                      ErrHandleSEGFW();
+ 356   4                      }while(!isMEMReplacedEnd());
+ 357   3              }          
+ 358   2      //////////////////  suspend mode  ///////////////////         
+ 359   2              if( Reg[REG_RP_SUSP_CTRL] & HW_SUSPEND )
+ 360   2              {                    
+ 361   3                  //UARTString("Suspend");    
+ 362   3                  if((bCtrlFlowState&0x1C)!=Event_Suspend)//avoid repeatly to enter stage0
+ 363   3                                  SetNextEvent(Event_Suspend); 
+ 364   3                          //AUDIO_FUN
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 7   
+
+ 365   3                              DisableDMIC();
+ 366   3              }
+ 367   2      
+ 368   2      //////////////////  Normal mode  ///////////////////                
+ 369   2              //qq if( Reg[REG_EP0_FIFO_CTRL] & EP0_IN_FIFO_READY ) //auto disable while endpoint0 receive a pac
+             -ket
+ 370   2              if( Reg[REG_EP0_FIFO_CTRL] & EP0_SETUP_PACKET )
+ 371   2              {
+ 372   3                       bInt0State&=~USB_SETUP_PKT_BIT;
+ 373   3                    USBCmd();
+ 374   3              }       
+ 375   2      
+ 376   2      //////////////////  state function        /////////////////
+ 377   2              if (xForceNextStage) {
+ 378   3                  bCtrlFlowState++;
+ 379   3              } else if (bNextFlowState!=NullStateEvent) {
+ 380   3                  bCtrlFlowState = bNextFlowState;
+ 381   3                  bNextFlowState = NullStateEvent;
+ 382   3              }
+ 383   2          
+ 384   2              xSkipKernelProcedure = FALSE;
+ 385   2              xForceNextStage      = FALSE;
+ 386   2              
+ 387   2             pfExStateFunction();
+ 388   2                      
+ 389   2              if (!xSkipKernelProcedure)
+ 390   2              {   
+ 391   3                      StateFunction();
+ 392   3              }
+ 393   2              // 2009,08,21 Lear add pull down for privacy control
+ 394   2              if(bAltSetting){
+ 395   3                  if(bPrivacyCtrlGPIO != GPIO_NULL){
+ 396   4                      if((xSupportPrivacy == TRUE)||(xGPIO5BtnSupport == TRUE)){
+ 397   5                          Reg[REG_GPIO1_PD] |= bPrivacyCtrlGPIO;
+ 398   5                      }
+ 399   4                  }
+ 400   3              }
+ 401   2                      
+ 402   2      //////////////////  state function      /////////////////
+ 403   2      
+ 404   2      
+ 405   2      //////////////////  interrup routine  ///////////////////
+ 406   2              if (bFrameFlag)
+ 407   2              {
+ 408   3                  //20081217 Mush modified, to avoid the event re-do issue.
+ 409   3                  if(xFrameStart) {
+ 410   4                                      
+ 411   4                              //SetRegBits(REG_GPIO1_DATA, GPIO7_BIT);
+ 412   4                              bFrameCount++;
+ 413   4                              //ClrRegBits(REG_GPIO1_DATA, GPIO7_BIT);
+ 414   4                                      
+ 415   4                              //if(bPartialSeg==SEG_STANDBY)  
+ 416   4                              //{     xFrameStart=FALSE;      }
+ 417   4      
+ 418   4                      }
+ 419   3                  pfControlInterruptRoutine();
+ 420   3              }
+ 421   2      //////////////////  interrup routine  ///////////////////
+ 422   2       
+ 423   2      //////////////////  snapshot trigger  ///////////////////  
+ 424   2              bIdleCnt++;
+ 425   2      
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 8   
+
+ 426   2              if(bAltSetting &&((bIdleCnt&0x07)==0x00))
+ 427   2              {        
+ 428   3                  if (xBtnPressed) {
+ 429   4                      if (!(Reg[REG_EP1_FIFO_CTRL] & EP1_FIFO_BUSY )) {
+ 430   5                           pbEP1Buf[0] = SC_VIDEO_STREAMING;
+ 431   5                           pbEP1Buf[1] = CT_ID;           //0x01
+ 432   5                           pbEP1Buf[2] = PRESS_BUTTON;
+ 433   5                           pbEP1Buf[3] = BUTTON_PRESSED;
+ 434   5                           Reg[REG_EP1_FIFO_LEN]=4;
+ 435   5                           xBtnPressed = FALSE;
+ 436   5                       }
+ 437   4                  }
+ 438   3                  if (xBtnReleased) {
+ 439   4                      if (!(Reg[REG_EP1_FIFO_CTRL] & EP1_FIFO_BUSY )) {
+ 440   5                           pbEP1Buf[0] = SC_VIDEO_STREAMING;
+ 441   5                           pbEP1Buf[1] = CT_ID;
+ 442   5                           pbEP1Buf[2] = PRESS_BUTTON;
+ 443   5                           pbEP1Buf[3] = BUTTON_RELEASED;
+ 444   5                           Reg[REG_EP1_FIFO_LEN]=4;
+ 445   5                           xBtnReleased = FALSE;
+ 446   5                      }
+ 447   4                  }
+ 448   3                  if(bSnapShotGPIO != GPIO_NULL){
+ 449   4                      SnapshotTrigger();
+ 450   4                  }                
+ 451   3                  if(xSupportPrivacy == TRUE){
+ 452   4                      if(bPrivacyCtrlGPIO != GPIO_NULL){
+ 453   5                          PrivacyCtrlTrigger();
+ 454   5                      }
+ 455   4                  }
+ 456   3              }
+ 457   2              // Asynchronous Property value save
+ 458   2              if(xAsyncSavePrp == TRUE){
+ 459   3                  CompletePrpSaveReq();
+ 460   3              }
+ 461   2              // external firmware hook function
+ 462   2             pfExMainHookFunc();
+ 463   2      
+ 464   2              //AUDIO_FUN
+ 465   2               if(xCheckDMICMute==TRUE)  //for GPIO DMIC, delay 100ms to clear mute
+ 466   2               {   
+ 467   3                      wDMICMuteDelay--;
+ 468   3                      if(!(wDMICMuteDelay))
+ 469   3                      {          
+ 470   4                          if(EX_CallBackFunction(FUNSEL_EnableDMIC2)==FALSE)//(pfAUEnableDMIC2() == FALSE)
+ 471   4                  {  
+ 472   5                      xCheckDMICMute=FALSE;
+ 473   5      
+ 474   5                      if(!(ReadReg(REG_END_P2_EN)& ENABLE_EP3))
+ 475   5                      {   //WriteReg(REG_MICCLK_SEL, DMICCurSetting.bSampFreq);
+ 476   6                          SetRegBits(REG_MIC_CTRL, (MUTE_LCHAN|MUTE_RCHAN));
+ 477   6                          //===== Open Audio Stream =====//
+ 478   6                          SetRegBits(REG_END_P2_EN, ENABLE_EP3); 
+ 479   6                          SetRegBits(REG_AUDIO_CTL, ABUFRDY);  
+ 480   6                          //wDMICMuteDelay=0x0200;//0x0220; //delay 200ms
+ 481   6                          SetPtrTabEx(path_AU_DelayTime);
+ 482   6                              wDMICMuteDelay=GetTabW(2);
+ 483   6                          xCheckDMICMute=TRUE;
+ 484   6                          //UARTWord2Hex(wDMICMuteDelay);
+ 485   6                      }else{
+ 486   6                          //===== Set Sample rate =====//
+ 487   6                          //WriteReg(REG_MICCLK_SEL, DMICCurSetting.bSampFreq);
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 9   
+
+ 488   6      
+ 489   6                          //Delay1MS(6);
+ 490   6                              
+ 491   6                                      //===== Clear Mute func =====//
+ 492   6                                      if(!DMICCurSetting.bMuteCur_L)  //left channel 
+ 493   6                                      {       ClrRegBits(REG_MIC_CTRL, MUTE_LCHAN); }
+ 494   6                                      if(!DMICCurSetting.bMuteCur_R)  //right Channel
+ 495   6                                      {       ClrRegBits(REG_MIC_CTRL, MUTE_RCHAN); }
+ 496   6                          //===== Open Audio Stream =====//
+ 497   6                         //SetRegBits(REG_END_P2_EN, ENABLE_EP3); //enable EP3
+ 498   6                             //SetRegBits(REG_AUDIO_CTL, ABUFRDY);  //start audio iso transf                       
+ 499   6                      }
+ 500   5                   }  
+ 501   4                      }
+ 502   3               }
+ 503   2      //////////////////  snapshot trigger  ///////////////////
+ 504   2          }
+ 505   1      }
+ 506          
+ 507          void SnapshotTrigger(void)
+ 508          {
+ 509   1          BYTE data bGPIOState;
+ 510   1          
+ 511   1          bGPIOState = GPIOGroup1State(bSnapShotGPIO);
+ 512   1          if (xBtnState ^ bGPIOState) {
+ 513   2              bSucsTrigCnt++;
+ 514   2              if (bSucsTrigCnt>6) {
+ 515   3                  xBtnState = bGPIOState;
+ 516   3                  if (xBtnState == xSnapActive)
+ 517   3                  {
+ 518   4                      xBtnPressed = TRUE;
+ 519   4                  }
+ 520   3                  else
+ 521   3                  {
+ 522   4                      xBtnReleased = TRUE;
+ 523   4                  }
+ 524   3                  // Clear snapshot trigger count
+ 525   3                  bSucsTrigCnt = 0;
+ 526   3              }
+ 527   2          } else {
+ 528   2              bSucsTrigCnt = 0;
+ 529   2          }
+ 530   1      }
+ 531          void StateFunction(void)
+ 532          {
+ 533   1      
+ 534   1          // Run external function first,csee if internal code is necessary or not.
+ 535   1          //
+ 536   1          // The "xSkipKernelProcedure" bit is designed to skip the internal code processing.
+ 537   1          //
+ 538   1          //
+ 539   1          // If "xForceNextStage" is set in external code,the next incoming state is in next stage.
+ 540   1          //
+ 541   1          // CAUTION: not set "xForceNextStage" in stage 3. We only provide stage 0~3.
+ 542   1         /* WORD data wSettingCnt;
+ 543   1          BYTE data bSectionCnt;
+ 544   1          WORD data wBackendAddr;
+ 545   1          */
+ 546   1          switch (bCtrlFlowState)
+ 547   1          {
+ 548   2              /*----------------------------------------------------------------------------*/
+ 549   2              /*                    state standby (0x00)   start                            */
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 10  
+
+ 550   2              /*----------------------------------------------------------------------------*/
+ 551   2              
+ 552   2              /*------------------- stage 0 --------------------*/
+ 553   2              case (State_DeviceStandBy|Event_Preview |Stage_0):
+ 554   2                  SetState(State_BackendPrepare);
+ 555   2                  break;
+ 556   2              
+ 557   2              case (State_DeviceStandBy|Event_SnapShot|Stage_0):
+ 558   2                  SetEvent(Event_None);
+ 559   2                  break;
+ 560   2              
+ 561   2              case (State_DeviceStandBy|Event_Close   |Stage_0):
+ 562   2                  SetState(State_StreamOff);
+ 563   2                  break;
+ 564   2              
+ 565   2              case (State_DeviceStandBy|Event_Suspend |Stage_0):
+ 566   2                  // save property value before device entering into suspend mode
+ 567   2                  CompletePrpSaveReq();
+ 568   2      
+ 569   2                  //Remove by Eric,20100330 
+ 570   2                  /*
+ 571   2                  if( bDeviceStatus & REMOTE_WAKEUP )
+ 572   2                  {
+ 573   2                      Reg[REG_WAKEUP_CH]|=bSnapShotGPIO;
+ 574   2                  }*/
+ 575   2                  //Audio Function
+ 576   2                  if(bDMICInput==MICSEL_ADC)
+ 577   2                          {   //SetRegBits(REG_ADC_CTL,(POWEROFF_CH1|POWEROFF_CH2));
+ 578   3                      SetRegBits(REG_ADC_CTL,LDOOFF);
+ 579   3                          }
+ 580   2                  while( Reg[REG_RP_SUSP_CTRL] & HW_SUSPEND )
+ 581   2                  { 
+ 582   3                      Reg[REG_SRW_CTRL]|=CHIP_SUSPEND_MODE;
+ 583   3                  }
+ 584   2                  if( (bDeviceStatus & REMOTE_WAKEUP) && (Reg[REG_SRW_CTRL] & WAKEUP_DETECT_BIT) ) {
+ 585   3                      //Remove by Eric,20100330 
+ 586   3                      //Reg[REG_WAKEUP_CH]&=~bSnapShotGPIO;
+ 587   3                      Reg[REG_SRW_CTRL]|=HW_WAKEUP;
+ 588   3                  }
+ 589   2                      //AUDIO_FUN
+ 590   2                  if(bDMICInput==MICSEL_ADC){
+ 591   3                       // Open ADC Regulator power   
+ 592   3                       ClrRegBits(REG_ADC_CTL,LDOOFF);
+ 593   3                       //Delay1MS(1);
+ 594   3                       //ClrRegBits(REG_ADC_CTL,(POWEROFF_CH1|POWEROFF_CH2));
+ 595   3                  }
+ 596   2      
+ 597   2                  SetRegBits(USB_CLK_CTL,ENABLE_USB_CLK_OFF); //for patch Vista Host controller in S3
+ 598   2                  SetEvent(Event_None);
+ 599   2                  break;
+ 600   2                              
+ 601   2              /*----------------------------------------------------------------------------*/
+ 602   2              /*                  state backend prepare (0x20)   start                      */
+ 603   2              /*----------------------------------------------------------------------------*/
+ 604   2              
+ 605   2              /*------------------- stage 0 --------------------*/
+ 606   2              case (State_BackendPrepare|Event_Preview |Stage_0):
+ 607   2              case (State_BackendPrepare|Event_SnapShot|Stage_0):
+ 608   2              {
+ 609   3                  if(Reg[REG_XCVR_ST] & (HIGH_SPEED_MODE)){
+ 610   4                      ClrRegBits(USB_CLK_CTL, ENABLE_USB_CLK_OFF); // for power saving leave, enable
+ 611   4                  }                
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 11  
+
+ 612   3                  //clear pull down pin
+ 613   3                  Reg[REG_SENPINPD] =  0x00;
+ 614   3                  //start all clock
+ 615   3                  Reg[REG_SENSOR_CTRL] = 0x00;
+ 616   3      
+ 617   3                  
+ 618   3                  // TODO: fill the input frame size in external code
+ 619   3                  
+ 620   3                      /*      // bSectionCnt for temporary usage
+ 621   3                              bSectionCnt = HiByteOfWord(InputSize.wInputWidth);
+ 622   3                              bSectionCnt = bSectionCnt & 0x0f;
+ 623   3                              bSectionCnt = bSectionCnt << 4;
+ 624   3                              bSectionCnt = bSectionCnt & 0xf0;
+ 625   3                              
+ 626   3                              wSettingCnt = HiByteOfWord(InputSize.wInputHeight);
+ 627   3                              wSettingCnt = wSettingCnt & 0x0f;
+ 628   3                              // 2009,05,15 Lear modify
+ 629   3                              // compare both two size of input width and height
+ 630   3                              if(
+ 631   3                                      (Reg[REG_ISP_INSIZEWIDTHL] == LoByteOfWord(InputSize.wInputWidth))
+ 632   3                                      &&((Reg[REG_ISP_INSIZEWIDTHH]&0xf0) == (bSectionCnt))
+ 633   3                                      &&((Reg[REG_ISP_INSIZEWIDTHH]&0x0f) == (wSettingCnt))
+ 634   3                                      &&(Reg[REG_ISP_INSIZEHEIGHTL] == LoByteOfWord(InputSize.wInputHeight))
+ 635   3                              )
+ 636   3                      /**/    
+ 637   3                  
+ 638   3                  if ( (Reg[REG_ISP_INSIZEWIDTHL] == LoByteOfWord(InputSize.wInputWidth)) && (Reg[REG_ISP_INSIZE
+             -WIDTHH] == HiByteOfWord(InputSize.wInputWidth)) 
+ 639   3                      && (Reg[REG_ISP_INSIZEHEIGHTL] == LoByteOfWord(InputSize.wInputHeight))&& (Reg[REG_ISP_INSIZEHEIGHTH] ==
+             - HiByteOfWord(InputSize.wInputHeight))        
+ 640   3                         )/**/
+ 641   3                  {          
+ 642   4                              //UARTString("The same Size image");
+ 643   4                      SetState(State_StreamPrepare);
+ 644   4                  }
+ 645   3                  else
+ 646   3                  {                      
+ 647   4                              //UARTString("Different Size image");                                   
+ 648   4                    /*  SetPtrTabEx(path_BackendInit);
+ 649   4                      
+ 650   4                      wSettingCnt = 2; //skip the table size 
+ 651   4                      while (wSettingCnt<GetTabW(0))
+ 652   4                      {
+ 653   4                          wBackendAddr = GetTabW(wSettingCnt);
+ 654   4                          wSettingCnt+=2;
+ 655   4                          
+ 656   4                          bSectionCnt = 1;
+ 657   4                          while(bSectionCnt<=GetTab(wSettingCnt)) {
+ 658   4                              Reg[wBackendAddr] = GetTab(wSettingCnt+bSectionCnt);
+ 659   4                              bSectionCnt++;
+ 660   4                          }
+ 661   4                          wSettingCnt+=bSectionCnt;
+ 662   4                      }*/
+ 663   4                      xForceNextStage = TRUE;
+ 664   4                  }
+ 665   3                  break;
+ 666   3              }
+ 667   2              
+ 668   2                  
+ 669   2              case (State_BackendPrepare|Event_Close   |Stage_0):        
+ 670   2              case (State_BackendPrepare|Event_Suspend |Stage_0):
+ 671   2                  SetState(State_StreamOff);
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 12  
+
+ 672   2                  break;
+ 673   2              
+ 674   2              
+ 675   2              /*------------------- stage 1 2--------------------*/
+ 676   2              case (State_BackendPrepare|Event_Preview |Stage_1):
+ 677   2              case (State_BackendPrepare|Event_SnapShot|Stage_1):
+ 678   2              case (State_BackendPrepare|Event_Preview |Stage_2):
+ 679   2              case (State_BackendPrepare|Event_SnapShot|Stage_2):
+ 680   2                  xForceNextStage = TRUE;
+ 681   2                  break;
+ 682   2              /*------------------- stage 3 --------------------*/
+ 683   2              case (State_BackendPrepare|Event_Preview |Stage_3):
+ 684   2              case (State_BackendPrepare|Event_SnapShot|Stage_3):
+ 685   2                  SetState(State_SensorPrepare);
+ 686   2                  break;
+ 687   2      
+ 688   2              /*----------------------------------------------------------------------------*/
+ 689   2              /*                  state sensor prepare (0x40)   start                       */
+ 690   2              /*----------------------------------------------------------------------------*/
+ 691   2              /*------------------- stage 0 --------------------*/
+ 692   2              case (State_SensorPrepare|Event_Preview |Stage_0):
+ 693   2              case (State_SensorPrepare|Event_SnapShot|Stage_0):
+ 694   2              {
+ 695   3                  /*WORD wSettingCnt;
+ 696   3                  BYTE bSectionCnt;
+ 697   3                  WORD wSensorAddr;
+ 698   3                  BYTE xdata bTemp[32];
+ 699   3                  
+ 700   3                  SetPtrTabEx(path_SensorInit);
+ 701   3                  
+ 702   3                  wSettingCnt = 2;
+ 703   3                  while (wSettingCnt<GetTabW(0))
+ 704   3                  {
+ 705   3                      wSensorAddr = GetTabW(wSettingCnt);
+ 706   3                      wSettingCnt+=2;
+ 707   3                      
+ 708   3                      bSectionCnt = 1;
+ 709   3                      while(bSectionCnt<GetTab(wSettingCnt)) {
+ 710   3                          bTemp[bSectionCnt] = GetTab(wSettingCnt+bSectionCnt);
+ 711   3                          bSectionCnt++;
+ 712   3                      }
+ 713   3                      pfSensorI2CWriteData (wSensorAddr , bSectionCnt , bTemp );
+ 714   3                      wSettingCnt+=bSectionCnt;
+ 715   3                  }*/
+ 716   3                  xForceNextStage = TRUE;
+ 717   3                  break;
+ 718   3              }
+ 719   2              case (State_SensorPrepare|Event_Close   |Stage_0):
+ 720   2              case (State_SensorPrepare|Event_Suspend |Stage_0):
+ 721   2                  SetState(State_StreamOff);
+ 722   2                  break;
+ 723   2              
+ 724   2              /*------------------- stage 1 2--------------------*/
+ 725   2              case (State_SensorPrepare|Event_Preview |Stage_1):
+ 726   2              case (State_SensorPrepare|Event_SnapShot|Stage_1):
+ 727   2              case (State_SensorPrepare|Event_Preview |Stage_2):
+ 728   2              case (State_SensorPrepare|Event_SnapShot|Stage_2):
+ 729   2                  xForceNextStage = TRUE;
+ 730   2                  break;
+ 731   2              
+ 732   2              /*------------------- stage 3 --------------------*/
+ 733   2              case (State_SensorPrepare|Event_Preview |Stage_3):
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 13  
+
+ 734   2              case (State_SensorPrepare|Event_SnapShot|Stage_3):
+ 735   2                  xSetPropertyBackLight       = TRUE;
+ 736   2                  xSetPropertyBrightness      = TRUE;
+ 737   2                  xSetPropertyContrast        = TRUE;
+ 738   2                  xSetPropertyPwrLine         = TRUE;
+ 739   2                  xSetPropertyHue                     = TRUE;
+ 740   2                  xSetPropertySaturation      = TRUE;
+ 741   2                  xSetPropertySharpness       = TRUE;
+ 742   2                  xSetPropertyGamma           = TRUE;
+ 743   2                  xSetPropertyWBColorTemp     = TRUE;
+ 744   2                  xSetPropertyWBCTAuto        = TRUE;
+ 745   2                  xSetPropertyMirror      = TRUE;
+ 746   2                  xSetPropertyFlip        = TRUE;
+ 747   2                  
+ 748   2                  SetState(State_StreamPrepare);
+ 749   2                  break;
+ 750   2              
+ 751   2              
+ 752   2              
+ 753   2              /*----------------------------------------------------------------------------*/
+ 754   2              /*                  state stream prepare (0x60)   start                       */
+ 755   2              /*----------------------------------------------------------------------------*/
+ 756   2              
+ 757   2              /*------------------- stage 0 --------------------*/
+ 758   2              case (State_StreamPrepare|Event_Preview |Stage_0):
+ 759   2            case (State_StreamPrepare|Event_SnapShot|Stage_0):
+ 760   2            case (State_StreamPrepare|Event_Close |Stage_0):
+ 761   2            case (State_StreamPrepare|Event_Suspend|Stage_0):
+ 762   2                      //===== Load Partial FW:ISP =====//
+ 763   2                      if(bFWLoadState != FWS_END)
+ 764   2                      {       
+ 765   3                              #ifdef TestTime
+                                      SetRegBits(REG_GPIO1_DATA, GPIO7_BIT);
+                                      #endif
+ 768   3                              ReplaceFW(SEG_ISP);
+ 769   3                  ErrHandleSEGFW();
+ 770   3                      }//else 
+ 771   2                      if(isMEMReplacedEnd())
+ 772   2                      {       //load FW end
+ 773   3                              #ifdef TestTime
+                                      ClrRegBits(REG_GPIO1_DATA, GPIO7_BIT);
+                                      #endif
+ 776   3      
+ 777   3                  //Change the clock to be external clock
+ 778   3                  Reg[REG_SYNC_CTRL]= SENSOR_SOURCE_PCLK;//0x10;
+ 779   3      
+ 780   3                              if(bCtrlFlowState==(State_StreamPrepare|Event_Preview))
+ 781   3                              {
+ 782   4                                      SelecStreamDimension(StrmCurSet.wVWidth,StrmCurSet.wVHeight);
+ 783   4          
+ 784   4                                      Reg[REG_VIDEOFLAG] = 0xFF;
+ 785   4                                      Reg[REG_VIDEOFLAG_MASK] = ( SENSOR_FRAME_START|SENSOR_FRAME_END|BUFFER_OVERFLOW|BUFFER_FRAM
+             -E_END );
+ 786   4                                      xForceNextStage = TRUE;
+ 787   4      
+ 788   4                              }else if(bCtrlFlowState==(State_StreamPrepare|Event_SnapShot))
+ 789   3                              {
+ 790   4                                      SelecStreamDimension(StrmCurSet.wSWidth,StrmCurSet.wSHeight);
+ 791   4                  
+ 792   4                                      Reg[REG_VIDEOFLAG] = 0xFF;
+ 793   4                                      Reg[REG_VIDEOFLAG_MASK] = ( SENSOR_FRAME_START|SENSOR_FRAME_END|BUFFER_OVERFLOW|BUFFER_FRAM
+             -E_END );
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 14  
+
+ 794   4                                      xForceNextStage = TRUE;
+ 795   4                              }else
+ 796   3                              {  //close or suspend
+ 797   4                                       SetState(State_StreamOff);
+ 798   4                              }
+ 799   3                      }
+ 800   2                      break;
+ 801   2      #if 0                   
+                      case (State_StreamPrepare|Event_Preview |Stage_0):
+                      {
+                          // TODO: set backend dimesion
+                          SelecStreamDimension(StrmCurSet.wVWidth,StrmCurSet.wVHeight);
+                  
+                          
+                          Reg[REG_VIDEOFLAG] = 0xFF;
+                          Reg[REG_VIDEOFLAG_MASK] = ( SENSOR_FRAME_START|SENSOR_FRAME_END|BUFFER_OVERFLOW|BUFFER_FRAME_E
+             -ND );
+                          xForceNextStage = TRUE;
+                          break;
+                      }
+                      case (State_StreamPrepare|Event_SnapShot|Stage_0):
+                      {
+                      // TODO: set stream dimesion
+                          
+                          SelecStreamDimension(StrmCurSet.wSWidth,StrmCurSet.wSHeight);
+                          
+                          Reg[REG_VIDEOFLAG] = 0xFF;
+                          Reg[REG_VIDEOFLAG_MASK] = ( SENSOR_FRAME_START|SENSOR_FRAME_END|BUFFER_OVERFLOW|BUFFER_FRAME_E
+             -ND );
+                          xForceNextStage = TRUE;
+                          break;
+                      }
+                      
+                      case (State_StreamPrepare|Event_Close   |Stage_0):
+                      case (State_StreamPrepare|Event_Suspend |Stage_0):
+                          SetState(State_StreamOff);
+                          break;
+              #endif        
+ 830   2              /*------------------- stage 1 --------------------*/
+ 831   2              // TODO: set stream format
+ 832   2              case (State_StreamPrepare|Event_Preview |Stage_1):
+ 833   2                  SelecStreamFormat(StrmCurSet.bVFormat);
+ 834   2                  xForceNextStage = TRUE;
+ 835   2                  break;
+ 836   2              case (State_StreamPrepare|Event_SnapShot|Stage_1):
+ 837   2                  SelecStreamFormat(StrmCurSet.bSFormat);
+ 838   2                  xForceNextStage = TRUE;
+ 839   2                  break;
+ 840   2              
+ 841   2              /*------------------- stage 2 --------------------*/
+ 842   2              // TODO: set stream framerate
+ 843   2              case (State_StreamPrepare|Event_Preview |Stage_2):
+ 844   2              case (State_StreamPrepare|Event_SnapShot|Stage_2):
+ 845   2                  xForceNextStage = TRUE;
+ 846   2                      //===== Load Partial FW:ISP =====//
+ 847   2                      /*if(bFWLoadState != FWS_END)
+ 848   2                      {       
+ 849   2                              #ifdef TestTime
+ 850   2                              SetRegBits(REG_GPIO1_DATA, GPIO7_BIT);
+ 851   2                              #endif
+ 852   2                              ReplaceFW(SEG_ISP);
+ 853   2                  ErrHandleSEGFW();
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 15  
+
+ 854   2                      }else if(isMEMReplacedEnd())
+ 855   2                      {       //load FW end
+ 856   2                              #ifdef TestTime
+ 857   2                              ClrRegBits(REG_GPIO1_DATA, GPIO7_BIT);
+ 858   2                              #endif
+ 859   2                              
+ 860   2                              xForceNextStage = TRUE;
+ 861   2                      }*/
+ 862   2                  break;
+ 863   2              
+ 864   2              /*------------------- stage 3 --------------------*/
+ 865   2              // TODO: set buffer/still on
+ 866   2              case (State_StreamPrepare|Event_Preview |Stage_3):
+ 867   2                  /* while using JPG mode, we will force RtlQgain to manula mode.
+ 868   2                     Clear the manual mode before buffer on 
+ 869   2                     Mush, 2008,12,05*/
+ 870   2                  /*if ((Reg[REG_JQ_GAIN]) & GAIN_MANUAL_ADJUST) {
+ 871   2                      ClrRegBits(REG_JQ_GAIN,GAIN_MANUAL_ADJUST);
+ 872   2                  }*/
+ 873   2                  // Clear Frame Error Bit before push video buffer
+ 874   2                  // Set alt0 will set frame error bit. It will prevent uncomplete still image issue
+ 875   2                  // Lear, 2008,12,08
+ 876   2                  ClrRegBits(REG_ISO_IN1_HEADER, FRAME_ERROR_BIT);
+ 877   2      
+ 878   2                  // 2008,11,26 Lear Hsieh
+ 879   2                  // NOTE NOTE NOTE
+ 880   2                  // In Armani, PUSH_VIDEO_BUF should "OR" BUF_RESET bit
+ 881   2                  // This programming sequence is difference with CK
+ 882   2                  SetRegBits(REG_DOS, PUSH_VIDEO_BUF);
+ 883   2                  // Clear Privacy control flag
+ 884   2      
+ 885   2      
+ 886   2                      xPrivacyControl = FALSE;
+ 887   2      
+ 888   2      
+ 889   2                              // NOTE NOTE NOTE
+ 890   2                  //In theoretically, a frame time will be waited by external code
+ 891   2                    // jpeg enable after a frame time from format be set
+ 892   2                    //2009/06/06
+ 893   2                      //if (StrmCurSet.bVFormat == FMT_MJPEG) 
+ 894   2                      //      Reg[REG_JPEG_CTRL] = JPEG_ENABLE;
+ 895   2                      
+ 896   2                  SetState(State_StreamReady);
+ 897   2                  break;
+ 898   2              case (State_StreamPrepare|Event_SnapShot|Stage_3):
+ 899   2                  /* while using JPG mode, we will force RtlQgain to manula mode.
+ 900   2                     Clear the manual mode before buffer on 
+ 901   2                     Mush, 2008,12,05*/
+ 902   2                  /*if ((Reg[REG_JQ_GAIN]) & GAIN_MANUAL_ADJUST) {
+ 903   2                      ClrRegBits(REG_JQ_GAIN,GAIN_MANUAL_ADJUST);
+ 904   2                  }*/
+ 905   2                      
+ 906   2                  // Clear Frame Error Bit before push video buffer
+ 907   2                  // Set alt0 will set frame error bit. It will prevent uncomplete still image issue
+ 908   2                  // Lear, 2008,12,08
+ 909   2                 // P1=Reg[0x65];
+ 910   2                  ClrRegBits(REG_ISO_IN1_HEADER, FRAME_ERROR_BIT);
+ 911   2                  SetRegBits(REG_ISO_IN1_HEADER, STILL_IMG_BIT);
+ 912   2      
+ 913   2                      //In theoretically, a frame time will be waited by external code
+ 914   2                    // jpeg enable after a frame time from format be set
+ 915   2                    //2009/06/06
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 16  
+
+ 916   2                      //if (StrmCurSet.bSFormat == FMT_MJPEG) 
+ 917   2                      //      Reg[REG_JPEG_CTRL] = JPEG_ENABLE;
+ 918   2                  SetStateAndEvent(State_StreamOff|Event_Preview);
+ 919   2      
+ 920   2                  break;
+ 921   2              /*----------------------------------------------------------------------------*/
+ 922   2              /*                  state stream prepare (0x60)    end                        */
+ 923   2              /*----------------------------------------------------------------------------*/
+ 924   2      
+ 925   2      
+ 926   2      
+ 927   2      
+ 928   2              /*----------------------------------------------------------------------------*/
+ 929   2              /*                  state stream ready (0x80)   start                         */
+ 930   2              /*----------------------------------------------------------------------------*/
+ 931   2              
+ 932   2              /*------------------- stage 0 --------------------*/
+ 933   2              case (State_StreamReady|Event_Preview |Stage_0):
+ 934   2                  break;
+ 935   2              
+ 936   2              case (State_StreamReady|Event_SnapShot|Stage_0):
+ 937   2                  break;
+ 938   2                  
+ 939   2              case (State_StreamReady|Event_Close   |Stage_0):
+ 940   2              case (State_StreamReady|Event_Suspend |Stage_0):
+ 941   2                  SetState(State_StreamOff);
+ 942   2                  break;
+ 943   2          
+ 944   2                  
+ 945   2              /*----------------------------------------------------------------------------*/
+ 946   2              /*                  state stream off (0xA0)    start                          */
+ 947   2              /*----------------------------------------------------------------------------*/
+ 948   2              
+ 949   2              /*------------------- stage 0 --------------------*/
+ 950   2              case (State_StreamOff|Event_Preview |Stage_0):
+ 951   2               //Patch StillIssue. Eric Added 20100312
+ 952   2              if(xStillIssue)
+ 953   2              {               
+ 954   3                      if((Reg[REG_ISO_IN1_PL_HI]==0x00)&&(Reg[REG_ISO_IN1_PL_LO]==0x00))
+ 955   3                      {       
+ 956   4                              if((Reg[REG_EP_NAK_STATUS]&EP2DAT0)&&xFrameStart)  //check EP2 In
+ 957   4                              {
+ 958   5                                      //if(xFrameStart)//Check frame Start
+ 959   5                                      {
+ 960   6                                              ClrRegBits(REG_END_P2_EN, ACTIVE); 
+ 961   6                                              Reg[REG_ISO_IN1_PL_LO]=LoByteOfWord(wDumpTrigger);
+ 962   6                                                      Reg[REG_ISO_IN1_PL_HI]=HiByteOfWord(wDumpTrigger);
+ 963   6                                                      SetRegBits(REG_END_P2_EN, ACTIVE);                        
+ 964   6                                      }       
+ 965   5                              }
+ 966   4                      }else
+ 967   3                      {
+ 968   4                              if(!Reg[REG_ISO_IN1_HEADER]&STILL_IMG_BIT)
+ 969   4                              {
+ 970   5                                      xStillIssue=FALSE;
+ 971   5                              }       
+ 972   4                      }                                                       
+ 973   3                      
+ 974   3                      if(xStillIssue)
+ 975   3                              break;
+ 976   3              }           
+ 977   2              case (State_StreamOff|Event_SnapShot|Stage_0):
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 17  
+
+ 978   2              case (State_StreamOff|Event_Close   |Stage_0):
+ 979   2              case (State_StreamOff|Event_Suspend |Stage_0):
+ 980   2                      
+ 981   2                  // close buffer
+ 982   2                  ClrRegBits(REG_DOS,PUSH_VIDEO_BUF);
+ 983   2      
+ 984   2                  //clear property control
+ 985   2                  bSetProperty1 = 0x00;
+ 986   2                  bSetProperty2 = 0x00;
+ 987   2      
+ 988   2                  //clear all frame flag
+ 989   2                  bFrameFlag  = 0x00;
+ 990   2                  
+ 991   2                  //  clear interrupt state
+ 992   2                  Reg[REG_VIDEOFLAG_MASK]=0x00;
+ 993   2                  Reg[REG_VIDEOFLAG]=0xFF;
+ 994   2                  
+ 995   2                  xForceNextStage = TRUE;
+ 996   2                  break;
+ 997   2              
+ 998   2              /*------------------- stage 1 --------------------*/
+ 999   2              case (State_StreamOff|Event_Preview |Stage_1):
+1000   2              case (State_StreamOff|Event_SnapShot|Stage_1):
+1001   2              case (State_StreamOff|Event_Close   |Stage_1):
+1002   2              case (State_StreamOff|Event_Suspend |Stage_1):
+1003   2                      //===== Load Partial FW:StandBy =====//
+1004   2                      if(bFWLoadState != FWS_END)
+1005   2                      {       
+1006   3                              ReplaceFW(SEG_STANDBY);
+1007   3                  ErrHandleSEGFW();
+1008   3                      }//else 
+1009   2                      if(isMEMReplacedEnd())
+1010   2                      {       //load FW end           
+1011   3                      
+1012   3                          //wait buffer cleared
+1013   3                          //UARTString("OFF1");
+1014   3                              //UARTByte2Hex(Reg[REG_DOS]);
+1015   3                          if ( (!(Reg[REG_DOS]&PUSH_VIDEO_BUF)) && (!(Reg[REG_ISO_IN1_HEADER]&STILL_IMG_BIT)) )
+1016   3                          {
+1017   4                              //reset clock setting
+1018   4                              //Reg[REG_MCLK_SEL]= MCLK_BASE_24M;
+1019   4                              Reg[REG_PCLK_DIV]= PCLK_BASE_24M;
+1020   4                              Reg[REG_SYNC_CTRL]= SENSOR_SOURCE_PCLK;//0x10;
+1021   4      
+1022   4                                 //Clear ScaleUp Control
+1023   4                                 Reg[REG_SCALUP_CTRL]=0x00;  //For Scale up function
+1024   4                                 if(! bDMICAltSetting)
+1025   4                         { Reg[REG_DYN_CLK_CTL] |= ISP_CLOCK_OFF_EN;
+1026   5                         }
+1027   4      
+1028   4                              //reset data flow
+1029   4                              Reg[REG_SIZE_CTRL]= 0x00;
+1030   4                              //disable jpg
+1031   4                              Reg[REG_JPEG_CTRL] = 0x00;
+1032   4                              xForceNextStage = TRUE;
+1033   4                          }
+1034   3                      }       
+1035   2                  break;
+1036   2              
+1037   2              
+1038   2              /*------------------- stage 2 --------------------*/
+1039   2              case (State_StreamOff|Event_Preview |Stage_2):
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 18  
+
+1040   2              case (State_StreamOff|Event_SnapShot|Stage_2):
+1041   2              case (State_StreamOff|Event_Close   |Stage_2):
+1042   2              case (State_StreamOff|Event_Suspend |Stage_2):
+1043   2                  xForceNextStage = TRUE;
+1044   2                  break;
+1045   2                  
+1046   2              /*------------------- stage 3 --------------------*/
+1047   2              case (State_StreamOff|Event_Preview |Stage_3):
+1048   2              case (State_StreamOff|Event_SnapShot|Stage_3):
+1049   2                  SetState(State_BackendPrepare);
+1050   2                  break;
+1051   2              case (State_StreamOff|Event_Close   |Stage_3):
+1052   2              case (State_StreamOff|Event_Suspend |Stage_3):
+1053   2                  SetState(State_SensorOff);
+1054   2                  break;
+1055   2              /*----------------------------------------------------------------------------*/
+1056   2              /*                  state stream off (0xA0)     end                           */
+1057   2              /*----------------------------------------------------------------------------*/
+1058   2      
+1059   2      
+1060   2      
+1061   2                  
+1062   2              /*----------------------------------------------------------------------------*/
+1063   2              /*                    state sensor off (0xC0)   start                         */
+1064   2              /*----------------------------------------------------------------------------*/
+1065   2              
+1066   2              /*------------------- stage 0 --------------------*/
+1067   2              case (State_SensorOff|Event_Preview |Stage_0):
+1068   2              case (State_SensorOff|Event_SnapShot|Stage_0):
+1069   2              case (State_SensorOff|Event_Close   |Stage_0):
+1070   2              case (State_SensorOff|Event_Suspend |Stage_0):
+1071   2                  //Patch suspend current,Eric 20100331
+1072   2                  Reg[REG_SYNC_CTRL]&= (~SENSOR_SOURCE_PCLK);
+1073   2                  xForceNextStage = TRUE;
+1074   2                  break;
+1075   2              
+1076   2              /*------------------- stage 1 --------------------*/
+1077   2              case (State_SensorOff|Event_Preview |Stage_1):
+1078   2              case (State_SensorOff|Event_SnapShot|Stage_1):
+1079   2              case (State_SensorOff|Event_Close   |Stage_1):
+1080   2              case (State_SensorOff|Event_Suspend |Stage_1):
+1081   2                  xForceNextStage = TRUE;
+1082   2                  break;
+1083   2              
+1084   2              /*------------------- stage 2 --------------------*/
+1085   2              case (State_SensorOff|Event_Preview |Stage_2):
+1086   2              case (State_SensorOff|Event_SnapShot|Stage_2):
+1087   2              case (State_SensorOff|Event_Close   |Stage_2):
+1088   2              case (State_SensorOff|Event_Suspend |Stage_2):
+1089   2                  Reg[REG_ISP_INSIZEWIDTHL]  = 0x00;
+1090   2                  Reg[REG_ISP_INSIZEWIDTHH]  = 0x00;
+1091   2                  Reg[REG_ISP_INSIZEHEIGHTL] = 0x00;
+1092   2                  Reg[REG_ISP_INSIZEHEIGHTH] = 0x00;
+1093   2                  xForceNextStage = TRUE;
+1094   2                  break;
+1095   2              
+1096   2              /*------------------- stage 3 --------------------*/
+1097   2              case (State_SensorOff|Event_Preview |Stage_3):
+1098   2              case (State_SensorOff|Event_SnapShot|Stage_3):
+1099   2                  SetState(State_DeviceStandBy);
+1100   2                  break;
+1101   2              
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 19  
+
+1102   2              case (State_SensorOff|Event_Close   |Stage_3):
+1103   2                  SetEvent(Event_None);
+1104   2              case (State_SensorOff|Event_Suspend |Stage_3):
+1105   2                      //UARTString("Clk Off");
+1106   2                  Reg[REG_SENSOR_CTRL] = (STOP_PCLK|STOP_MCLK|STOP_ISP_CLK|STOP_JPEG_CLK);
+1107   2                  Reg[REG_SENPINPD] = (SEN_DATA_PD|SEN_HSYNC_PD|SEN_VSYNC_PD|SEN_CLK_PD);
+1108   2                  ////Patch suspend current,Eric 20100331
+1109   2                  Reg[0x560]=0x03;  //Close LDO
+1110   2                  if(Reg[REG_XCVR_ST] & HIGH_SPEED_MODE){
+1111   3                      // Enable power saving after set address
+1112   3                      // To prevent host-device hand shacking unexpected result
+1113   3                      // ture on USB clock off should be set after HOST-DEVICE handshack
+1114   3                      // Hardware only support this functin in high speed mode
+1115   3                      if(!bDMICAltSetting)   //avoid audio in run 
+1116   3                          SetRegBits(USB_CLK_CTL, ENABLE_USB_CLK_OFF); // for power saving
+1117   3                  }  
+1118   2                      
+1119   2                  SetState(State_DeviceStandBy);
+1120   2                  break;
+1121   2              
+1122   2              /*----------------------------------------------------------------------------*/
+1123   2              /*                    state sensor off (0xC0)    end                          */
+1124   2              /*----------------------------------------------------------------------------*/
+1125   2              default :
+1126   2                  break;
+1127   2          }
+1128   1              
+1129   1      }
+1130          void SelecStreamDimension(WORD wIncomingWidth,WORD wIncomingHeight)
+1131          {
+1132   1          WORD idata HStart;
+1133   1          WORD idata VStart;
+1134   1          
+1135   1      
+1136   1          //input image size  from Sensor
+1137   1          Reg[REG_ISP_INSIZEWIDTHL]  = LoByteOfWord(InputSize.wInputWidth);
+1138   1          Reg[REG_ISP_INSIZEWIDTHH]  = HiByteOfWord(InputSize.wInputWidth);
+1139   1          Reg[REG_ISP_INSIZEHEIGHTL] = LoByteOfWord(InputSize.wInputHeight);
+1140   1          Reg[REG_ISP_INSIZEHEIGHTH] = HiByteOfWord(InputSize.wInputHeight);
+1141   1          /**/
+1142   1          /*
+1143   1              VStart = HiByteOfWord(InputSize.wInputHeight);
+1144   1              VStart = VStart & 0x0f;
+1145   1              // HStart for temporary usage
+1146   1              HStart = HiByteOfWord(InputSize.wInputWidth);
+1147   1              HStart = HStart << 4;
+1148   1              HStart = HStart | VStart;
+1149   1              Reg[REG_ISP_INSIZEWIDTHL]  = LoByteOfWord(InputSize.wInputWidth);
+1150   1              Reg[REG_ISP_INSIZEWIDTHH]  = HStart;
+1151   1              Reg[REG_ISP_INSIZEHEIGHTL] = LoByteOfWord(InputSize.wInputHeight);
+1152   1          /**/
+1153   1              //SetRegBits(REG_GPIO1_DATA, GPIO6_BIT);
+1154   1              
+1155   1          HStart = ((InputSize.wInputWidth-InputSize.wResizeWidth)>>1);
+1156   1          VStart = ((InputSize.wInputHeight-InputSize.wResizeHeight)>>1);
+1157   1              //shift length
+1158   1          Reg[Reg_RESIZE_HSTARTL] = LoByteOfWord(HStart);
+1159   1          Reg[Reg_RESIZE_HSTARTH] = HiByteOfWord(HStart);
+1160   1          Reg[Reg_RESIZE_VSTARTL] = LoByteOfWord(VStart);
+1161   1          Reg[Reg_RESIZE_VSTARTH] = HiByteOfWord(VStart);
+1162   1      
+1163   1              // output size after subsampling
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 20  
+
+1164   1          Reg[Reg_RESIZE_HSIZEL] = LoByteOfWord(InputSize.wResizeWidth); 
+1165   1          Reg[Reg_RESIZE_HSIZEH] = HiByteOfWord(InputSize.wResizeWidth); 
+1166   1          Reg[Reg_RESIZE_VSIZEL] = LoByteOfWord(InputSize.wResizeHeight);
+1167   1          Reg[Reg_RESIZE_VSIZEH] = HiByteOfWord(InputSize.wResizeHeight);
+1168   1      
+1169   1         if(xEnableScaleUp==TRUE)
+1170   1         {
+1171   2              wIncomingWidth=wIncomingWidth>>1;
+1172   2              wIncomingHeight=wIncomingHeight>>1;     
+1173   2         }
+1174   1      
+1175   1         // PC Host want size 
+1176   1          Reg[Reg_OUTPUT_HSIZEL] = LoByteOfWord(wIncomingWidth);
+1177   1          Reg[Reg_OUTPUT_HSIZEH] = HiByteOfWord(wIncomingWidth);
+1178   1          Reg[Reg_OUTPUT_VSIZEL] = LoByteOfWord(wIncomingHeight);
+1179   1          Reg[Reg_OUTPUT_VSIZEH] = HiByteOfWord(wIncomingHeight);
+1180   1      
+1181   1         
+1182   1              //ClrRegBits(REG_GPIO1_DATA, GPIO6_BIT);
+1183   1      }
+1184          void SelecStreamFormat(BYTE bIncomingFormat)
+1185          {
+1186   1          if (bIncomingFormat == FMT_YUY2) {
+1187   2              if (xInDataBayerMode) {
+1188   3                  Reg[REG_DATAFORMAT] = DS_B2YUV;
+1189   3              } else {
+1190   3                  Reg[REG_DATAFORMAT] = DS_YUV2YUV;
+1191   3                 Reg[REG_SIZE_CTRL] = ISPYUV;
+1192   3              }
+1193   2              SetRegBits(REG_SENSOR_CTRL,STOP_JPEG_CLK);
+1194   2              Reg[REG_ISP_MISCCTRL] &= (~JPEG_YUV);
+1195   2          } else if (bIncomingFormat == FMT_MJPEG) {
+1196   2              if (xInDataBayerMode) {
+1197   3                  Reg[REG_DATAFORMAT] = DS_B2YUV2JPEG;
+1198   3              } else {
+1199   3                  Reg[REG_DATAFORMAT] = DS_YUV2JPEG;
+1200   3                  Reg[REG_SIZE_CTRL] = ISPYUV;
+1201   3              }
+1202   2      
+1203   2              //Only Preview need this action for good presence
+1204   2              //Marked in 2009/06/06
+1205   2              /*
+1206   2              if (xHighSpdMode) {
+1207   2                    Reg[REG_JQ_GAIN] = (QG_2QX|GAIN_MANUAL_ADJUST);
+1208   2              } else {
+1209   2                    Reg[REG_JQ_GAIN] = (QG_1X|GAIN_MANUAL_ADJUST);
+1210   2              }*/     
+1211   2              
+1212   2              
+1213   2              WriteReg(REG_QGAIN_DCMAX,0x0A);
+1214   2              WriteReg(REG_QGAIN_CTRL, 0x33);
+1215   2      
+1216   2               //Need a frame time to enable after REG_DATAFORMAT set
+1217   2               //Marked in 2009/06/06
+1218   2              //Reg[REG_JPEG_CTRL] = JPEG_ENABLE;
+1219   2             if(xBDGP16==0) //bonding for supporting MJ 
+1220   2                  SetRegBits(REG_JPEG_CTRL, JPEG_ENABLE);  
+1221   2             Reg[REG_ISP_MISCCTRL] |= (JPEG_YUV);
+1222   2          }
+1223   1      }
+1224          
+1225          void ScaleUpSetting(BYTE bIncomingFormat)
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 21  
+
+1226          {
+1227   1               if (bIncomingFormat == FMT_YUY2) 
+1228   1               {      
+1229   2              if(! bDMICAltSetting)
+1230   2              { Reg[REG_DYN_CLK_CTL] &= ~ISP_CLOCK_OFF_EN;
+1231   3              }    
+1232   2              //Set Master Clock
+1233   2                      //WriteReg(REG_MCLK_SEL, MCLK_PCLK_X2); 
+1234   2      
+1235   2                      //Set Pixel Clock
+1236   2                      Reg[REG_PCLK_DIV]=bClkForScaleUp;
+1237   2      
+1238   2                      //Set Scale up clock (pixel clock x4)
+1239   2                      WriteReg(REG_SCALUP_CTRL, PCLKX4_60M|YUV_SCALUP);
+1240   2      
+1241   2                      //Enable
+1242   2                      //SetRegBits(REG_SCALUP_CTRL, YUV_SCALUP); 
+1243   2      
+1244   2                   //patch HW scaleup clock issue
+1245   2                   Reg[REG_DYN_CLK_CTL] &= ~ISP_CLOCK_OFF_EN;
+1246   2      
+1247   2                      
+1248   2               }else if(bIncomingFormat == FMT_MJPEG) 
+1249   1               {        //Set Master Clock
+1250   2                      //WriteReg(REG_MCLK_SEL, MCLK_PCLK_X2);
+1251   2      
+1252   2                      //Set Pixel Clock
+1253   2                      Reg[REG_PCLK_DIV]=bClkForScaleUp;
+1254   2      
+1255   2                      //Set Scale up clock
+1256   2                      WriteReg(REG_SCALUP_CTRL, PCLKX4_60M);
+1257   2      
+1258   2                      //Enable
+1259   2                      SetRegBits(REG_JPEG_CTRL, JPEG_SCALUP);
+1260   2              
+1261   2                   //patch HW scaleup clock issue
+1262   2                   Reg[REG_DYN_CLK_CTL] |= ISP_CLOCK_OFF_EN;
+1263   2               }
+1264   1      }
+1265          
+1266          #endif  //  #ifndef    __dispatcher_c__
+1267          
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 22  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION SetIntefaceFunc (BEGIN)
+                                           ; SOURCE LINE # 43
+                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 45
+0000 900B14            MOV     DPTR,#pfIspSetPropertyBrightness
+0003 7400        E     MOV     A,#HIGH IspSetPropertyBrightness
+0005 F0                MOVX    @DPTR,A
+0006 A3                INC     DPTR
+0007 7400        E     MOV     A,#LOW IspSetPropertyBrightness
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 46
+000A A3                INC     DPTR
+000B 7400        E     MOV     A,#HIGH IspSetPropertyContrast
+000D F0                MOVX    @DPTR,A
+000E A3                INC     DPTR
+000F 7400        E     MOV     A,#LOW IspSetPropertyContrast
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 47
+0012 A3                INC     DPTR
+0013 7400        E     MOV     A,#HIGH IspSetPropertyHue
+0015 F0                MOVX    @DPTR,A
+0016 A3                INC     DPTR
+0017 7400        E     MOV     A,#LOW IspSetPropertyHue
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 48
+001A A3                INC     DPTR
+001B 7400        E     MOV     A,#HIGH IspSetPropertySaturation
+001D F0                MOVX    @DPTR,A
+001E A3                INC     DPTR
+001F 7400        E     MOV     A,#LOW IspSetPropertySaturation
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 50
+0022 A3                INC     DPTR
+0023 7400        E     MOV     A,#HIGH IspSetPropertyGamma
+0025 F0                MOVX    @DPTR,A
+0026 A3                INC     DPTR
+0027 7400        E     MOV     A,#LOW IspSetPropertyGamma
+0029 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 60
+002A A3                INC     DPTR
+002B 7400        E     MOV     A,#HIGH _SetPtrTabEx
+002D F0                MOVX    @DPTR,A
+002E A3                INC     DPTR
+002F 7400        E     MOV     A,#LOW _SetPtrTabEx
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 61
+0032 A3                INC     DPTR
+0033 7400        E     MOV     A,#HIGH _GetTab
+0035 F0                MOVX    @DPTR,A
+0036 A3                INC     DPTR
+0037 7400        E     MOV     A,#LOW _GetTab
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 62
+003A A3                INC     DPTR
+003B 7400        E     MOV     A,#HIGH _GetTabW
+003D F0                MOVX    @DPTR,A
+003E A3                INC     DPTR
+003F 7400        E     MOV     A,#LOW _GetTabW
+0041 F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 23  
+
+                                           ; SOURCE LINE # 63
+0042 A3                INC     DPTR
+0043 7400        E     MOV     A,#HIGH _Delay1MS
+0045 F0                MOVX    @DPTR,A
+0046 A3                INC     DPTR
+0047 7400        E     MOV     A,#LOW _Delay1MS
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 64
+004A A3                INC     DPTR
+004B 7400        E     MOV     A,#HIGH _Delay10US
+004D F0                MOVX    @DPTR,A
+004E A3                INC     DPTR
+004F 7400        E     MOV     A,#LOW _Delay10US
+0051 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 65
+0052 A3                INC     DPTR
+0053 7400        E     MOV     A,#HIGH _UartByte2Hex
+0055 F0                MOVX    @DPTR,A
+0056 A3                INC     DPTR
+0057 7400        E     MOV     A,#LOW _UartByte2Hex
+0059 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 66
+005A A3                INC     DPTR
+005B 7400        E     MOV     A,#HIGH _UartWord2Hex
+005D F0                MOVX    @DPTR,A
+005E A3                INC     DPTR
+005F 7400        E     MOV     A,#LOW _UartWord2Hex
+0061 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 67
+0062 A3                INC     DPTR
+0063 7400        E     MOV     A,#HIGH _UartString
+0065 F0                MOVX    @DPTR,A
+0066 A3                INC     DPTR
+0067 7400        E     MOV     A,#LOW _UartString
+0069 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 68
+006A A3                INC     DPTR
+006B 7400        E     MOV     A,#HIGH _SetupAsyncTimer
+006D F0                MOVX    @DPTR,A
+006E A3                INC     DPTR
+006F 7400        E     MOV     A,#LOW _SetupAsyncTimer
+0071 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+0072 A3                INC     DPTR
+0073 7400        E     MOV     A,#HIGH IsAsyncTimeOut
+0075 F0                MOVX    @DPTR,A
+0076 A3                INC     DPTR
+0077 7400        E     MOV     A,#LOW IsAsyncTimeOut
+0079 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 70
+007A A3                INC     DPTR
+007B 7400        E     MOV     A,#HIGH _HardwareInit
+007D F0                MOVX    @DPTR,A
+007E A3                INC     DPTR
+007F 7400        E     MOV     A,#LOW _HardwareInit
+0081 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 72
+0082 900B36            MOV     DPTR,#_pfSensorI2CReadData
+0085 7400        E     MOV     A,#HIGH _SensorI2CReadData
+0087 F0                MOVX    @DPTR,A
+0088 A3                INC     DPTR
+0089 7400        E     MOV     A,#LOW _SensorI2CReadData
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 24  
+
+008B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+008C A3                INC     DPTR
+008D 7400        E     MOV     A,#HIGH _SensorI2CWriteData
+008F F0                MOVX    @DPTR,A
+0090 A3                INC     DPTR
+0091 7400        E     MOV     A,#LOW _SensorI2CWriteData
+0093 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 75
+0094 900B40            MOV     DPTR,#pfExSetUpHookFunc
+0097 7400        E     MOV     A,#HIGH ExSetupHookFunc
+0099 F0                MOVX    @DPTR,A
+009A A3                INC     DPTR
+009B 7400        E     MOV     A,#LOW ExSetupHookFunc
+009D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 76
+009E A3                INC     DPTR
+009F 7400        E     MOV     A,#HIGH ExMainHookFunc
+00A1 F0                MOVX    @DPTR,A
+00A2 A3                INC     DPTR
+00A3 7400        E     MOV     A,#LOW ExMainHookFunc
+00A5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 78
+00A6 900B4A            MOV     DPTR,#_pfAddDesc
+00A9 7400        E     MOV     A,#HIGH _AddDesc
+00AB F0                MOVX    @DPTR,A
+00AC A3                INC     DPTR
+00AD 7400        E     MOV     A,#LOW _AddDesc
+00AF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 79
+00B0 A3                INC     DPTR
+00B1 7400        E     MOV     A,#HIGH ExDeepSetupHook
+00B3 F0                MOVX    @DPTR,A
+00B4 A3                INC     DPTR
+00B5 7400        E     MOV     A,#LOW ExDeepSetupHook
+00B7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 80
+00B8 A3                INC     DPTR
+00B9 7400        E     MOV     A,#HIGH HookGetStringDesc
+00BB F0                MOVX    @DPTR,A
+00BC A3                INC     DPTR
+00BD 7400        E     MOV     A,#LOW HookGetStringDesc
+00BF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 82
+00C0 900B44            MOV     DPTR,#pfISROfTime1
+00C3 7400        E     MOV     A,#HIGH ISROfTime1
+00C5 F0                MOVX    @DPTR,A
+00C6 A3                INC     DPTR
+00C7 7400        E     MOV     A,#LOW ISROfTime1
+00C9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 84
+00CA 900B48            MOV     DPTR,#_pfI2CEEPROMReadData
+00CD 7400        E     MOV     A,#HIGH _I2CEEPROMReadData
+00CF F0                MOVX    @DPTR,A
+00D0 A3                INC     DPTR
+00D1 7400        E     MOV     A,#LOW _I2CEEPROMReadData
+00D3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 85
+00D4 900B46            MOV     DPTR,#_pfI2CEEPROMWriteData
+00D7 7400        E     MOV     A,#HIGH _I2CEEPROMWriteData
+00D9 F0                MOVX    @DPTR,A
+00DA A3                INC     DPTR
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 25  
+
+00DB 7400        E     MOV     A,#LOW _I2CEEPROMWriteData
+00DD F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 88
+00DE 120000      E     LCALL   MainFP2Dummy
+                                           ; SOURCE LINE # 97
+00E1 7E00        E     MOV     R6,#HIGH ExMainHookFunc
+00E3 7F00        E     MOV     R7,#LOW ExMainHookFunc
+00E5 900B50            MOV     DPTR,#pfUSBHIDClassCtrl
+00E8 EE                MOV     A,R6
+00E9 F0                MOVX    @DPTR,A
+00EA A3                INC     DPTR
+00EB EF                MOV     A,R7
+00EC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 98
+00ED A3                INC     DPTR
+00EE 7400        E     MOV     A,#HIGH DummyHIDStandCtrl
+00F0 F0                MOVX    @DPTR,A
+00F1 A3                INC     DPTR
+00F2 7400        E     MOV     A,#LOW DummyHIDStandCtrl
+00F4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 99
+00F5 7C00        E     MOV     R4,#HIGH ExDeepSetupHook
+00F7 7D00        E     MOV     R5,#LOW ExDeepSetupHook
+00F9 A3                INC     DPTR
+00FA EC                MOV     A,R4
+00FB F0                MOVX    @DPTR,A
+00FC A3                INC     DPTR
+00FD ED                MOV     A,R5
+00FE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 100
+00FF A3                INC     DPTR
+0100 EE                MOV     A,R6
+0101 F0                MOVX    @DPTR,A
+0102 A3                INC     DPTR
+0103 EF                MOV     A,R7
+0104 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+0105 A3                INC     DPTR
+0106 EC                MOV     A,R4
+0107 F0                MOVX    @DPTR,A
+0108 A3                INC     DPTR
+0109 ED                MOV     A,R5
+010A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 104
+010B A3                INC     DPTR
+010C EC                MOV     A,R4
+010D F0                MOVX    @DPTR,A
+010E A3                INC     DPTR
+010F ED                MOV     A,R5
+0110 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 105
+0111 A3                INC     DPTR
+0112 EC                MOV     A,R4
+0113 F0                MOVX    @DPTR,A
+0114 A3                INC     DPTR
+0115 ED                MOV     A,R5
+0116 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 108
+0117 A3                INC     DPTR
+0118 7400        R     MOV     A,#HIGH _ScaleUpSetting
+011A F0                MOVX    @DPTR,A
+011B A3                INC     DPTR
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 26  
+
+011C 7400        R     MOV     A,#LOW _ScaleUpSetting
+011E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+011F 22                RET     
+             ; FUNCTION SetIntefaceFunc (END)
+
+             ; FUNCTION PrivacyCtrlTrigger (BEGIN)
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 114
+0000 9009E7            MOV     DPTR,#bPrivacyCtrlGPIO
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900020            MOV     DPTR,#020H
+0008 E0                MOVX    A,@DPTR
+0009 5F                ANL     A,R7
+000A 6003              JZ      ?C0003
+000C D3                SETB    C
+000D 8001              SJMP    ?C0004
+000F         ?C0003:
+000F C3                CLR     C
+0010         ?C0004:
+0010 301C01            JNB     xPrivBtnState,?C0197
+0013 B3                CPL     C
+0014         ?C0197:
+0014 502A              JNC     ?C0002
+                                           ; SOURCE LINE # 115
+0016 900841            MOV     DPTR,#bSusPrivTrigCnt
+0019 E0                MOVX    A,@DPTR
+001A 04                INC     A
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 116
+001C E0                MOVX    A,@DPTR
+001D 9406              SUBB    A,#06H
+001F 4024              JC      ?C0009
+                                           ; SOURCE LINE # 118
+0021 A21C              MOV     C,xPrivBtnState
+0023 301D01            JNB     xPrivActive,?C0198
+0026 B3                CPL     C
+0027         ?C0198:
+0027 4007              JC      ?C0006
+                                           ; SOURCE LINE # 119
+0029 A21D              MOV     C,xPrivActive
+002B B3                CPL     C
+002C 921C              MOV     xPrivBtnState,C
+                                           ; SOURCE LINE # 120
+002E 8004              SJMP    ?C0007
+0030         ?C0006:
+                                           ; SOURCE LINE # 121
+0030 A21D              MOV     C,xPrivActive
+0032 921C              MOV     xPrivBtnState,C
+                                           ; SOURCE LINE # 122
+0034         ?C0007:
+                                           ; SOURCE LINE # 123
+0034 A21C              MOV     C,xPrivBtnState
+0036 301D01            JNB     xPrivActive,?C0199
+0039 B3                CPL     C
+003A         ?C0199:
+003A 4004              JC      ?C0202
+                                           ; SOURCE LINE # 124
+003C D21E              SETB    xPrivBtnToggle
+                                           ; SOURCE LINE # 125
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 27  
+
+003E         ?C0008:
+                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 128
+                                           ; SOURCE LINE # 129
+003E 8000              SJMP    ?C0202
+0040         ?C0002:
+                                           ; SOURCE LINE # 130
+0040         ?C0202:
+0040 E4                CLR     A
+0041 900841            MOV     DPTR,#bSusPrivTrigCnt
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 131
+0045         ?C0009:
+                                           ; SOURCE LINE # 132
+0045 301E16            JNB     xPrivBtnToggle,?C0012
+                                           ; SOURCE LINE # 133
+0048 301F05            JNB     xGPIO5BtnSupport,?C0011
+                                           ; SOURCE LINE # 135
+004B D217              SETB    xGPIO5BtnTriger
+                                           ; SOURCE LINE # 136
+004D C21E              CLR     xPrivBtnToggle
+004F 22                RET     
+                                           ; SOURCE LINE # 138
+0050         ?C0011:
+                                           ; SOURCE LINE # 139
+0050 201B04            JB      xPrivacyControl,?C0013
+                                           ; SOURCE LINE # 141
+0053 D21B              SETB    xPrivacyControl
+                                           ; SOURCE LINE # 142
+                                           ; SOURCE LINE # 143
+0055 8002              SJMP    ?C0203
+0057         ?C0013:
+                                           ; SOURCE LINE # 145
+0057 C21B              CLR     xPrivacyControl
+                                           ; SOURCE LINE # 146
+0059         ?C0203:
+0059 120000      E     LCALL   PrivacyCtrlInterrupt
+                                           ; SOURCE LINE # 147
+005C         ?C0014:
+                                           ; SOURCE LINE # 148
+005C C21E              CLR     xPrivBtnToggle
+                                           ; SOURCE LINE # 149
+                                           ; SOURCE LINE # 150
+005E         ?C0012:
+005E 22                RET     
+             ; FUNCTION PrivacyCtrlTrigger (END)
+
+             ; FUNCTION main (BEGIN)
+                                           ; SOURCE LINE # 154
+                                           ; SOURCE LINE # 155
+                                           ; SOURCE LINE # 157
+0000 900015            MOV     DPTR,#015H
+0003 E0                MOVX    A,@DPTR
+0004 4401              ORL     A,#01H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 160
+0007 900026            MOV     DPTR,#026H
+000A E0                MOVX    A,@DPTR
+000B 54FC              ANL     A,#0FCH
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 162
+000E 00                NOP     
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 28  
+
+000F 00                NOP     
+0010 00                NOP     
+                                           ; SOURCE LINE # 164
+0011 120000      E     LCALL   HWInit
+                                           ; SOURCE LINE # 165
+0014 120000      E     LCALL   FWInit
+                                           ; SOURCE LINE # 166
+0017 120000      E     LCALL   EnableAsyncTimer
+                                           ; SOURCE LINE # 167
+001A 120000      R     LCALL   SetIntefaceFunc
+                                           ; SOURCE LINE # 170
+001D 900026            MOV     DPTR,#026H
+0020 E0                MOVX    A,@DPTR
+0021 20E20D            JB      ACC.2,?C0015
+0024 120000      E     LCALL   FWLoadXFirmware
+0027 EF                MOV     A,R7
+0028 6007              JZ      ?C0015
+                                           ; SOURCE LINE # 171
+002A 300C19            JNB     xExFWExist,?C0017
+                                           ; SOURCE LINE # 173
+002D D205              SETB    xFWPartialLoad
+                                           ; SOURCE LINE # 176
+                                           ; SOURCE LINE # 177
+002F 8015              SJMP    ?C0017
+0031         ?C0015:
+                                           ; SOURCE LINE # 179
+0031 C20C              CLR     xExFWExist
+                                           ; SOURCE LINE # 180
+0033 C20B              CLR     xSetFileExist
+                                           ; SOURCE LINE # 181
+0035 E4                CLR     A
+0036 9009EF            MOV     DPTR,#bPrpSaveMethod
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 183
+003A 9009E8            MOV     DPTR,#bEEPROMID
+003D 74A0              MOV     A,#0A0H
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 184
+0040 900A2A            MOV     DPTR,#bIICClock
+0043 7402              MOV     A,#02H
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 185
+0046         ?C0017:
+                                           ; SOURCE LINE # 192
+0046 900545            MOV     DPTR,#0545H
+0049 E0                MOVX    A,@DPTR
+004A 547F              ANL     A,#07FH
+004C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 193
+004D 200C1C            JB      xExFWExist,?C0018
+                                           ; SOURCE LINE # 194
+                                           ; SOURCE LINE # 195
+0050 120000      E     LCALL   FWLoadOTP
+0053 BF010B            CJNE    R7,#01H,?C0019
+0056 900026            MOV     DPTR,#026H
+0059 E0                MOVX    A,@DPTR
+005A 20E304            JB      ACC.3,?C0019
+                                           ; SOURCE LINE # 196
+                                           ; SOURCE LINE # 198
+005D D205              SETB    xFWPartialLoad
+                                           ; SOURCE LINE # 209
+005F 800B              SJMP    ?C0018
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 29  
+
+0061         ?C0019:
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 216
+0061 C205              CLR     xFWPartialLoad
+                                           ; SOURCE LINE # 218
+0063 C204              CLR     xOTPSettingExist
+                                           ; SOURCE LINE # 219
+0065 C20B              CLR     xSetFileExist
+                                           ; SOURCE LINE # 220
+0067 E4                CLR     A
+0068 9009EF            MOV     DPTR,#bPrpSaveMethod
+006B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+006C         ?C0018:
+                                           ; SOURCE LINE # 229
+006C D20D              SETB    xExResTable
+                                           ; SOURCE LINE # 230
+006E 7F46              MOV     R7,#046H
+0070 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 234
+0073 120000      E     LCALL   AudioDefaultFormat
+                                           ; SOURCE LINE # 236
+0076 900550            MOV     DPTR,#0550H
+0079 E4                CLR     A
+007A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 246
+007B 30053A            JNB     xFWPartialLoad,?C0021
+                                           ; SOURCE LINE # 247
+                                           ; SOURCE LINE # 249
+007E 900027            MOV     DPTR,#027H
+0081 E0                MOVX    A,@DPTR
+0082 4410              ORL     A,#010H
+0084 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 250
+0085 00                NOP     
+0086 00                NOP     
+0087 00                NOP     
+                                           ; SOURCE LINE # 251
+0088 00                NOP     
+0089 00                NOP     
+008A 00                NOP     
+                                           ; SOURCE LINE # 252
+008B 00                NOP     
+008C 00                NOP     
+008D 00                NOP     
+                                           ; SOURCE LINE # 254
+008E E4                CLR     A
+008F 900A0D            MOV     DPTR,#bPartialSeg
+0092 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 255
+0093 900000      E     MOV     DPTR,#cpfExternalInit
+0096 93                MOVC    A,@A+DPTR
+0097 FE                MOV     R6,A
+0098 7401              MOV     A,#01H
+009A 93                MOVC    A,@A+DPTR
+009B AA06              MOV     R2,AR6
+009D F9                MOV     R1,A
+009E 120000      E     LCALL   ?C?ICALL
+                                           ; SOURCE LINE # 258
+00A1 300504            JNB     xFWPartialLoad,?C0022
+00A4 7F01              MOV     R7,#01H
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 30  
+
+00A6 8002              SJMP    ?C0023
+00A8         ?C0022:
+00A8 7F00              MOV     R7,#00H
+00AA         ?C0023:
+00AA 900550            MOV     DPTR,#0550H
+00AD EF                MOV     A,R7
+00AE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 261
+00AF 900553            MOV     DPTR,#0553H
+00B2 E4                CLR     A
+00B3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 262
+00B4 A3                INC     DPTR
+00B5 74C0              MOV     A,#0C0H
+00B7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 263
+00B8         ?C0021:
+                                           ; SOURCE LINE # 269
+00B8 E4                CLR     A
+00B9 F553              MOV     bFWLoadState,A
+00BB         ?C0026:
+                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 272
+00BB 7F01              MOV     R7,#01H
+00BD 120000      E     LCALL   _ReplaceFW
+                                           ; SOURCE LINE # 280
+00C0 120000      E     LCALL   ErrHandleSEGFW
+                                           ; SOURCE LINE # 281
+00C3 120000      E     LCALL   isMEMReplacedEnd
+00C6 EF                MOV     A,R7
+00C7 60F2              JZ      ?C0026
+                                           ; SOURCE LINE # 284
+00C9 120000      E     LCALL   AudioInitialize
+                                           ; SOURCE LINE # 286
+00CC 120000      E     LCALL   DeviceReset
+                                           ; SOURCE LINE # 287
+00CF 900B34            MOV     DPTR,#pfExternalReset
+00D2 E0                MOVX    A,@DPTR
+00D3 FE                MOV     R6,A
+00D4 A3                INC     DPTR
+00D5 E0                MOVX    A,@DPTR
+00D6 AA06              MOV     R2,AR6
+00D8 F9                MOV     R1,A
+00D9 120000      E     LCALL   ?C?ICALL
+00DC         ?C0029:
+                                           ; SOURCE LINE # 290
+                                           ; SOURCE LINE # 291
+00DC 7F02              MOV     R7,#02H
+00DE 120000      E     LCALL   _ReplaceFW
+                                           ; SOURCE LINE # 292
+00E1 120000      E     LCALL   ErrHandleSEGFW
+                                           ; SOURCE LINE # 293
+00E4 120000      E     LCALL   isMEMReplacedEnd
+00E7 EF                MOV     A,R7
+00E8 60F2              JZ      ?C0029
+                                           ; SOURCE LINE # 295
+00EA 120000      E     LCALL   EnableConnection
+                                           ; SOURCE LINE # 298
+00ED 304615            JNB     xWatchDogEnable,?C0030
+                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 300
+00F0 E5D8              MOV     A,WDTCON
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 31  
+
+00F2 30E10A            JNB     ACC.1,?C0031
+                                           ; SOURCE LINE # 301
+00F5 53D8FC            ANL     WDTCON,#0FCH
+                                           ; SOURCE LINE # 304
+00F8 900026            MOV     DPTR,#026H
+00FB E0                MOVX    A,@DPTR
+00FC 4410              ORL     A,#010H
+00FE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 305
+00FF         ?C0031:
+                                           ; SOURCE LINE # 306
+00FF 438EC0            ORL     CKCON,#0C0H
+0102 43D803            ORL     WDTCON,#03H
+                                           ; SOURCE LINE # 307
+0105         ?C0030:
+                                           ; SOURCE LINE # 309
+0105 120000      E     LCALL   Int0Disable
+                                           ; SOURCE LINE # 310
+0108 120000      E     LCALL   Int1Disable
+                                           ; SOURCE LINE # 311
+010B 120000      E     LCALL   Int0Enable
+                                           ; SOURCE LINE # 312
+010E 120000      E     LCALL   Int1Enable
+                                           ; SOURCE LINE # 313
+0111 E4                CLR     A
+0112 F550              MOV     bIdleCnt,A
+0114         ?C0032:
+                                           ; SOURCE LINE # 322
+                                           ; SOURCE LINE # 329
+0114 304603            JNB     xWatchDogEnable,?C0034
+                                           ; SOURCE LINE # 330
+0117 43D801            ORL     WDTCON,#01H
+                                           ; SOURCE LINE # 331
+011A         ?C0034:
+                                           ; SOURCE LINE # 335
+011A 900026            MOV     DPTR,#026H
+011D E0                MOVX    A,@DPTR
+011E 20E637            JB      ACC.6,?C0035
+0121 E534              MOV     A,bInt0State
+0123 30E032            JNB     ACC.0,?C0035
+                                           ; SOURCE LINE # 338
+                                           ; SOURCE LINE # 340
+0126 5334FE            ANL     bInt0State,#0FEH
+                                           ; SOURCE LINE # 343
+0129 E4                CLR     A
+012A F553              MOV     bFWLoadState,A
+012C         ?C0038:
+                                           ; SOURCE LINE # 344
+                                           ; SOURCE LINE # 345
+012C 7F01              MOV     R7,#01H
+012E 120000      E     LCALL   _ReplaceFW
+                                           ; SOURCE LINE # 346
+0131 120000      E     LCALL   ErrHandleSEGFW
+                                           ; SOURCE LINE # 347
+0134 120000      E     LCALL   isMEMReplacedEnd
+0137 EF                MOV     A,R7
+0138 60F2              JZ      ?C0038
+                                           ; SOURCE LINE # 349
+013A 120000      E     LCALL   DeviceReset
+                                           ; SOURCE LINE # 350
+013D 900B34            MOV     DPTR,#pfExternalReset
+0140 E0                MOVX    A,@DPTR
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 32  
+
+0141 FE                MOV     R6,A
+0142 A3                INC     DPTR
+0143 E0                MOVX    A,@DPTR
+0144 AA06              MOV     R2,AR6
+0146 F9                MOV     R1,A
+0147 120000      E     LCALL   ?C?ICALL
+014A         ?C0041:
+                                           ; SOURCE LINE # 353
+                                           ; SOURCE LINE # 354
+014A 7F02              MOV     R7,#02H
+014C 120000      E     LCALL   _ReplaceFW
+                                           ; SOURCE LINE # 355
+014F 120000      E     LCALL   ErrHandleSEGFW
+                                           ; SOURCE LINE # 356
+0152 120000      E     LCALL   isMEMReplacedEnd
+0155 EF                MOV     A,R7
+0156 60F2              JZ      ?C0041
+                                           ; SOURCE LINE # 357
+0158         ?C0035:
+                                           ; SOURCE LINE # 359
+0158 900007            MOV     DPTR,#07H
+015B E0                MOVX    A,@DPTR
+015C 30E413            JNB     ACC.4,?C0042
+                                           ; SOURCE LINE # 360
+                                           ; SOURCE LINE # 362
+015F E54E              MOV     A,bCtrlFlowState
+0161 541C              ANL     A,#01CH
+0163 6410              XRL     A,#010H
+0165 6008              JZ      ?C0043
+                                           ; SOURCE LINE # 363
+0167 E54E              MOV     A,bCtrlFlowState
+0169 54E0              ANL     A,#0E0H
+016B 4410              ORL     A,#010H
+016D F54F              MOV     bNextFlowState,A
+016F         ?C0043:
+                                           ; SOURCE LINE # 365
+016F 120000      E     LCALL   DisableDMIC
+                                           ; SOURCE LINE # 366
+0172         ?C0042:
+                                           ; SOURCE LINE # 370
+0172 900002            MOV     DPTR,#02H
+0175 E0                MOVX    A,@DPTR
+0176 30E706            JNB     ACC.7,?C0044
+                                           ; SOURCE LINE # 371
+                                           ; SOURCE LINE # 372
+0179 5334FD            ANL     bInt0State,#0FDH
+                                           ; SOURCE LINE # 373
+017C 120000      E     LCALL   USBCmd
+                                           ; SOURCE LINE # 374
+017F         ?C0044:
+                                           ; SOURCE LINE # 377
+017F 300304            JNB     xForceNextStage,?C0045
+                                           ; SOURCE LINE # 378
+0182 054E              INC     bCtrlFlowState
+                                           ; SOURCE LINE # 379
+0184 800B              SJMP    ?C0046
+0186         ?C0045:
+0186 E54F              MOV     A,bNextFlowState
+0188 F4                CPL     A
+0189 6006              JZ      ?C0046
+                                           ; SOURCE LINE # 380
+018B 854F4E            MOV     bCtrlFlowState,bNextFlowState
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 33  
+
+                                           ; SOURCE LINE # 381
+018E 754FFF            MOV     bNextFlowState,#0FFH
+                                           ; SOURCE LINE # 382
+0191         ?C0046:
+                                           ; SOURCE LINE # 384
+0191 C202              CLR     xSkipKernelProcedure
+                                           ; SOURCE LINE # 385
+0193 C203              CLR     xForceNextStage
+                                           ; SOURCE LINE # 387
+0195 900B3E            MOV     DPTR,#pfExStateFunction
+0198 E0                MOVX    A,@DPTR
+0199 FE                MOV     R6,A
+019A A3                INC     DPTR
+019B E0                MOVX    A,@DPTR
+019C AA06              MOV     R2,AR6
+019E F9                MOV     R1,A
+019F 120000      E     LCALL   ?C?ICALL
+                                           ; SOURCE LINE # 389
+01A2 200203            JB      xSkipKernelProcedure,?C0048
+                                           ; SOURCE LINE # 390
+                                           ; SOURCE LINE # 391
+01A5 120000      R     LCALL   StateFunction
+                                           ; SOURCE LINE # 392
+01A8         ?C0048:
+                                           ; SOURCE LINE # 394
+01A8 900848            MOV     DPTR,#bAltSetting
+01AB E0                MOVX    A,@DPTR
+01AC 6014              JZ      ?C0049
+                                           ; SOURCE LINE # 395
+01AE 9009E7            MOV     DPTR,#bPrivacyCtrlGPIO
+01B1 E0                MOVX    A,@DPTR
+01B2 FF                MOV     R7,A
+01B3 F4                CPL     A
+01B4 600C              JZ      ?C0049
+                                           ; SOURCE LINE # 396
+01B6 200F03            JB      xSupportPrivacy,?C0052
+01B9 301F06            JNB     xGPIO5BtnSupport,?C0049
+01BC         ?C0052:
+                                           ; SOURCE LINE # 397
+01BC 900024            MOV     DPTR,#024H
+01BF E0                MOVX    A,@DPTR
+01C0 4F                ORL     A,R7
+01C1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 398
+                                           ; SOURCE LINE # 399
+                                           ; SOURCE LINE # 400
+01C2         ?C0049:
+                                           ; SOURCE LINE # 406
+01C2 E524              MOV     A,bFrameFlag
+01C4 6012              JZ      ?C0053
+                                           ; SOURCE LINE # 407
+                                           ; SOURCE LINE # 409
+01C6 302002            JNB     xFrameStart,?C0054
+                                           ; SOURCE LINE # 412
+01C9 0551              INC     bFrameCount
+                                           ; SOURCE LINE # 418
+01CB         ?C0054:
+                                           ; SOURCE LINE # 419
+01CB 900B3A            MOV     DPTR,#pfControlInterruptRoutine
+01CE E0                MOVX    A,@DPTR
+01CF FE                MOV     R6,A
+01D0 A3                INC     DPTR
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 34  
+
+01D1 E0                MOVX    A,@DPTR
+01D2 AA06              MOV     R2,AR6
+01D4 F9                MOV     R1,A
+01D5 120000      E     LCALL   ?C?ICALL
+                                           ; SOURCE LINE # 420
+01D8         ?C0053:
+                                           ; SOURCE LINE # 424
+01D8 0550              INC     bIdleCnt
+                                           ; SOURCE LINE # 426
+01DA 900848            MOV     DPTR,#bAltSetting
+01DD E0                MOVX    A,@DPTR
+01DE 605E              JZ      ?C0055
+01E0 E550              MOV     A,bIdleCnt
+01E2 5407              ANL     A,#07H
+01E4 7058              JNZ     ?C0055
+                                           ; SOURCE LINE # 427
+                                           ; SOURCE LINE # 428
+01E6 30191E            JNB     xBtnPressed,?C0056
+                                           ; SOURCE LINE # 429
+01E9 900004            MOV     DPTR,#04H
+01EC E0                MOVX    A,@DPTR
+01ED 20E117            JB      ACC.1,?C0056
+                                           ; SOURCE LINE # 430
+01F0 9000C0            MOV     DPTR,#pbEP1Buf
+01F3 7402              MOV     A,#02H
+01F5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 431
+01F6 A3                INC     DPTR
+01F7 14                DEC     A
+01F8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 432
+01F9 E4                CLR     A
+01FA A3                INC     DPTR
+01FB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 433
+01FC A3                INC     DPTR
+01FD 04                INC     A
+01FE F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 434
+01FF 900005            MOV     DPTR,#05H
+0202 7404              MOV     A,#04H
+0204 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 435
+0205 C219              CLR     xBtnPressed
+                                           ; SOURCE LINE # 436
+                                           ; SOURCE LINE # 437
+0207         ?C0056:
+                                           ; SOURCE LINE # 438
+0207 301A1D            JNB     xBtnReleased,?C0058
+                                           ; SOURCE LINE # 439
+020A 900004            MOV     DPTR,#04H
+020D E0                MOVX    A,@DPTR
+020E 20E116            JB      ACC.1,?C0058
+                                           ; SOURCE LINE # 440
+0211 9000C0            MOV     DPTR,#pbEP1Buf
+0214 7402              MOV     A,#02H
+0216 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 441
+0217 A3                INC     DPTR
+0218 14                DEC     A
+0219 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 442
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 35  
+
+021A E4                CLR     A
+021B A3                INC     DPTR
+021C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 443
+021D A3                INC     DPTR
+021E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 444
+021F 900005            MOV     DPTR,#05H
+0222 7404              MOV     A,#04H
+0224 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 445
+0225 C21A              CLR     xBtnReleased
+                                           ; SOURCE LINE # 446
+                                           ; SOURCE LINE # 447
+0227         ?C0058:
+                                           ; SOURCE LINE # 448
+0227 9009E6            MOV     DPTR,#bSnapShotGPIO
+022A E0                MOVX    A,@DPTR
+022B F4                CPL     A
+022C 6003              JZ      ?C0060
+                                           ; SOURCE LINE # 449
+022E 120000      R     LCALL   SnapshotTrigger
+                                           ; SOURCE LINE # 450
+0231         ?C0060:
+                                           ; SOURCE LINE # 451
+0231 300F0A            JNB     xSupportPrivacy,?C0055
+                                           ; SOURCE LINE # 452
+0234 9009E7            MOV     DPTR,#bPrivacyCtrlGPIO
+0237 E0                MOVX    A,@DPTR
+0238 F4                CPL     A
+0239 6003              JZ      ?C0055
+                                           ; SOURCE LINE # 453
+023B 120000      R     LCALL   PrivacyCtrlTrigger
+                                           ; SOURCE LINE # 454
+                                           ; SOURCE LINE # 455
+                                           ; SOURCE LINE # 456
+023E         ?C0055:
+                                           ; SOURCE LINE # 458
+023E 300703            JNB     xAsyncSavePrp,?C0063
+                                           ; SOURCE LINE # 459
+0241 120000      E     LCALL   CompletePrpSaveReq
+                                           ; SOURCE LINE # 460
+0244         ?C0063:
+                                           ; SOURCE LINE # 462
+0244 900B42            MOV     DPTR,#pfExMainHookFunc
+0247 E0                MOVX    A,@DPTR
+0248 FE                MOV     R6,A
+0249 A3                INC     DPTR
+024A E0                MOVX    A,@DPTR
+024B AA06              MOV     R2,AR6
+024D F9                MOV     R1,A
+024E 120000      E     LCALL   ?C?ICALL
+                                           ; SOURCE LINE # 465
+0251 204703            JB      xCheckDMICMute,$ + 6H
+0254 020000      R     LJMP    ?C0032
+                                           ; SOURCE LINE # 466
+                                           ; SOURCE LINE # 467
+0257 900A1F            MOV     DPTR,#wDMICMuteDelay
+025A 74FF              MOV     A,#0FFH
+025C F5F0              MOV     B,A
+025E 120000      E     LCALL   ?C?IILDX
+                                           ; SOURCE LINE # 468
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 36  
+
+0261 900A1F            MOV     DPTR,#wDMICMuteDelay
+0264 E0                MOVX    A,@DPTR
+0265 7002              JNZ     ?C0200
+0267 A3                INC     DPTR
+0268 E0                MOVX    A,@DPTR
+0269         ?C0200:
+0269 6003              JZ      $ + 5H
+026B 020000      R     LJMP    ?C0032
+                                           ; SOURCE LINE # 469
+                                           ; SOURCE LINE # 470
+026E 7F05              MOV     R7,#05H
+0270 120000      E     LCALL   _EX_CallBackFunction
+0273 EF                MOV     A,R7
+0274 6003              JZ      $ + 5H
+0276 020000      R     LJMP    ?C0032
+                                           ; SOURCE LINE # 471
+                                           ; SOURCE LINE # 472
+0279 C247              CLR     xCheckDMICMute
+                                           ; SOURCE LINE # 474
+027B 900010            MOV     DPTR,#010H
+027E E0                MOVX    A,@DPTR
+027F 20E42E            JB      ACC.4,?C0067
+                                           ; SOURCE LINE # 475
+                                           ; SOURCE LINE # 476
+0282 9004C0            MOV     DPTR,#04C0H
+0285 E0                MOVX    A,@DPTR
+0286 4430              ORL     A,#030H
+0288 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 478
+0289 900010            MOV     DPTR,#010H
+028C E0                MOVX    A,@DPTR
+028D 4410              ORL     A,#010H
+028F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 479
+0290 9004DC            MOV     DPTR,#04DCH
+0293 E0                MOVX    A,@DPTR
+0294 4401              ORL     A,#01H
+0296 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 481
+0297 7F6E              MOV     R7,#06EH
+0299 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 482
+029C 7F02              MOV     R7,#02H
+029E 7E00              MOV     R6,#00H
+02A0 120000      E     LCALL   _GetTabW
+02A3 900A1F            MOV     DPTR,#wDMICMuteDelay
+02A6 EE                MOV     A,R6
+02A7 F0                MOVX    @DPTR,A
+02A8 A3                INC     DPTR
+02A9 EF                MOV     A,R7
+02AA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 483
+02AB D247              SETB    xCheckDMICMute
+                                           ; SOURCE LINE # 485
+02AD 020000      R     LJMP    ?C0032
+02B0         ?C0067:
+                                           ; SOURCE LINE # 492
+02B0 900A23            MOV     DPTR,#DMICCurSetting+02H
+02B3 E0                MOVX    A,@DPTR
+02B4 7007              JNZ     ?C0069
+                                           ; SOURCE LINE # 493
+02B6 9004C0            MOV     DPTR,#04C0H
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 37  
+
+02B9 E0                MOVX    A,@DPTR
+02BA 54DF              ANL     A,#0DFH
+02BC F0                MOVX    @DPTR,A
+02BD         ?C0069:
+                                           ; SOURCE LINE # 494
+02BD 900A24            MOV     DPTR,#DMICCurSetting+03H
+02C0 E0                MOVX    A,@DPTR
+02C1 6003              JZ      $ + 5H
+02C3 020000      R     LJMP    ?C0032
+                                           ; SOURCE LINE # 495
+02C6 9004C0            MOV     DPTR,#04C0H
+02C9 E0                MOVX    A,@DPTR
+02CA 54EF              ANL     A,#0EFH
+02CC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 499
+                                           ; SOURCE LINE # 500
+                                           ; SOURCE LINE # 501
+                                           ; SOURCE LINE # 502
+                                           ; SOURCE LINE # 504
+02CD 020000      R     LJMP    ?C0032
+             ; FUNCTION main (END)
+
+             ; FUNCTION SnapshotTrigger (BEGIN)
+                                           ; SOURCE LINE # 507
+                                           ; SOURCE LINE # 508
+                                           ; SOURCE LINE # 511
+0000 9009E6            MOV     DPTR,#bSnapShotGPIO
+0003 E0                MOVX    A,@DPTR
+0004 FF                MOV     R7,A
+0005 900020            MOV     DPTR,#020H
+0008 E0                MOVX    A,@DPTR
+0009 5F                ANL     A,R7
+000A 6004              JZ      ?C0072
+000C 7F01              MOV     R7,#01H
+000E 8002              SJMP    ?C0073
+0010         ?C0072:
+0010 7F00              MOV     R7,#00H
+0012         ?C0073:
+;---- Variable 'bGPIOState' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 512
+0012 A218              MOV     C,xBtnState
+0014 E4                CLR     A
+0015 33                RLC     A
+0016 6F                XRL     A,R7
+0017 6021              JZ      ?C0074
+                                           ; SOURCE LINE # 513
+0019 900842            MOV     DPTR,#bSucsTrigCnt
+001C E0                MOVX    A,@DPTR
+001D 04                INC     A
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 514
+001F E0                MOVX    A,@DPTR
+0020 D3                SETB    C
+0021 9406              SUBB    A,#06H
+0023 401A              JC      ?C0079
+                                           ; SOURCE LINE # 515
+0025 EF                MOV     A,R7
+0026 24FF              ADD     A,#0FFH
+0028 9218              MOV     xBtnState,C
+                                           ; SOURCE LINE # 516
+002A A218              MOV     C,xBtnState
+002C 300101            JNB     xSnapActive,?C0201
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 38  
+
+002F B3                CPL     C
+0030         ?C0201:
+0030 4004              JC      ?C0076
+                                           ; SOURCE LINE # 517
+                                           ; SOURCE LINE # 518
+0032 D219              SETB    xBtnPressed
+                                           ; SOURCE LINE # 519
+0034 8004              SJMP    ?C0204
+0036         ?C0076:
+                                           ; SOURCE LINE # 521
+                                           ; SOURCE LINE # 522
+0036 D21A              SETB    xBtnReleased
+                                           ; SOURCE LINE # 523
+0038         ?C0077:
+                                           ; SOURCE LINE # 525
+                                           ; SOURCE LINE # 526
+                                           ; SOURCE LINE # 527
+0038 8000              SJMP    ?C0204
+003A         ?C0074:
+                                           ; SOURCE LINE # 528
+003A         ?C0204:
+003A E4                CLR     A
+003B 900842            MOV     DPTR,#bSucsTrigCnt
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 529
+                                           ; SOURCE LINE # 530
+003F         ?C0079:
+003F 22                RET     
+             ; FUNCTION SnapshotTrigger (END)
+
+             ; FUNCTION StateFunction (BEGIN)
+                                           ; SOURCE LINE # 531
+                                           ; SOURCE LINE # 532
+                                           ; SOURCE LINE # 546
+0000 E54E              MOV     A,bCtrlFlowState
+0002 120000      E     LCALL   ?C?CCASE
+0005 0000        R     DW      ?C0081
+0007 04                DB      04H
+0008 0000        R     DW      ?C0082
+000A 08                DB      08H
+000B 0000        R     DW      ?C0083
+000D 0C                DB      0CH
+000E 0000        R     DW      ?C0084
+0010 10                DB      010H
+0011 0000        R     DW      ?C0091
+0013 24                DB      024H
+0014 0000        R     DW      ?C0156
+0016 25                DB      025H
+0017 0000        R     DW      ?C0156
+0019 26                DB      026H
+001A 0000        R     DW      ?C0102
+001C 27                DB      027H
+001D 0000        R     DW      ?C0091
+001F 28                DB      028H
+0020 0000        R     DW      ?C0156
+0022 29                DB      029H
+0023 0000        R     DW      ?C0156
+0025 2A                DB      02AH
+0026 0000        R     DW      ?C0102
+0028 2B                DB      02BH
+0029 0000        R     DW      ?C0096
+002B 2C                DB      02CH
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 39  
+
+002C 0000        R     DW      ?C0096
+002E 30                DB      030H
+002F 0000        R     DW      ?C0156
+0031 44                DB      044H
+0032 0000        R     DW      ?C0156
+0034 45                DB      045H
+0035 0000        R     DW      ?C0156
+0037 46                DB      046H
+0038 0000        R     DW      ?C0112
+003A 47                DB      047H
+003B 0000        R     DW      ?C0156
+003D 48                DB      048H
+003E 0000        R     DW      ?C0156
+0040 49                DB      049H
+0041 0000        R     DW      ?C0156
+0043 4A                DB      04AH
+0044 0000        R     DW      ?C0112
+0046 4B                DB      04BH
+0047 0000        R     DW      ?C0106
+0049 4C                DB      04CH
+004A 0000        R     DW      ?C0106
+004C 50                DB      050H
+004D 0000        R     DW      ?C0116
+004F 64                DB      064H
+0050 0000        R     DW      ?C0123
+0052 65                DB      065H
+0053 0000        R     DW      ?C0156
+0055 66                DB      066H
+0056 0000        R     DW      ?C0127
+0058 67                DB      067H
+0059 0000        R     DW      ?C0116
+005B 68                DB      068H
+005C 0000        R     DW      ?C0124
+005E 69                DB      069H
+005F 0000        R     DW      ?C0156
+0061 6A                DB      06AH
+0062 0000        R     DW      ?C0128
+0064 6B                DB      06BH
+0065 0000        R     DW      ?C0116
+0067 6C                DB      06CH
+0068 0000        R     DW      ?C0116
+006A 70                DB      070H
+006B 0000        R     DW      ?C0132
+006D 8C                DB      08CH
+006E 0000        R     DW      ?C0132
+0070 90                DB      090H
+0071 0000        R     DW      ?C0133
+0073 A4                DB      0A4H
+0074 0000        R     DW      ?C0148
+0076 A5                DB      0A5H
+0077 0000        R     DW      ?C0156
+0079 A6                DB      0A6H
+007A 0000        R     DW      ?C0158
+007C A7                DB      0A7H
+007D 0000        R     DW      ?C0144
+007F A8                DB      0A8H
+0080 0000        R     DW      ?C0148
+0082 A9                DB      0A9H
+0083 0000        R     DW      ?C0156
+0085 AA                DB      0AAH
+0086 0000        R     DW      ?C0158
+0088 AB                DB      0ABH
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 40  
+
+0089 0000        R     DW      ?C0144
+008B AC                DB      0ACH
+008C 0000        R     DW      ?C0148
+008E AD                DB      0ADH
+008F 0000        R     DW      ?C0156
+0091 AE                DB      0AEH
+0092 0000        R     DW      ?C0160
+0094 AF                DB      0AFH
+0095 0000        R     DW      ?C0144
+0097 B0                DB      0B0H
+0098 0000        R     DW      ?C0148
+009A B1                DB      0B1H
+009B 0000        R     DW      ?C0156
+009D B2                DB      0B2H
+009E 0000        R     DW      ?C0160
+00A0 B3                DB      0B3H
+00A1 0000        R     DW      ?C0164
+00A3 C4                DB      0C4H
+00A4 0000        R     DW      ?C0156
+00A6 C5                DB      0C5H
+00A7 0000        R     DW      ?C0172
+00A9 C6                DB      0C6H
+00AA 0000        R     DW      ?C0174
+00AC C7                DB      0C7H
+00AD 0000        R     DW      ?C0164
+00AF C8                DB      0C8H
+00B0 0000        R     DW      ?C0156
+00B2 C9                DB      0C9H
+00B3 0000        R     DW      ?C0172
+00B5 CA                DB      0CAH
+00B6 0000        R     DW      ?C0174
+00B8 CB                DB      0CBH
+00B9 0000        R     DW      ?C0164
+00BB CC                DB      0CCH
+00BC 0000        R     DW      ?C0156
+00BE CD                DB      0CDH
+00BF 0000        R     DW      ?C0172
+00C1 CE                DB      0CEH
+00C2 0000        R     DW      ?C0175
+00C4 CF                DB      0CFH
+00C5 0000        R     DW      ?C0164
+00C7 D0                DB      0D0H
+00C8 0000        R     DW      ?C0156
+00CA D1                DB      0D1H
+00CB 0000        R     DW      ?C0172
+00CD D2                DB      0D2H
+00CE 0000        R     DW      ?C0176
+00D0 D3                DB      0D3H
+00D1 0000              DW      00H
+00D3 0000        R     DW      ?C0180
+                                           ; SOURCE LINE # 547
+                                           ; SOURCE LINE # 553
+00D5         ?C0081:
+                                           ; SOURCE LINE # 554
+                                           ; SOURCE LINE # 555
+00D5 020000      R     LJMP    ?C0205
+                                           ; SOURCE LINE # 557
+00D8         ?C0082:
+                                           ; SOURCE LINE # 558
+                                           ; SOURCE LINE # 559
+00D8 804B              SJMP    ?C0206
+                                           ; SOURCE LINE # 561
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 41  
+
+00DA         ?C0083:
+                                           ; SOURCE LINE # 562
+                                           ; SOURCE LINE # 563
+00DA 020000      R     LJMP    ?C0213
+                                           ; SOURCE LINE # 565
+00DD         ?C0084:
+                                           ; SOURCE LINE # 567
+00DD 120000      E     LCALL   CompletePrpSaveReq
+                                           ; SOURCE LINE # 576
+00E0 900A1A            MOV     DPTR,#bDMICInput
+00E3 E0                MOVX    A,@DPTR
+00E4 B41007            CJNE    A,#010H,?C0086
+                                           ; SOURCE LINE # 577
+                                           ; SOURCE LINE # 578
+00E7 9004D0            MOV     DPTR,#04D0H
+00EA E0                MOVX    A,@DPTR
+00EB 4480              ORL     A,#080H
+00ED F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 579
+00EE         ?C0086:
+                                           ; SOURCE LINE # 580
+00EE 900007            MOV     DPTR,#07H
+00F1 E0                MOVX    A,@DPTR
+00F2 30E409            JNB     ACC.4,?C0087
+                                           ; SOURCE LINE # 581
+                                           ; SOURCE LINE # 582
+00F5 900028            MOV     DPTR,#028H
+00F8 E0                MOVX    A,@DPTR
+00F9 4404              ORL     A,#04H
+00FB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 583
+00FC 80F0              SJMP    ?C0086
+00FE         ?C0087:
+                                           ; SOURCE LINE # 584
+00FE 900845            MOV     DPTR,#bDeviceStatus
+0101 E0                MOVX    A,@DPTR
+0102 30E10B            JNB     ACC.1,?C0088
+0105 900028            MOV     DPTR,#028H
+0108 E0                MOVX    A,@DPTR
+0109 30E504            JNB     ACC.5,?C0088
+                                           ; SOURCE LINE # 587
+010C E0                MOVX    A,@DPTR
+010D 4401              ORL     A,#01H
+010F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 588
+0110         ?C0088:
+                                           ; SOURCE LINE # 590
+0110 900A1A            MOV     DPTR,#bDMICInput
+0113 E0                MOVX    A,@DPTR
+0114 B41007            CJNE    A,#010H,?C0089
+                                           ; SOURCE LINE # 592
+0117 9004D0            MOV     DPTR,#04D0H
+011A E0                MOVX    A,@DPTR
+011B 547F              ANL     A,#07FH
+011D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 595
+011E         ?C0089:
+                                           ; SOURCE LINE # 597
+011E 900016            MOV     DPTR,#016H
+0121 E0                MOVX    A,@DPTR
+0122 4410              ORL     A,#010H
+0124 F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 42  
+
+                                           ; SOURCE LINE # 598
+0125         ?C0206:
+0125 534EE0            ANL     bCtrlFlowState,#0E0H
+                                           ; SOURCE LINE # 599
+0128 22                RET     
+                                           ; SOURCE LINE # 606
+                                           ; SOURCE LINE # 607
+0129         ?C0091:
+                                           ; SOURCE LINE # 608
+                                           ; SOURCE LINE # 609
+0129 900008            MOV     DPTR,#08H
+012C E0                MOVX    A,@DPTR
+012D 30E007            JNB     ACC.0,?C0092
+                                           ; SOURCE LINE # 610
+0130 900016            MOV     DPTR,#016H
+0133 E0                MOVX    A,@DPTR
+0134 54EF              ANL     A,#0EFH
+0136 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 611
+0137         ?C0092:
+                                           ; SOURCE LINE # 613
+0137 90002A            MOV     DPTR,#02AH
+013A E4                CLR     A
+013B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 615
+013C 900054            MOV     DPTR,#054H
+013F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 639
+0140 9002E0            MOV     DPTR,#02E0H
+0143 E0                MOVX    A,@DPTR
+0144 6547              XRL     A,InputSize+01H
+0146 7011              JNZ     ?C0093
+0148 A3                INC     DPTR
+0149 E0                MOVX    A,@DPTR
+014A B5460C            CJNE    A,InputSize,?C0093
+014D A3                INC     DPTR
+014E E0                MOVX    A,@DPTR
+014F B54907            CJNE    A,InputSize+03H,?C0093
+0152 A3                INC     DPTR
+0153 E0                MOVX    A,@DPTR
+0154 B54802            CJNE    A,InputSize+02H,?C0093
+                                           ; SOURCE LINE # 641
+                                           ; SOURCE LINE # 643
+                                           ; SOURCE LINE # 644
+0157 8028              SJMP    ?C0208
+0159         ?C0093:
+                                           ; SOURCE LINE # 646
+                                           ; SOURCE LINE # 663
+0159 D203              SETB    xForceNextStage
+                                           ; SOURCE LINE # 664
+                                           ; SOURCE LINE # 665
+015B 22                RET     
+                                           ; SOURCE LINE # 666
+                                           ; SOURCE LINE # 669
+                                           ; SOURCE LINE # 670
+015C         ?C0096:
+                                           ; SOURCE LINE # 671
+015C         ?C0207:
+                                           ; SOURCE LINE # 672
+015C 020000      R     LJMP    ?C0213
+                                           ; SOURCE LINE # 676
+                                           ; SOURCE LINE # 677
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 43  
+
+                                           ; SOURCE LINE # 678
+                                           ; SOURCE LINE # 679
+                                           ; SOURCE LINE # 683
+                                           ; SOURCE LINE # 684
+015F         ?C0102:
+                                           ; SOURCE LINE # 685
+015F 534E1C            ANL     bCtrlFlowState,#01CH
+0162 434E40            ORL     bCtrlFlowState,#040H
+                                           ; SOURCE LINE # 686
+0165 22                RET     
+                                           ; SOURCE LINE # 692
+                                           ; SOURCE LINE # 693
+                                           ; SOURCE LINE # 718
+                                           ; SOURCE LINE # 719
+                                           ; SOURCE LINE # 720
+0166         ?C0106:
+                                           ; SOURCE LINE # 721
+0166         ?C0209:
+                                           ; SOURCE LINE # 722
+0166 020000      R     LJMP    ?C0213
+                                           ; SOURCE LINE # 725
+                                           ; SOURCE LINE # 726
+                                           ; SOURCE LINE # 727
+                                           ; SOURCE LINE # 728
+                                           ; SOURCE LINE # 733
+                                           ; SOURCE LINE # 734
+0169         ?C0112:
+                                           ; SOURCE LINE # 735
+0169 D228              SETB    xSetPropertyBackLight
+                                           ; SOURCE LINE # 736
+016B D229              SETB    xSetPropertyBrightness
+                                           ; SOURCE LINE # 737
+016D D22A              SETB    xSetPropertyContrast
+                                           ; SOURCE LINE # 738
+016F D22B              SETB    xSetPropertyPwrLine
+                                           ; SOURCE LINE # 739
+0171 D22C              SETB    xSetPropertyHue
+                                           ; SOURCE LINE # 740
+0173 D22D              SETB    xSetPropertySaturation
+                                           ; SOURCE LINE # 741
+0175 D22E              SETB    xSetPropertySharpness
+                                           ; SOURCE LINE # 742
+0177 D22F              SETB    xSetPropertyGamma
+                                           ; SOURCE LINE # 743
+0179 D230              SETB    xSetPropertyWBColorTemp
+                                           ; SOURCE LINE # 744
+017B D231              SETB    xSetPropertyWBCTAuto
+                                           ; SOURCE LINE # 745
+017D D234              SETB    xSetPropertyMirror
+                                           ; SOURCE LINE # 746
+017F D235              SETB    xSetPropertyFlip
+                                           ; SOURCE LINE # 748
+0181         ?C0208:
+0181 534E1C            ANL     bCtrlFlowState,#01CH
+0184 434E60            ORL     bCtrlFlowState,#060H
+                                           ; SOURCE LINE # 749
+0187 22                RET     
+                                           ; SOURCE LINE # 758
+                                           ; SOURCE LINE # 759
+                                           ; SOURCE LINE # 760
+                                           ; SOURCE LINE # 761
+0188         ?C0116:
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 44  
+
+                                           ; SOURCE LINE # 763
+0188 E553              MOV     A,bFWLoadState
+018A 6402              XRL     A,#02H
+018C 6008              JZ      ?C0117
+                                           ; SOURCE LINE # 764
+                                           ; SOURCE LINE # 768
+018E 7F03              MOV     R7,#03H
+0190 120000      E     LCALL   _ReplaceFW
+                                           ; SOURCE LINE # 769
+0193 120000      E     LCALL   ErrHandleSEGFW
+                                           ; SOURCE LINE # 770
+0196         ?C0117:
+                                           ; SOURCE LINE # 771
+0196 120000      E     LCALL   isMEMReplacedEnd
+0199 EF                MOV     A,R7
+019A 7003              JNZ     $ + 5H
+019C 020000      R     LJMP    ?C0180
+                                           ; SOURCE LINE # 772
+                                           ; SOURCE LINE # 778
+019F 900055            MOV     DPTR,#055H
+01A2 7410              MOV     A,#010H
+01A4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 780
+01A5 E54E              MOV     A,bCtrlFlowState
+01A7 B4640A            CJNE    A,#064H,?C0119
+                                           ; SOURCE LINE # 781
+                                           ; SOURCE LINE # 782
+01AA AD3F              MOV     R5,StrmCurSet+04H
+01AC AC3E              MOV     R4,StrmCurSet+03H
+01AE AF3D              MOV     R7,StrmCurSet+02H
+01B0 AE3C              MOV     R6,StrmCurSet+01H
+                                           ; SOURCE LINE # 784
+                                           ; SOURCE LINE # 785
+                                           ; SOURCE LINE # 786
+                                           ; SOURCE LINE # 788
+01B2 800D              SJMP    ?C0211
+01B4         ?C0119:
+01B4 E54E              MOV     A,bCtrlFlowState
+01B6 B46817            CJNE    A,#068H,?C0121
+                                           ; SOURCE LINE # 789
+                                           ; SOURCE LINE # 790
+01B9 AD45              MOV     R5,StrmCurSet+0AH
+01BB AC44              MOV     R4,StrmCurSet+09H
+01BD AF43              MOV     R7,StrmCurSet+08H
+01BF AE42              MOV     R6,StrmCurSet+07H
+01C1         ?C0211:
+01C1 120000      R     LCALL   _SelecStreamDimension
+                                           ; SOURCE LINE # 792
+01C4 900056            MOV     DPTR,#056H
+01C7 74FF              MOV     A,#0FFH
+01C9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 793
+01CA A3                INC     DPTR
+01CB 7453              MOV     A,#053H
+                                           ; SOURCE LINE # 794
+                                           ; SOURCE LINE # 795
+01CD 020000      R     LJMP    ?C0217
+01D0         ?C0121:
+                                           ; SOURCE LINE # 796
+                                           ; SOURCE LINE # 797
+01D0         ?C0210:
+                                           ; SOURCE LINE # 798
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 45  
+
+                                           ; SOURCE LINE # 799
+                                           ; SOURCE LINE # 800
+01D0 8032              SJMP    ?C0213
+                                           ; SOURCE LINE # 832
+01D2         ?C0123:
+                                           ; SOURCE LINE # 833
+01D2 AF3B              MOV     R7,StrmCurSet
+                                           ; SOURCE LINE # 834
+                                           ; SOURCE LINE # 835
+01D4 8002              SJMP    ?C0214
+                                           ; SOURCE LINE # 836
+01D6         ?C0124:
+                                           ; SOURCE LINE # 837
+01D6 AF41              MOV     R7,StrmCurSet+06H
+01D8         ?C0214:
+01D8 120000      R     LCALL   _SelecStreamFormat
+                                           ; SOURCE LINE # 838
+01DB D203              SETB    xForceNextStage
+                                           ; SOURCE LINE # 839
+01DD 22                RET     
+                                           ; SOURCE LINE # 843
+                                           ; SOURCE LINE # 844
+                                           ; SOURCE LINE # 866
+01DE         ?C0127:
+                                           ; SOURCE LINE # 876
+01DE 900014            MOV     DPTR,#014H
+01E1 E0                MOVX    A,@DPTR
+01E2 54BF              ANL     A,#0BFH
+01E4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 882
+01E5 900051            MOV     DPTR,#051H
+01E8 E0                MOVX    A,@DPTR
+01E9 4420              ORL     A,#020H
+01EB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 886
+01EC C21B              CLR     xPrivacyControl
+                                           ; SOURCE LINE # 896
+01EE 534E1C            ANL     bCtrlFlowState,#01CH
+01F1 434E80            ORL     bCtrlFlowState,#080H
+                                           ; SOURCE LINE # 897
+01F4 22                RET     
+                                           ; SOURCE LINE # 898
+01F5         ?C0128:
+                                           ; SOURCE LINE # 910
+01F5 900014            MOV     DPTR,#014H
+01F8 E0                MOVX    A,@DPTR
+01F9 54BF              ANL     A,#0BFH
+01FB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 911
+01FC E0                MOVX    A,@DPTR
+01FD 4420              ORL     A,#020H
+01FF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 918
+0200 754EA4            MOV     bCtrlFlowState,#0A4H
+                                           ; SOURCE LINE # 920
+0203 22                RET     
+                                           ; SOURCE LINE # 933
+                                           ; SOURCE LINE # 934
+                                           ; SOURCE LINE # 936
+                                           ; SOURCE LINE # 937
+                                           ; SOURCE LINE # 939
+                                           ; SOURCE LINE # 940
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 46  
+
+0204         ?C0132:
+                                           ; SOURCE LINE # 941
+0204         ?C0213:
+0204 534E1C            ANL     bCtrlFlowState,#01CH
+0207 434EA0            ORL     bCtrlFlowState,#0A0H
+                                           ; SOURCE LINE # 942
+020A 22                RET     
+                                           ; SOURCE LINE # 950
+020B         ?C0133:
+                                           ; SOURCE LINE # 952
+020B 30404E            JNB     xStillIssue,?C0144
+                                           ; SOURCE LINE # 953
+                                           ; SOURCE LINE # 954
+020E 900012            MOV     DPTR,#012H
+0211 E0                MOVX    A,@DPTR
+0212 7030              JNZ     ?C0135
+0214 900011            MOV     DPTR,#011H
+0217 E0                MOVX    A,@DPTR
+0218 702A              JNZ     ?C0135
+                                           ; SOURCE LINE # 955
+                                           ; SOURCE LINE # 956
+021A 900006            MOV     DPTR,#06H
+021D E0                MOVX    A,@DPTR
+021E 30E235            JNB     ACC.2,?C0137
+0221 302032            JNB     xFrameStart,?C0137
+                                           ; SOURCE LINE # 957
+                                           ; SOURCE LINE # 959
+                                           ; SOURCE LINE # 960
+0224 900010            MOV     DPTR,#010H
+0227 E0                MOVX    A,@DPTR
+0228 54FE              ANL     A,#0FEH
+022A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 961
+022B 9009E4            MOV     DPTR,#wDumpTrigger+01H
+022E E0                MOVX    A,@DPTR
+022F 900011            MOV     DPTR,#011H
+0232 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 962
+0233 9009E3            MOV     DPTR,#wDumpTrigger
+0236 E0                MOVX    A,@DPTR
+0237 900012            MOV     DPTR,#012H
+023A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 963
+023B 900010            MOV     DPTR,#010H
+023E E0                MOVX    A,@DPTR
+023F 4401              ORL     A,#01H
+0241 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 964
+                                           ; SOURCE LINE # 965
+                                           ; SOURCE LINE # 966
+0242 8012              SJMP    ?C0137
+0244         ?C0135:
+                                           ; SOURCE LINE # 967
+                                           ; SOURCE LINE # 968
+0244 900014            MOV     DPTR,#014H
+0247 E0                MOVX    A,@DPTR
+0248 7004              JNZ     ?C0139
+024A 7F01              MOV     R7,#01H
+024C 8002              SJMP    ?C0140
+024E         ?C0139:
+024E 7F00              MOV     R7,#00H
+0250         ?C0140:
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 47  
+
+0250 EF                MOV     A,R7
+0251 30E502            JNB     ACC.5,?C0137
+                                           ; SOURCE LINE # 969
+                                           ; SOURCE LINE # 970
+0254 C240              CLR     xStillIssue
+                                           ; SOURCE LINE # 971
+                                           ; SOURCE LINE # 972
+0256         ?C0137:
+                                           ; SOURCE LINE # 974
+0256 304003            JNB     xStillIssue,$ + 6H
+0259 020000      R     LJMP    ?C0180
+                                           ; SOURCE LINE # 975
+                                           ; SOURCE LINE # 976
+                                           ; SOURCE LINE # 977
+                                           ; SOURCE LINE # 978
+                                           ; SOURCE LINE # 979
+025C         ?C0144:
+                                           ; SOURCE LINE # 982
+025C 900051            MOV     DPTR,#051H
+025F E0                MOVX    A,@DPTR
+0260 54DF              ANL     A,#0DFH
+0262 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 985
+0263 E4                CLR     A
+0264 F525              MOV     bSetProperty1,A
+                                           ; SOURCE LINE # 986
+0266 F526              MOV     bSetProperty2,A
+                                           ; SOURCE LINE # 989
+0268 F524              MOV     bFrameFlag,A
+                                           ; SOURCE LINE # 992
+026A 900057            MOV     DPTR,#057H
+026D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 993
+026E 900056            MOV     DPTR,#056H
+0271 74FF              MOV     A,#0FFH
+0273         ?C0212:
+                                           ; SOURCE LINE # 995
+                                           ; SOURCE LINE # 996
+0273 8076              SJMP    ?C0217
+                                           ; SOURCE LINE # 999
+                                           ; SOURCE LINE # 1000
+                                           ; SOURCE LINE # 1001
+                                           ; SOURCE LINE # 1002
+0275         ?C0148:
+                                           ; SOURCE LINE # 1004
+0275 E553              MOV     A,bFWLoadState
+0277 6402              XRL     A,#02H
+0279 6008              JZ      ?C0149
+                                           ; SOURCE LINE # 1005
+                                           ; SOURCE LINE # 1006
+027B 7F02              MOV     R7,#02H
+027D 120000      E     LCALL   _ReplaceFW
+                                           ; SOURCE LINE # 1007
+0280 120000      E     LCALL   ErrHandleSEGFW
+                                           ; SOURCE LINE # 1008
+0283         ?C0149:
+                                           ; SOURCE LINE # 1009
+0283 120000      E     LCALL   isMEMReplacedEnd
+0286 EF                MOV     A,R7
+0287 7003              JNZ     $ + 5H
+0289 020000      R     LJMP    ?C0180
+                                           ; SOURCE LINE # 1010
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 48  
+
+                                           ; SOURCE LINE # 1015
+028C 900051            MOV     DPTR,#051H
+028F E0                MOVX    A,@DPTR
+0290 30E503            JNB     ACC.5,$ + 6H
+0293 020000      R     LJMP    ?C0180
+0296 900014            MOV     DPTR,#014H
+0299 E0                MOVX    A,@DPTR
+029A 30E503            JNB     ACC.5,$ + 6H
+029D 020000      R     LJMP    ?C0180
+                                           ; SOURCE LINE # 1016
+                                           ; SOURCE LINE # 1019
+02A0 900052            MOV     DPTR,#052H
+02A3 7403              MOV     A,#03H
+02A5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1020
+02A6 900055            MOV     DPTR,#055H
+02A9 7410              MOV     A,#010H
+02AB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1023
+02AC 900069            MOV     DPTR,#069H
+02AF E4                CLR     A
+02B0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1024
+02B1 900A1B            MOV     DPTR,#bDMICAltSetting
+02B4 E0                MOVX    A,@DPTR
+02B5 7007              JNZ     ?C0152
+                                           ; SOURCE LINE # 1025
+02B7 90003E            MOV     DPTR,#03EH
+02BA E0                MOVX    A,@DPTR
+02BB 4401              ORL     A,#01H
+02BD F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1026
+02BE         ?C0152:
+                                           ; SOURCE LINE # 1029
+02BE 900053            MOV     DPTR,#053H
+02C1 E4                CLR     A
+02C2 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1031
+02C3 900070            MOV     DPTR,#070H
+02C6         ?C0215:
+                                           ; SOURCE LINE # 1032
+                                           ; SOURCE LINE # 1033
+                                           ; SOURCE LINE # 1034
+                                           ; SOURCE LINE # 1035
+02C6 8023              SJMP    ?C0217
+                                           ; SOURCE LINE # 1039
+                                           ; SOURCE LINE # 1040
+                                           ; SOURCE LINE # 1041
+                                           ; SOURCE LINE # 1042
+02C8         ?C0156:
+                                           ; SOURCE LINE # 1043
+02C8 D203              SETB    xForceNextStage
+                                           ; SOURCE LINE # 1044
+02CA 22                RET     
+                                           ; SOURCE LINE # 1047
+                                           ; SOURCE LINE # 1048
+02CB         ?C0158:
+                                           ; SOURCE LINE # 1049
+02CB         ?C0205:
+02CB 534E1C            ANL     bCtrlFlowState,#01CH
+02CE 434E20            ORL     bCtrlFlowState,#020H
+                                           ; SOURCE LINE # 1050
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 49  
+
+02D1 22                RET     
+                                           ; SOURCE LINE # 1051
+                                           ; SOURCE LINE # 1052
+02D2         ?C0160:
+                                           ; SOURCE LINE # 1053
+02D2 534E1C            ANL     bCtrlFlowState,#01CH
+02D5 434EC0            ORL     bCtrlFlowState,#0C0H
+                                           ; SOURCE LINE # 1054
+02D8 22                RET     
+                                           ; SOURCE LINE # 1067
+                                           ; SOURCE LINE # 1068
+                                           ; SOURCE LINE # 1069
+                                           ; SOURCE LINE # 1070
+02D9         ?C0164:
+                                           ; SOURCE LINE # 1072
+02D9 900055            MOV     DPTR,#055H
+02DC E0                MOVX    A,@DPTR
+02DD 54EF              ANL     A,#0EFH
+02DF         ?C0216:
+                                           ; SOURCE LINE # 1073
+                                           ; SOURCE LINE # 1074
+02DF 800A              SJMP    ?C0217
+                                           ; SOURCE LINE # 1077
+                                           ; SOURCE LINE # 1078
+                                           ; SOURCE LINE # 1079
+                                           ; SOURCE LINE # 1080
+                                           ; SOURCE LINE # 1085
+                                           ; SOURCE LINE # 1086
+                                           ; SOURCE LINE # 1087
+                                           ; SOURCE LINE # 1088
+02E1         ?C0172:
+                                           ; SOURCE LINE # 1089
+02E1 9002E0            MOV     DPTR,#02E0H
+02E4 E4                CLR     A
+02E5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1090
+02E6 A3                INC     DPTR
+02E7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1091
+02E8 A3                INC     DPTR
+02E9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1092
+02EA A3                INC     DPTR
+02EB         ?C0217:
+02EB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1093
+02EC D203              SETB    xForceNextStage
+                                           ; SOURCE LINE # 1094
+02EE 22                RET     
+                                           ; SOURCE LINE # 1097
+                                           ; SOURCE LINE # 1098
+02EF         ?C0174:
+                                           ; SOURCE LINE # 1099
+                                           ; SOURCE LINE # 1100
+02EF 8029              SJMP    ?C0218
+                                           ; SOURCE LINE # 1102
+02F1         ?C0175:
+                                           ; SOURCE LINE # 1103
+02F1 534EE0            ANL     bCtrlFlowState,#0E0H
+                                           ; SOURCE LINE # 1104
+02F4         ?C0176:
+                                           ; SOURCE LINE # 1106
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 50  
+
+02F4 900054            MOV     DPTR,#054H
+02F7 74F0              MOV     A,#0F0H
+02F9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1107
+02FA 90002A            MOV     DPTR,#02AH
+02FD 740F              MOV     A,#0FH
+02FF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1109
+0300 900560            MOV     DPTR,#0560H
+0303 7403              MOV     A,#03H
+0305 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1110
+0306 900008            MOV     DPTR,#08H
+0309 E0                MOVX    A,@DPTR
+030A 30E00D            JNB     ACC.0,?C0177
+                                           ; SOURCE LINE # 1115
+030D 900A1B            MOV     DPTR,#bDMICAltSetting
+0310 E0                MOVX    A,@DPTR
+0311 7007              JNZ     ?C0177
+                                           ; SOURCE LINE # 1116
+0313 900016            MOV     DPTR,#016H
+0316 E0                MOVX    A,@DPTR
+0317 4410              ORL     A,#010H
+0319 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1117
+031A         ?C0177:
+                                           ; SOURCE LINE # 1119
+031A         ?C0218:
+031A 534E1C            ANL     bCtrlFlowState,#01CH
+                                           ; SOURCE LINE # 1120
+                                           ; SOURCE LINE # 1125
+                                           ; SOURCE LINE # 1126
+                                           ; SOURCE LINE # 1127
+                                           ; SOURCE LINE # 1129
+031D         ?C0180:
+031D 22                RET     
+             ; FUNCTION StateFunction (END)
+
+             ; FUNCTION _SelecStreamDimension (BEGIN)
+                                           ; SOURCE LINE # 1130
+0000 8E00        R     MOV     wIncomingWidth,R6
+0002 8F00        R     MOV     wIncomingWidth+01H,R7
+0004 8C00        R     MOV     wIncomingHeight,R4
+0006 8D00        R     MOV     wIncomingHeight+01H,R5
+                                           ; SOURCE LINE # 1131
+                                           ; SOURCE LINE # 1137
+0008 9002E0            MOV     DPTR,#02E0H
+000B E547              MOV     A,InputSize+01H
+000D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1138
+000E A3                INC     DPTR
+000F E546              MOV     A,InputSize
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1139
+0012 A3                INC     DPTR
+0013 E549              MOV     A,InputSize+03H
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1140
+0016 A3                INC     DPTR
+0017 E548              MOV     A,InputSize+02H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1155
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 51  
+
+001A C3                CLR     C
+001B E547              MOV     A,InputSize+01H
+001D 954B              SUBB    A,InputSize+05H
+001F FF                MOV     R7,A
+0020 E546              MOV     A,InputSize
+0022 954A              SUBB    A,InputSize+04H
+0024 C3                CLR     C
+0025 13                RRC     A
+0026 7900        R     MOV     R1,#LOW HStart
+0028 F7                MOV     @R1,A
+0029 EF                MOV     A,R7
+002A 13                RRC     A
+002B 09                INC     R1
+002C F7                MOV     @R1,A
+                                           ; SOURCE LINE # 1156
+002D C3                CLR     C
+002E E549              MOV     A,InputSize+03H
+0030 954D              SUBB    A,InputSize+07H
+0032 FF                MOV     R7,A
+0033 E548              MOV     A,InputSize+02H
+0035 954C              SUBB    A,InputSize+06H
+0037 C3                CLR     C
+0038 13                RRC     A
+0039 09                INC     R1
+003A F7                MOV     @R1,A
+003B EF                MOV     A,R7
+003C 13                RRC     A
+003D 09                INC     R1
+003E F7                MOV     @R1,A
+                                           ; SOURCE LINE # 1158
+003F 7800        R     MOV     R0,#LOW HStart+01H
+0041 E6                MOV     A,@R0
+0042 900072            MOV     DPTR,#072H
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1159
+0046 18                DEC     R0
+0047 E6                MOV     A,@R0
+0048 A3                INC     DPTR
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1160
+004A 7800        R     MOV     R0,#LOW VStart+01H
+004C E6                MOV     A,@R0
+004D A3                INC     DPTR
+004E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1161
+004F 18                DEC     R0
+0050 E6                MOV     A,@R0
+0051 A3                INC     DPTR
+0052 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1164
+0053 A3                INC     DPTR
+0054 E54B              MOV     A,InputSize+05H
+0056 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1165
+0057 A3                INC     DPTR
+0058 E54A              MOV     A,InputSize+04H
+005A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1166
+005B A3                INC     DPTR
+005C E54D              MOV     A,InputSize+07H
+005E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1167
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 52  
+
+005F A3                INC     DPTR
+0060 E54C              MOV     A,InputSize+06H
+0062 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1169
+0063 301516            JNB     xEnableScaleUp,?C0181
+                                           ; SOURCE LINE # 1170
+                                           ; SOURCE LINE # 1171
+0066 E500        R     MOV     A,wIncomingWidth
+0068 C3                CLR     C
+0069 13                RRC     A
+006A F500        R     MOV     wIncomingWidth,A
+006C E500        R     MOV     A,wIncomingWidth+01H
+006E 13                RRC     A
+006F F500        R     MOV     wIncomingWidth+01H,A
+                                           ; SOURCE LINE # 1172
+0071 E500        R     MOV     A,wIncomingHeight
+0073 C3                CLR     C
+0074 13                RRC     A
+0075 F500        R     MOV     wIncomingHeight,A
+0077 E500        R     MOV     A,wIncomingHeight+01H
+0079 13                RRC     A
+007A F500        R     MOV     wIncomingHeight+01H,A
+                                           ; SOURCE LINE # 1173
+007C         ?C0181:
+                                           ; SOURCE LINE # 1176
+007C 90007A            MOV     DPTR,#07AH
+007F E500        R     MOV     A,wIncomingWidth+01H
+0081 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1177
+0082 A3                INC     DPTR
+0083 E500        R     MOV     A,wIncomingWidth
+0085 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1178
+0086 A3                INC     DPTR
+0087 E500        R     MOV     A,wIncomingHeight+01H
+0089 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1179
+008A A3                INC     DPTR
+008B E500        R     MOV     A,wIncomingHeight
+008D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1183
+008E 22                RET     
+             ; FUNCTION _SelecStreamDimension (END)
+
+             ; FUNCTION _SelecStreamFormat (BEGIN)
+                                           ; SOURCE LINE # 1184
+;---- Variable 'bIncomingFormat' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1185
+                                           ; SOURCE LINE # 1186
+0000 EF                MOV     A,R7
+0001 6401              XRL     A,#01H
+0003 7022              JNZ     ?C0183
+                                           ; SOURCE LINE # 1187
+0005 900050            MOV     DPTR,#050H
+0008 301404            JNB     xInDataBayerMode,?C0184
+                                           ; SOURCE LINE # 1188
+000B 04                INC     A
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1189
+000D 8009              SJMP    ?C0185
+000F         ?C0184:
+                                           ; SOURCE LINE # 1190
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 53  
+
+000F 7403              MOV     A,#03H
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1191
+0012 900053            MOV     DPTR,#053H
+0015 7408              MOV     A,#08H
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1192
+0018         ?C0185:
+                                           ; SOURCE LINE # 1193
+0018 900054            MOV     DPTR,#054H
+001B E0                MOVX    A,@DPTR
+001C 4480              ORL     A,#080H
+001E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1194
+001F 9002BA            MOV     DPTR,#02BAH
+0022 E0                MOVX    A,@DPTR
+0023 54FD              ANL     A,#0FDH
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1195
+0026 22                RET     
+0027         ?C0183:
+0027 EF                MOV     A,R7
+0028 6402              XRL     A,#02H
+002A 7031              JNZ     ?C0191
+                                           ; SOURCE LINE # 1196
+002C 900050            MOV     DPTR,#050H
+002F 301405            JNB     xInDataBayerMode,?C0188
+                                           ; SOURCE LINE # 1197
+0032 7402              MOV     A,#02H
+0034 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1198
+0035 8009              SJMP    ?C0189
+0037         ?C0188:
+                                           ; SOURCE LINE # 1199
+0037 7404              MOV     A,#04H
+0039 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1200
+003A 900053            MOV     DPTR,#053H
+003D 7408              MOV     A,#08H
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1201
+0040         ?C0189:
+                                           ; SOURCE LINE # 1213
+0040 900061            MOV     DPTR,#061H
+0043 740A              MOV     A,#0AH
+0045 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1214
+0046 900067            MOV     DPTR,#067H
+0049 7433              MOV     A,#033H
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1219
+004C 204107            JB      xBDGP16,?C0190
+                                           ; SOURCE LINE # 1220
+004F 900070            MOV     DPTR,#070H
+0052 E0                MOVX    A,@DPTR
+0053 4480              ORL     A,#080H
+0055 F0                MOVX    @DPTR,A
+0056         ?C0190:
+                                           ; SOURCE LINE # 1221
+0056 9002BA            MOV     DPTR,#02BAH
+0059 E0                MOVX    A,@DPTR
+005A 4402              ORL     A,#02H
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 54  
+
+005C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1222
+                                           ; SOURCE LINE # 1223
+005D         ?C0191:
+005D 22                RET     
+             ; FUNCTION _SelecStreamFormat (END)
+
+             ; FUNCTION _ScaleUpSetting (BEGIN)
+                                           ; SOURCE LINE # 1225
+;---- Variable 'bIncomingFormat' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1226
+                                           ; SOURCE LINE # 1227
+0000 EF                MOV     A,R7
+0001 6401              XRL     A,#01H
+0003 7023              JNZ     ?C0192
+                                           ; SOURCE LINE # 1228
+                                           ; SOURCE LINE # 1229
+0005 900A1B            MOV     DPTR,#bDMICAltSetting
+0008 E0                MOVX    A,@DPTR
+0009 7007              JNZ     ?C0193
+                                           ; SOURCE LINE # 1230
+000B 90003E            MOV     DPTR,#03EH
+000E E0                MOVX    A,@DPTR
+000F 54FE              ANL     A,#0FEH
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1231
+0012         ?C0193:
+                                           ; SOURCE LINE # 1236
+0012 900A16            MOV     DPTR,#bClkForScaleUp
+0015 E0                MOVX    A,@DPTR
+0016 900052            MOV     DPTR,#052H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1239
+001A 900069            MOV     DPTR,#069H
+001D 7482              MOV     A,#082H
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1245
+0020 90003E            MOV     DPTR,#03EH
+0023 E0                MOVX    A,@DPTR
+0024 54FE              ANL     A,#0FEH
+0026 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1248
+0027 22                RET     
+0028         ?C0192:
+0028 BF021C            CJNE    R7,#02H,?C0196
+                                           ; SOURCE LINE # 1249
+                                           ; SOURCE LINE # 1253
+002B 900A16            MOV     DPTR,#bClkForScaleUp
+002E E0                MOVX    A,@DPTR
+002F 900052            MOV     DPTR,#052H
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1256
+0033 900069            MOV     DPTR,#069H
+0036 7402              MOV     A,#02H
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1259
+0039 900070            MOV     DPTR,#070H
+003C E0                MOVX    A,@DPTR
+003D 4410              ORL     A,#010H
+003F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1262
+0040 90003E            MOV     DPTR,#03EH
+C51 COMPILER V7.06   DISPATCHER                                                            07/22/2020 17:08:20 PAGE 55  
+
+0043 E0                MOVX    A,@DPTR
+0044 4401              ORL     A,#01H
+0046 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1263
+                                           ; SOURCE LINE # 1264
+0047         ?C0196:
+0047 22                RET     
+             ; FUNCTION _ScaleUpSetting (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2274    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----       4
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,2723 @@
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE EXUNIT
+OBJECT MODULE PLACED IN .\output\exunit.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE exunit.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\exunit.l
+                    -st) OBJECT(.\output\exunit.obj)
+
+stmt level    source
+
+   1          /************************************************************************|
+   2          |                  A L C O R   M I C R O,  C O R P.                      |
+   3          |                                                                        |
+   4          |         This source code is classified as confidential and             |
+   5          |         contains trade secrets owned by Alcor Micro, Corp.             |
+   6          |                                                                        |
+   7          |                         (C)Copyright 2008                              |
+   8          |                         Alcor Micro, Corp.                             |
+   9          |                        All rights reserved.                            |
+  10          |************************************************************************/
+  11          
+  12          #include "globaldef.h"
+  13          #include "regmap.h"
+  14          #include "globalvar.h"
+  15          #include "base.h"
+  16          #include "InFirmdef.h"
+  17          #include "usbif.h"
+  18          #include "SettingDef.h"
+  19          #include "setintf.h"
+  20          #include "exunit.h"
+  21          #include "util.h"
+  22          #include <string.h>
+  23          
+  24          extern code BYTE InternalVersion[11];
+  25          
+  26          static void RegSeqWriteControl(void)
+  27          {
+  28   1      //    BYTE data i;
+  29   1          WORD data wAddr;
+  30   1          BYTE data nLen;
+  31   1          HiByteOfWord(wAddr) = pbIBuf[1];
+  32   1          LoByteOfWord(wAddr) = pbIBuf[2];
+  33   1          nLen = pbIBuf[0]&LENGTH_MASK;
+  34   1          if((pbIBuf[0] &RW_ACTION_MASK) == READ_ACTION){
+  35   2              // Read reqest set address
+  36   2              if((bHwValue == EX_CTRL_REG_SEQUENCIAL_RW)){
+  37   3                  // Write to hardware registers
+  38   3                              memcpy(pbExBuf, &Reg[wAddr], nLen);
+  39   3              }else if(bHwValue == EX_CTRL_8051_SEQUENCIAL_RW){
+  40   3                  // Write to 8051 data segement
+  41   3                  if(pbIBuf[0] & MCU_CODE_SAPCE){
+  42   4                                      memcpy(pbExBuf, &CBYTE[wAddr], nLen);
+  43   4                  }else{
+  44   4                                      memcpy(pbExBuf, &DBYTE[wAddr], nLen);
+  45   4                  }                
+  46   3              }else{
+  47   3                  //mush tested for IIC read
+  48   3                  //pfSensorI2CReadData(wAddr, nLen, (void*)&pbExBuf);
+  49   3                  if((wAddr != 0xffff) || (nLen != 4)){
+  50   4                      ExCallBackFun_ToROM();
+  51   4                      pfSensorI2CReadData(wAddr, nLen, &pbExBuf);
+  52   4                      ExCallBackFun_ToRAM();
+  53   4                  }else{
+  54   4                      pbExBuf[0] = LoByteOfWord(wSensorAPID);
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 2   
+
+  55   4                      pbExBuf[1] = HiByteOfWord(wSensorAPID);
+  56   4                      pbExBuf[2] = LoByteOfWord(wExFirmwareVersion);
+  57   4                      pbExBuf[3] = HiByteOfWord(wExFirmwareVersion);
+  58   4                  }
+  59   3              }
+  60   2              bExGetLen = nLen;
+  61   2          }else{
+  62   2              // Write request
+  63   2              if((bHwValue == EX_CTRL_REG_SEQUENCIAL_RW)){
+  64   3                  // Write to hardware registers
+  65   3                               memcpy(&Reg[wAddr], &pbIBuf[3], nLen);
+  66   3              }else if(bHwValue == EX_CTRL_8051_SEQUENCIAL_RW){
+  67   3                  // Write to 8051 data segement
+  68   3                              memcpy(&DBYTE[wAddr], &pbIBuf[3], nLen);
+  69   3              }else{
+  70   3                  // Sensor write control
+  71   3                   ExCallBackFun_ToROM();
+  72   3                  pfSensorI2CWriteData(wAddr, nLen, &pbIBuf[3]);
+  73   3                   ExCallBackFun_ToRAM();
+  74   3              }
+  75   2          }
+  76   1      }
+  77          #ifdef UPGRADE_INTERAL
+  78          static void InternalROMProg(WORD wAddr, BYTE bData)
+  79          {
+  80   1              Reg[ROM_ADDR_L] = LoByteOfWord(wAddr);
+  81   1              Reg[ROM_ADDR_H] = HiByteOfWord(wAddr);
+  82   1      
+  83   1              // Reg[ROM_ADDR_L] = (*((BYTE *)&(wAddr) + 1))
+  84   1              // Reg[ROM_ADDR_H] = (*((BYTE *)&(wAddr)));
+  85   1              Reg[ROM_DATA] = bData;
+  86   1      }
+  87          static void UpgradeInteranlSetCtrl(void)
+  88          {
+  89   1      
+  90   1          BYTE data i;
+  91   1          WORD data wAddr;
+  92   1          if((((pbIBuf[0] & RW_ACTION_MASK) == READ_ACTION))&&
+  93   1              (((pbIBuf[0] & ERASE_ACTION_MASK) != ERASE_ACTION))){            
+  94   2              // Read bRequest
+  95   2              HiByteOfWord(wAddr) = pbIBuf[1];
+  96   2              LoByteOfWord(wAddr) = pbIBuf[2];
+  97   2              // UartWord2Hex(wAddr);
+  98   2      
+  99   2              Reg[PRG_ROM_SET] = (PRG_ROM_ENABLE | 0x1);
+ 100   2              // PRG_ROM_CTRL set output disable
+ 101   2              ClrRegBits(PRG_ROM_CTRL, PRG_ROM_OUT_ENABLE);
+ 102   2      
+ 103   2              for(i=0; i< (pbIBuf[0]&LENGTH_MASK); i++, wAddr++){
+ 104   3                  // Set Address
+ 105   3                  // ROM_ADDR_L
+ 106   3                  Reg[ROM_ADDR_L] = LoByteOfWord(wAddr);
+ 107   3                  // ROM_ADDR_H
+ 108   3                  Reg[ROM_ADDR_H] = HiByteOfWord(wAddr);
+ 109   3                  pbExBuf[i] = Reg[ROM_DATA];
+ 110   3              }            
+ 111   2              bExGetLen = pbIBuf[0]&LENGTH_MASK;
+ 112   2          }else if((pbIBuf[0] & ERASE_ACTION_MASK) == ERASE_ACTION){
+ 113   2              // Erase bRequest, 70ms 
+ 114   2              // UartString("EraSST");
+ 115   2      
+ 116   2              Reg[PRG_ROM_SET] = (PRG_ROM_ENABLE | 0x1);
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 3   
+
+ 117   2              // PRG_ROM_CTRL set output enable
+ 118   2              Reg[PRG_ROM_CTRL] = PRG_ROM_OUT_ENABLE;
+ 119   2              // 0x5555 0xaa
+ 120   2              InternalROMProg(0x5555, 0xaa);
+ 121   2      /*        
+ 122   2              Reg[ROM_ADDR_L] = 0x55;
+ 123   2              Reg[ROM_ADDR_H] = 0x55;
+ 124   2              Reg[ROM_DATA] = 0xaa;
+ 125   2      */        
+ 126   2              // 0x2aaa 0x55
+ 127   2              InternalROMProg(0x2aaa, 0x55);
+ 128   2      /*        
+ 129   2              Reg[ROM_ADDR_L] = 0xaa;
+ 130   2              Reg[ROM_ADDR_H] = 0x2a;
+ 131   2              Reg[ROM_DATA] = 0x55;
+ 132   2      */        
+ 133   2              // 0x5555 0x80
+ 134   2              InternalROMProg(0x5555, 0x80);
+ 135   2      /*        
+ 136   2              Reg[ROM_ADDR_L] = 0x55;
+ 137   2              Reg[ROM_ADDR_H] = 0x55;
+ 138   2              Reg[ROM_DATA] = 0x80;
+ 139   2      */        
+ 140   2              // 0x5555 0xaa
+ 141   2              InternalROMProg(0x5555, 0xaa);
+ 142   2      /*        
+ 143   2              Reg[ROM_ADDR_L] = 0x55;
+ 144   2              Reg[ROM_ADDR_H] = 0x55;
+ 145   2              Reg[ROM_DATA] = 0xaa;        
+ 146   2      */        
+ 147   2              // 0x2aaa 0x55
+ 148   2              InternalROMProg(0x2aaa, 0x55);
+ 149   2      /*        
+ 150   2              Reg[ROM_ADDR_L] = 0xaa;
+ 151   2              Reg[ROM_ADDR_H] = 0x2a;
+ 152   2              Reg[ROM_DATA] = 0x55;        
+ 153   2      */        
+ 154   2              // 0x5555 0x10
+ 155   2              InternalROMProg(0x5555, 0x10);
+ 156   2      /*        
+ 157   2              Reg[ROM_ADDR_L] = 0x55;
+ 158   2              Reg[ROM_ADDR_H] = 0x55;
+ 159   2              Reg[ROM_DATA] = 0x10;        
+ 160   2      */        
+ 161   2          }else{
+ 162   2              // Write bRequest
+ 163   2              // UartString("WSST");
+ 164   2              HiByteOfWord(wAddr) = pbIBuf[1];
+ 165   2              LoByteOfWord(wAddr) = pbIBuf[2];
+ 166   2              // UartWord2Hex(wAddr);
+ 167   2              Reg[PRG_ROM_SET] = (PRG_ROM_ENABLE | 0x1);
+ 168   2              // PRG_ROM_CTRL set output enable
+ 169   2              Reg[PRG_ROM_CTRL] = PRG_ROM_OUT_ENABLE;
+ 170   2              for(i=0; i< (pbIBuf[0]&LENGTH_MASK); i++, wAddr++){
+ 171   3      
+ 172   3                  // Set Address
+ 173   3                  // 0x5555 0xaa
+ 174   3                  InternalROMProg(0x5555, 0xaa);
+ 175   3      /*            
+ 176   3                  Reg[ROM_ADDR_L] = 0x55;
+ 177   3                  Reg[ROM_ADDR_H] = 0x55;
+ 178   3                  Reg[ROM_DATA] = 0xaa;        
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 4   
+
+ 179   3      */            
+ 180   3                  // 0x2aaa 0x55
+ 181   3                  InternalROMProg(0x2aaa, 0x55);
+ 182   3      /*            
+ 183   3                  Reg[ROM_ADDR_L] = 0xaa;
+ 184   3                  Reg[ROM_ADDR_H] = 0x2a;
+ 185   3                  Reg[ROM_DATA] = 0x55;        
+ 186   3      */
+ 187   3                  // 0x5555 0xa0
+ 188   3                  InternalROMProg(0x5555, 0xa0);
+ 189   3      /*            
+ 190   3                  Reg[ROM_ADDR_L] = 0x55;
+ 191   3                  Reg[ROM_ADDR_H] = 0x55;
+ 192   3                  Reg[ROM_DATA] = 0xa0;        
+ 193   3      */            
+ 194   3                  InternalROMProg(wAddr, pbIBuf[3+i]);
+ 195   3      /*
+ 196   3                  // ROM_ADDR_L
+ 197   3                  Reg[ROM_ADDR_L] = LoByteOfWord(wAddr);
+ 198   3                  // ROM_ADDR_H
+ 199   3                  Reg[ROM_ADDR_H] = HiByteOfWord(wAddr);
+ 200   3                  // Get Data
+ 201   3                  Reg[ROM_DATA] = pbIBuf[3+i];
+ 202   3      */            
+ 203   3      
+ 204   3                  // Delay 20 us
+ 205   3                 Delay10US(2);
+ 206   3              }            
+ 207   2          }
+ 208   1      
+ 209   1      }    
+ 210          static void UpgradeInteranlGetCtrl(void)
+ 211          {
+ 212   1      
+ 213   1      //    BYTE data i;
+ 214   1      /*      
+ 215   1          for(i=0; i<bExGetLen; i++){
+ 216   1              pbEP0Buf[i+3] = pbExBuf[i];
+ 217   1          }
+ 218   1      */
+ 219   1              memcpy(&pbEP0Buf[3], pbExBuf, bExGetLen);
+ 220   1      
+ 221   1      }   
+ 222          #endif
+ 223          
+ 224          #ifdef OTPFUNENABLE
+ 225          static void RegOTPControl(void)
+ 226          {
+ 227   1          WORD data wAddr;
+ 228   1      
+ 229   1          if(pbIBuf[0]==OTPRW_ACTION)
+ 230   1          {   //enter OTP R/W mode
+ 231   2                      OTPModeEnter();
+ 232   2          }else if(pbIBuf[0]==OTPROM_ACTION)
+ 233   1          {   //enter OTP ROM action
+ 234   2                      OTPModeLeave();
+ 235   2          }else if(((pbIBuf[0] & RW_ACTION_MASK) == READ_ACTION))
+ 236   1          {    // Read bRequest
+ 237   2              HiByteOfWord(wAddr) = pbIBuf[1];
+ 238   2              LoByteOfWord(wAddr) = pbIBuf[2];
+ 239   2      
+ 240   2                #ifdef OTP_TESTEU     
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 5   
+
+                            UARTString("OTPRead");
+                          UartWord2Hex(wAddr);
+                              wAddr=wAddr+UPGRADE_RAM_START_ADDR;
+                              pbExBuf[0]=Reg[wAddr];
+                              pbExBuf[1]=Reg[wAddr+1];
+                              pbExBuf[2]=Reg[wAddr+2];
+                              pbExBuf[3]=Reg[wAddr+3];
+                              pbExBuf[4]=Reg[wAddr+4];
+                              pbExBuf[5]=Reg[wAddr+5];
+                              pbExBuf[6]=Reg[wAddr+6];
+                              pbExBuf[7]=Reg[wAddr+7];
+                      #else
+ 253   2                      OTPReadData(wAddr,(pbIBuf[0]&LENGTH_MASK),pbExBuf);
+ 254   2              #endif                  
+ 255   2              bExGetLen = pbIBuf[0]&LENGTH_MASK;              
+ 256   2      
+ 257   2          }else
+ 258   1          {   //write action
+ 259   2              if(pbIBuf[0]==OTPWRITE_EN_ACTION)
+ 260   2              {
+ 261   3                  OTPWriteEnable();
+ 262   3              }else if(pbIBuf[0]==OTPWRITE_DIS_ACTION)
+ 263   2              {
+ 264   3                  OTPWriteDisable();
+ 265   3              }else
+ 266   2              {
+ 267   3                HiByteOfWord(wAddr) = pbIBuf[1];
+ 268   3                LoByteOfWord(wAddr) = pbIBuf[2];
+ 269   3               #ifdef OTP_TESTEU      
+                        UARTString("OTPWrite");
+                           UartWord2Hex(wAddr);
+                              wAddr=wAddr+UPGRADE_RAM_START_ADDR;              
+                              Reg[wAddr]=pbIBuf[3];
+                              Reg[wAddr+1]=pbIBuf[4];
+                              Reg[wAddr+2]=pbIBuf[5];
+                              Reg[wAddr+3]=pbIBuf[6];
+                              Reg[wAddr+4]=pbIBuf[7];
+                              Reg[wAddr+5]=pbIBuf[8];
+                              Reg[wAddr+6]=pbIBuf[9];
+                              Reg[wAddr+7]=pbIBuf[10];
+                          #else
+ 282   3               OTPWriteData(wAddr,(pbIBuf[0]&LENGTH_MASK),&pbIBuf[3]);        
+ 283   3              #endif
+ 284   3             }
+ 285   2          }
+ 286   1              
+ 287   1      }
+ 288          
+ 289          #endif
+ 290          
+ 291          // Upgrade External EEPROM/Flash set control
+ 292          static void UpgradeExternalSetCtrl(void)
+ 293          {
+ 294   1         BYTE data nLen;
+ 295   1         WORD data wAddr;
+ 296   1         BYTE data i;
+ 297   1         HiByteOfWord(wAddr) = pbIBuf[1];
+ 298   1         LoByteOfWord(wAddr) = pbIBuf[2];
+ 299   1         nLen = pbIBuf[0]&LENGTH_MASK;
+ 300   1         if((pbIBuf[0] & ERASE_ACTION_MASK)){
+ 301   2      #ifndef DISABLE_SPI    
+ 302   2          // Erase SPI flash
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 6   
+
+ 303   2          if(xSPIEnable){
+ 304   3              EraseSPIFlash();
+ 305   3          }    
+ 306   2      #endif    
+ 307   2          bExWrIdx = 0;
+ 308   2         }else if((pbIBuf[0] & WRITE_ACTION)){
+ 309   2      /*   
+ 310   2              for(nLen=0; nLen<8; nLen++){
+ 311   2                  pbExBuf[bExWrIdx*8+nLen] = pbIBuf[3+nLen];
+ 312   2              } 
+ 313   2      */
+ 314   2                      memcpy(&pbExBuf[bExWrIdx*8], &pbIBuf[3], nLen);
+ 315   2              if(pbIBuf[0] & FLUSH_ACTION){
+ 316   3                              if(nLen < 8){
+ 317   4                                      i = (bExWrIdx)*8;
+ 318   4                                      nLen = i + nLen;
+ 319   4                              }else{
+ 320   4                                      nLen = (bExWrIdx+1)*8;
+ 321   4                              }
+ 322   3                  if(I2CEEPROMWriteData(wAddr, nLen, pbExBuf) != TRUE){
+ 323   4      #ifdef EEPROM_DEBUG                
+                              UartString("writeEEPROM failed");
+              #endif                
+ 326   4                  }
+ 327   3                  bExWrIdx = 0;
+ 328   3              }else{
+ 329   3                  bExWrIdx++;           
+ 330   3              }    
+ 331   2         }else{
+ 332   2           // Read request
+ 333   2              // 2009,04,03 Lear add
+ 334   2              // Clear I2C buffer before read
+ 335   2              // Clear firmware buffer
+ 336   2              /*for(i=0; i<nLen; i++){
+ 337   2                              pbExBuf[i] = 0x00;
+ 338   2              }*/
+ 339   2                      memset(pbExBuf,0x00,nLen);
+ 340   2              if(I2CEEPROMReadData(wAddr, nLen, pbExBuf) != TRUE){
+ 341   3      #ifdef EEPROM_DEBUG            
+                          UartString("readEEPROM failed");
+              #endif            
+ 344   3              }    
+ 345   2              bExGetLen = nLen;
+ 346   2         }    
+ 347   1      } 
+ 348          static void ExGetCtrlReturnData(void)
+ 349          {
+ 350   1      //    BYTE data i;
+ 351   1      /*
+ 352   1          for(i=0; i<bExGetLen; i++){
+ 353   1              pbEP0Buf[i+3] = pbExBuf[i];
+ 354   1          }    
+ 355   1      */
+ 356   1              memcpy(&pbEP0Buf[3], pbExBuf, bExGetLen);
+ 357   1      }    
+ 358          
+ 359          static void SetEEPROMSize(BYTE eerombit)
+ 360          {
+ 361   1          if(eerombit == 0xff){
+ 362   2              // SPI flash 64K
+ 363   2              wEEPROMSize = (64*1024 - 32);// to prevent overflow
+ 364   2              xSPIEnable = TRUE;
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 7   
+
+ 365   2                      #ifndef DISABLE_SPI
+ 366   2              SPIRDID();
+ 367   2                      #endif
+ 368   2          }else{
+ 369   2              wEEPROMSize = 128*eerombit;
+ 370   2              xSPIEnable = FALSE;
+ 371   2          }
+ 372   1      }
+ 373          
+ 374          static void SetWriteProtect()
+ 375          {
+ 376   1           SetRegBits(REG_WAKEUP_CH, DIS_PROTECT_GP0);  //Disable Protect GPIO0
+ 377   1      #ifndef DISABLE_SPI    
+ 378   1          if(pbIBuf[0] == 1){
+ 379   2              
+ 380   2              if(xSPIEnable == FALSE){
+ 381   3                  // Enable EEPROM write protect
+ 382   3                  GPIOGroup1High(bWriteProtectGPIO);
+ 383   3              }else{
+ 384   3                  // Enable SPI WP protect
+ 385   3                  GPIOGroup1Low(bWriteProtectGPIO);          
+ 386   3              }            
+ 387   2          }else{
+ 388   2              
+ 389   2              if(xSPIEnable == FALSE){
+ 390   3                  // Disable EEPROM write protect
+ 391   3                  GPIOGroup1Low(bWriteProtectGPIO);
+ 392   3              }else{
+ 393   3                  // Disable SPI WP protect
+ 394   3                  GPIOGroup1High(bWriteProtectGPIO);
+ 395   3                  SPIWriteEnable();
+ 396   3              }
+ 397   2          }
+ 398   1      #else
+                  if(pbIBuf[0] == 1){
+                      // Enable write protect
+                      GPIOGroup1High(bWriteProtectGPIO);
+                  }else{
+                      // Disable write protect
+                      GPIOGroup1Low(bWriteProtectGPIO);
+                  }
+              #endif    
+ 407   1           ClrRegBits(REG_WAKEUP_CH, DIS_PROTECT_GP0);  //Protect GPIO0
+ 408   1      }
+ 409          
+ 410          // Extension Unit Control Handler for SET_CUR
+ 411          void ExtensionUnitSetControl(void)
+ 412          {
+ 413   1          BYTE data  bRecBytesCnt=0;//i;
+ 414   1          while( !(Reg[REG_EP0_FIFO_CTRL] & EP0_IN_FIFO_READY) );
+ 415   1      
+ 416   1              bRecBytesCnt = Reg[REG_EP0_FIFO_LEN] & EP0_FIFO_BYTE_LEN_MASK;
+ 417   1      //      for( i = 0 ; i < bRecBytesCnt ; i++ ){
+ 418   1      //              pbIBuf[i] = pbEP0Buf[i];
+ 419   1      //    }
+ 420   1      
+ 421   1              memcpy(pbIBuf,pbEP0Buf,bRecBytesCnt);
+ 422   1              
+ 423   1              Reg[REG_EP0_FIFO_CTRL]&=~EP0_IN_FIFO_READY;
+ 424   1              switch(bHwValue){
+ 425   2                  // Addr ctrl
+ 426   2                  case EX_CTRL_ADDR:
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 8   
+
+ 427   2                      bAdrID=pbIBuf[0];
+ 428   2                      LoByteOfWord(wExtenAdr) = pbIBuf[2];
+ 429   2                      HiByteOfWord(wExtenAdr) = pbIBuf[3];
+ 430   2                      break;
+ 431   2              // Data Ctrl            
+ 432   2              case EX_CTRL_DATA:
+ 433   2                  LoByteOfWord(wExtenValue) = pbIBuf[0];
+ 434   2                  HiByteOfWord(wExtenValue) = pbIBuf[1];
+ 435   2                  if(bAdrID==1){
+ 436   3                      Reg[wExtenAdr]=(BYTE)wExtenValue;
+ 437   3                  }else{
+ 438   3                       ExCallBackFun_ToROM();
+ 439   3                      pfSensorI2CWriteData(wExtenAdr, bRecBytesCnt, pbIBuf);
+ 440   3                       ExCallBackFun_ToRAM();
+ 441   3                  }
+ 442   2                  break;      
+ 443   2              // EEPROM Read/Write Control                    
+ 444   2              case EX_CTRL_EEPROM_RW:
+ 445   2                  // EEPROM/SPI flash write control
+ 446   2                  UpgradeExternalSetCtrl();
+ 447   2                  break;            
+ 448   2              //Flip            
+ 449   2              case EX_CTRL_FLIP:
+ 450   2                  bExtenUnitCtrl= pbIBuf[0];
+ 451   2                  xSetPropertyFlip = TRUE;
+ 452   2                  if(bExtenUnitCtrl & 0x2){
+ 453   3                      bFlip = 0x01;
+ 454   3                  }else{
+ 455   3                      bFlip = 0x00;
+ 456   3                  }
+ 457   2                      QueuePrpSaveReq();      
+ 458   2                  break;  
+ 459   2              // Mirror            
+ 460   2              case EX_CTRL_MIRROR:
+ 461   2                  bExtenUnitCtrl= pbIBuf[0];
+ 462   2                  xSetPropertyMirror = TRUE;
+ 463   2                  if(bExtenUnitCtrl & 0x1){
+ 464   3                      bMirror = 0x01;
+ 465   3                  }else{
+ 466   3                      bMirror = 0x00;
+ 467   3                  }
+ 468   2                      QueuePrpSaveReq();      
+ 469   2                  break;   
+ 470   2              // backend, sensor MCU registers Read/Write controls            
+ 471   2              case EX_CTRL_REG_SEQUENCIAL_RW:
+ 472   2              case EX_CTRL_SENSOR_SEQUENCIAL_RW:
+ 473   2              case EX_CTRL_8051_SEQUENCIAL_RW:
+ 474   2                  // Hardware reg /II2C and 8051 write control
+ 475   2                  //RegSeqWriteControl(bHwValue);
+ 476   2                  RegSeqWriteControl();
+ 477   2                  break;                                           
+ 478   2              // Internal ROM upgrade control            
+ 479   2              case EX_CTRL_UPGRADE_INTER_ROM:
+ 480   2      #ifdef UPGRADE_INTERAL            
+ 481   2                  UpgradeInteranlSetCtrl();
+ 482   2      #endif            
+ 483   2                  break;            
+ 484   2              // These controls is meanless for SET_CUR            
+ 485   2              case EX_CTRL_GET_HW_VER:
+ 486   2              case EX_CTRL_GET_SET_VER:
+ 487   2              case EX_CTRL_GET_FW_VER:        
+ 488   2                  // DO NOTHING           
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 9   
+
+ 489   2                  break;
+ 490   2              // Set EEPROM Type, used by XUpdate utility            
+ 491   2              case EX_CTRL_EEPROM_TYPE:
+ 492   2                  bEEPromKBits = pbIBuf[0];
+ 493   2                  SetEEPROMSize(bEEPromKBits);
+ 494   2                  break;                        
+ 495   2              case EX_CTRL_WRITE_PROTECT:
+ 496   2                  // Set EEPROM Write Protect
+ 497   2                  SetWriteProtect();
+ 498   2                  break;
+ 499   2               case EX_CTRL_TOUCHCTRL_RW:
+ 500   2                      EX_CallBackFunction(FUNSEL_HIDExtenUnitCtrl);//pfHIDExtenUnitCtrl();
+ 501   2                      break;
+ 502   2              // Reserve control selector 16 for external code usage
+ 503   2      #ifdef OTPFUNENABLE
+ 504   2           case EX_CTRL_OTPROM_RW:
+ 505   2                      RegOTPControl();
+ 506   2                      break;
+ 507   2      #else
+                      case 0xF:                       
+              #endif
+ 510   2            case 0x10:
+ 511   2                case 0x11:
+ 512   2                case 0x12:
+ 513   2                case 0x13:
+ 514   2                case 0x14:
+ 515   2                case 0x15:
+ 516   2                case 0x16:
+ 517   2                //case 0x17:
+ 518   2                case 0x18:    
+ 519   2                  // Hook function for external firmware
+ 520   2                  pfSensorExtenUnitCtrl();
+ 521   2                  break;
+ 522   2              default:
+ 523   2                  InvalidRequestandStall();
+ 524   2                  return;
+ 525   2              }
+ 526   1              Reg[REG_EP0_FIFO_CTRL]|=EP0_STATUS_OUT_NO_DATA;
+ 527   1              while( Reg[REG_EP0_FIFO_CTRL] & EP0_STATUS_OUT_NO_DATA );
+ 528   1          
+ 529   1      }
+ 530          
+ 531          // Extension Unit Control Handler for GET_XXX
+ 532          static void ExUnitGetCURCtrl(BYTE HwValue)
+ 533          {
+ 534   1          BYTE data i,bTmp;
+ 535   1          switch(HwValue){
+ 536   2              case EX_CTRL_ADDR:
+ 537   2                  pbEP0Buf[0]=0x00;
+ 538   2                  pbEP0Buf[1]=0x00;
+ 539   2                  pbEP0Buf[2]=0x00;
+ 540   2                  pbEP0Buf[3]=0x00;
+ 541   2                  bTmp=4;
+ 542   2                  break;
+ 543   2              case EX_CTRL_DATA:
+ 544   2                  if(bAdrID==1){      //ASIC Register data
+ 545   3                      pbEP0Buf[0]=Reg[wExtenAdr];
+ 546   3                      pbEP0Buf[1]=0x00;
+ 547   3                      bTmp=2;
+ 548   3                  }else if(bAdrID==2){ //sensor register data
+ 549   3                       ExCallBackFun_ToROM();
+ 550   3                      pfSensorI2CReadData(wExtenAdr, 2, pbEP0Buf);
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 10  
+
+ 551   3                       ExCallBackFun_ToRAM();
+ 552   3                      bTmp=2;
+ 553   3                  }else{
+ 554   3                      InvalidRequestandStall();
+ 555   3                      return;
+ 556   3                  }
+ 557   2                  break;  
+ 558   2              case EX_CTRL_EEPROM_RW:
+ 559   2                  // Read EEPROM/SPI flash
+ 560   2                  ExGetCtrlReturnData();
+ 561   2                  bTmp = wLength;
+ 562   2                  break;         
+ 563   2              case EX_CTRL_FLIP:
+ 564   2              case EX_CTRL_MIRROR:
+ 565   2                  pbEP0Buf[0] = bMirror | ( bFlip<<1 );//bExtenUnitCtrl;
+ 566   2                  bTmp=1;
+ 567   2                  break;
+ 568   2              case EX_CTRL_REG_SEQUENCIAL_RW:
+ 569   2              case EX_CTRL_SENSOR_SEQUENCIAL_RW:
+ 570   2              case EX_CTRL_8051_SEQUENCIAL_RW:
+ 571   2                case EX_CTRL_TOUCHCTRL_RW:            
+ 572   2                //case EX_CTRL_OTPROM_RW:             
+ 573   2                  // Sequencial read from hardware register, I2C and 8051 code, data space
+ 574   2                  ExGetCtrlReturnData();
+ 575   2                  bTmp=wLength;
+ 576   2                  break;       
+ 577   2              case EX_CTRL_UPGRADE_INTER_ROM:
+ 578   2      #ifdef UPGRADE_INTERAL                        
+ 579   2                  UpgradeInteranlGetCtrl();
+ 580   2      #endif            
+ 581   2                  bTmp=wLength;
+ 582   2                  break;  
+ 583   2              case EX_CTRL_GET_HW_VER:
+ 584   2                  pbEP0Buf[0] = Reg[REG_CHIPVER];
+ 585   2                  bTmp = 1;
+ 586   2                  break;   
+ 587   2              case EX_CTRL_EEPROM_TYPE:
+ 588   2                  pbEP0Buf[0] = bEEPromKBits;
+ 589   2                  bTmp = 1;
+ 590   2                  break;   
+ 591   2              case EX_CTRL_GET_SET_VER:
+ 592   2                  // Get SetFile version
+ 593   2                  for(i=0; i<EXTENSION_MAX_SIZE; i++){
+ 594   3                      pbEP0Buf[i] = 0x0;
+ 595   3                  }
+ 596   2                  SetPtrTabEx(path_SettingVersion);
+ 597   2                  bTmp=wLength;
+ 598   2                  for(i=0; i<bTmp; i++){
+ 599   3                      pbEP0Buf[i] = GetTab(i);
+ 600   3                      if(pbEP0Buf[i] == 0x00){
+ 601   4                              break;
+ 602   4                      }
+ 603   3                  }
+ 604   2                  break;
+ 605   2              case EX_CTRL_GET_FW_VER:
+ 606   2                  // return internal firmware version
+ 607   2                  for(i=0; i<wLength; i++){
+ 608   3                      pbEP0Buf[i] = InternalVersion[i];
+ 609   3                      if(InternalVersion[i] == 0x0){
+ 610   4                              break;
+ 611   4                      }
+ 612   3                  }
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 11  
+
+ 613   2                  bTmp=wLength; 
+ 614   2                  break;
+ 615   2              case EX_CTRL_WRITE_PROTECT:
+ 616   2                  // Return Write Protect Status
+ 617   2                  pbEP0Buf[0] = Reg[REG_GPIO1_DATA]&bWriteProtectGPIO;
+ 618   2                  bTmp = 1;
+ 619   2                  break;
+ 620   2        #ifdef OTPFUNENABLE
+ 621   2              case EX_CTRL_OTPROM_RW:         
+ 622   2                       ExGetCtrlReturnData(); 
+ 623   2                    bTmp=wLength;
+ 624   2                  break;     
+ 625   2        #else
+                        case 0xF:
+                #endif
+ 628   2                case 0x10:
+ 629   2                case 0x11:
+ 630   2                case 0x12:
+ 631   2                case 0x13:
+ 632   2                case 0x14:
+ 633   2                case 0x15:
+ 634   2                case 0x16:
+ 635   2               // case 0x17:
+ 636   2                case 0x18:            
+ 637   2                  // Hook function for external firmware
+ 638   2                  pfSensorExtenUnitCtrl();
+ 639   2                  bTmp=wLength; 
+ 640   2                  break; 
+ 641   2              default:
+ 642   2                  InvalidRequestandStall();
+ 643   2                  return;
+ 644   2          }
+ 645   1          Reg[REG_EP0_FIFO_LEN]=bTmp;
+ 646   1          bRequestErrorCode = EC_NO_ERROR;
+ 647   1              WaitTXEnd();
+ 648   1      }
+ 649          
+ 650          static void ExUnitGetLENCtrl(BYTE HwValue)
+ 651          {
+ 652   1          switch(HwValue){
+ 653   2              case EX_CTRL_ADDR:
+ 654   2                  pbEP0Buf[0] =0x04;
+ 655   2                  break;
+ 656   2              case EX_CTRL_DATA:
+ 657   2                  pbEP0Buf[0] =0x02;
+ 658   2                  break;
+ 659   2              case EX_CTRL_FLIP:
+ 660   2              case EX_CTRL_MIRROR:   
+ 661   2              case EX_CTRL_EEPROM_TYPE:
+ 662   2              case EX_CTRL_GET_HW_VER:
+ 663   2              case EX_CTRL_WRITE_PROTECT:     
+ 664   2                  pbEP0Buf[0] = 0x1;
+ 665   2                  break;            
+ 666   2              case EX_CTRL_EEPROM_RW:
+ 667   2              case EX_CTRL_REG_SEQUENCIAL_RW:
+ 668   2              case EX_CTRL_SENSOR_SEQUENCIAL_RW:
+ 669   2              case EX_CTRL_8051_SEQUENCIAL_RW:
+ 670   2              case EX_CTRL_UPGRADE_INTER_ROM:   
+ 671   2              case EX_CTRL_GET_SET_VER:
+ 672   2              case EX_CTRL_GET_FW_VER:   
+ 673   2      #ifdef OTPFUNENABLE                     
+ 674   2                case EX_CTRL_OTPROM_RW:
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 12  
+
+ 675   2      #else //endif
+               //           pbEP0Buf[0] = EXTENSION_MAX_SIZE;                                                           
+             -       
+               //           break;
+              //#ifndef OTPFUNENABLE 
+                      case 0x0F:  
+              #endif
+ 681   2            case 0x10:
+ 682   2                case 0x11:
+ 683   2                case 0x12:
+ 684   2                case 0x13:
+ 685   2                case 0x14:
+ 686   2                case 0x15:
+ 687   2                case 0x16:
+ 688   2                case 0x17:
+ 689   2                case 0x18:            
+ 690   2                  pbEP0Buf[0] = EXTENSION_MAX_SIZE;
+ 691   2                  break;
+ 692   2              default:
+ 693   2                  InvalidRequestandStall();
+ 694   2                  return;
+ 695   2          }
+ 696   1          pbEP0Buf[1] = 0x0;
+ 697   1          Reg[REG_EP0_FIFO_LEN]= 0x2;
+ 698   1          bRequestErrorCode = EC_NO_ERROR;
+ 699   1              WaitTXEnd();
+ 700   1      }
+ 701          
+ 702          static void ExUnitGetMISCCtrl(BYTE HwValue)
+ 703          {
+ 704   1          BYTE data i,bTmp;
+ 705   1          switch(HwValue){
+ 706   2              case EX_CTRL_ADDR:
+ 707   2                  pbEP0Buf[0] =0x00;
+ 708   2                  pbEP0Buf[1] =0x00;
+ 709   2                  pbEP0Buf[2] =0x00;
+ 710   2                  pbEP0Buf[3] =0x00;
+ 711   2                  bTmp=4;
+ 712   2                  break;
+ 713   2              case EX_CTRL_DATA:
+ 714   2                  pbEP0Buf[0] =0x00;
+ 715   2                  pbEP0Buf[1] =0x00;
+ 716   2                  bTmp=2;
+ 717   2                  break;  
+ 718   2              case EX_CTRL_EEPROM_RW:
+ 719   2              case EX_CTRL_REG_SEQUENCIAL_RW:
+ 720   2              case EX_CTRL_SENSOR_SEQUENCIAL_RW:
+ 721   2              case EX_CTRL_8051_SEQUENCIAL_RW:
+ 722   2              case EX_CTRL_UPGRADE_INTER_ROM:
+ 723   2              case EX_CTRL_GET_SET_VER:
+ 724   2              case EX_CTRL_GET_FW_VER:                                                                        
+ 725   2              case EX_CTRL_OTPROM_RW:
+ 726   2                //case 0x0F:          
+ 727   2      
+ 728   2            case 0x10:
+ 729   2                case 0x11:
+ 730   2                case 0x12:
+ 731   2                case 0x13:
+ 732   2                case 0x14:
+ 733   2                case 0x15:
+ 734   2                case 0x16:
+ 735   2                case 0x17:
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 13  
+
+ 736   2                case 0x18:            
+ 737   2                  for(i=0;i<EXTENSION_MAX_SIZE;i++){
+ 738   3                      pbEP0Buf[i]=0;
+ 739   3                  }
+ 740   2                  bTmp=EXTENSION_MAX_SIZE;
+ 741   2                  break;                       
+ 742   2            case EX_CTRL_MIRROR:
+ 743   2            case EX_CTRL_FLIP:
+ 744   2            case EX_CTRL_GET_HW_VER:
+ 745   2            case EX_CTRL_EEPROM_TYPE:
+ 746   2            case EX_CTRL_WRITE_PROTECT:
+ 747   2                          pbEP0Buf[0]=0;
+ 748   2                  bTmp = 1;
+ 749   2                  break;
+ 750   2              default:
+ 751   2                  InvalidRequestandStall();
+ 752   2                  return;            
+ 753   2          }
+ 754   1          Reg[REG_EP0_FIFO_LEN]=bTmp;
+ 755   1          bRequestErrorCode = EC_NO_ERROR;
+ 756   1              WaitTXEnd();
+ 757   1      }
+ 758          void ExtensionUnitGetControl(void)
+ 759          {
+ 760   1          switch(bRequest){
+ 761   2              case REQ_GET_CUR:   //0x81
+ 762   2                  ExUnitGetCURCtrl(bHwValue);
+ 763   2                  break;
+ 764   2              case REQ_GET_INFO:   //0x86
+ 765   2             // #ifndef OTPFUNENABLE
+ 766   2              //    if((bHwValue>0) && (bHwValue<=16)){
+ 767   2              //#else
+ 768   2                   if((bHwValue>0) && (bHwValue<=0x18)){
+ 769   3              //#endif
+ 770   3                      pbEP0Buf[0] =0x03;              //support set/get request
+ 771   3                  }else{
+ 772   3                      InvalidRequestandStall();
+ 773   3                      return;
+ 774   3                  }
+ 775   2                  Reg[REG_EP0_FIFO_LEN]=1;
+ 776   2                  bRequestErrorCode = EC_NO_ERROR;
+ 777   2                      WaitTXEnd();
+ 778   2                  break;            
+ 779   2              case REQ_GET_LEN:               //0x85
+ 780   2                  ExUnitGetLENCtrl(bHwValue);
+ 781   2                  break;
+ 782   2              case REQ_GET_MIN:   //0x82
+ 783   2              case REQ_GET_MAX:   //0x83
+ 784   2              case REQ_GET_RES:   //0x84
+ 785   2              case REQ_GET_DEF:   //0x87 
+ 786   2                  ExUnitGetMISCCtrl(bHwValue);           
+ 787   2                  break;
+ 788   2              default:
+ 789   2                  InvalidRequestandStall();
+ 790   2          }
+ 791   1      }
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 14  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION RegSeqWriteControl (BEGIN)
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 27
+                                           ; SOURCE LINE # 31
+0000 900000      E     MOV     DPTR,#pbIBuf+01H
+0003 E0                MOVX    A,@DPTR
+0004 F500        R     MOV     wAddr,A
+                                           ; SOURCE LINE # 32
+0006 A3                INC     DPTR
+0007 E0                MOVX    A,@DPTR
+0008 F500        R     MOV     wAddr+01H,A
+                                           ; SOURCE LINE # 33
+000A 900000      E     MOV     DPTR,#pbIBuf
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F 541F              ANL     A,#01FH
+0011 F500        R     MOV     nLen,A
+                                           ; SOURCE LINE # 34
+0013 EF                MOV     A,R7
+0014 30E703            JNB     ACC.7,$ + 6H
+0017 020000      R     LJMP    ?C0001
+                                           ; SOURCE LINE # 36
+001A E500        E     MOV     A,wValue
+001C B40612            CJNE    A,#06H,?C0002
+                                           ; SOURCE LINE # 38
+001F AF00        R     MOV     R7,nLen
+0021 7E00              MOV     R6,#00H
+0023 E4                CLR     A
+0024 2500        R     ADD     A,wAddr+01H
+0026 FD                MOV     R5,A
+0027 E4                CLR     A
+0028 3500        R     ADDC    A,wAddr
+002A FA                MOV     R2,A
+002B A905              MOV     R1,AR5
+002D 7B01              MOV     R3,#01H
+                                           ; SOURCE LINE # 39
+002F 8026              SJMP    ?C0217
+0031         ?C0002:
+0031 E500        E     MOV     A,wValue
+0033 6408              XRL     A,#08H
+0035 702B              JNZ     ?C0004
+                                           ; SOURCE LINE # 41
+0037 900000      E     MOV     DPTR,#pbIBuf
+003A E0                MOVX    A,@DPTR
+003B AF00        R     MOV     R7,nLen
+003D 7E00              MOV     R6,#00H
+003F 30E60E            JNB     ACC.6,?C0005
+                                           ; SOURCE LINE # 42
+0042 E4                CLR     A
+0043 2500        R     ADD     A,wAddr+01H
+0045 FD                MOV     R5,A
+0046 E4                CLR     A
+0047 3500        R     ADDC    A,wAddr
+0049 FA                MOV     R2,A
+004A A905              MOV     R1,AR5
+004C 7BFF              MOV     R3,#0FFH
+                                           ; SOURCE LINE # 43
+004E 8007              SJMP    ?C0216
+0050         ?C0005:
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 15  
+
+                                           ; SOURCE LINE # 44
+0050 E500        R     MOV     A,wAddr+01H
+0052 F9                MOV     R1,A
+0053 7A00              MOV     R2,#00H
+0055 7B00              MOV     R3,#00H
+0057         ?C0216:
+0057         ?C0217:
+0057 7800        E     MOV     R0,#LOW pbExBuf
+0059 7C00        E     MOV     R4,#HIGH pbExBuf
+005B 7D01              MOV     R5,#01H
+005D 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 46
+0060 8052              SJMP    ?C0003
+0062         ?C0004:
+                                           ; SOURCE LINE # 49
+0062 E500        R     MOV     A,wAddr+01H
+0064 B4FF0B            CJNE    A,#0FFH,?C0009
+0067 E500        R     MOV     A,wAddr
+0069 B4FF06            CJNE    A,#0FFH,?C0009
+006C E500        R     MOV     A,nLen
+006E 6404              XRL     A,#04H
+0070 6022              JZ      ?C0008
+0072         ?C0009:
+                                           ; SOURCE LINE # 50
+0072 120000      E     LCALL   ExCallBackFun_ToROM
+                                           ; SOURCE LINE # 51
+0075 7B01              MOV     R3,#01H
+0077 7A00        E     MOV     R2,#HIGH pbExBuf
+0079 7900        E     MOV     R1,#LOW pbExBuf
+007B 900000      E     MOV     DPTR,#_pfSensorI2CReadData
+007E E0                MOVX    A,@DPTR
+007F FE                MOV     R6,A
+0080 A3                INC     DPTR
+0081 E0                MOVX    A,@DPTR
+0082 F582              MOV     DPL,A
+0084 8E83              MOV     DPH,R6
+0086 AD00        R     MOV     R5,nLen
+0088 AF00        R     MOV     R7,wAddr+01H
+008A AE00        R     MOV     R6,wAddr
+008C 120000      E     LCALL   ?C?ICALL2
+                                           ; SOURCE LINE # 52
+008F 120000      E     LCALL   ExCallBackFun_ToRAM
+                                           ; SOURCE LINE # 53
+0092 8020              SJMP    ?C0003
+0094         ?C0008:
+                                           ; SOURCE LINE # 54
+0094 900000      E     MOV     DPTR,#wSensorAPID+01H
+0097 E0                MOVX    A,@DPTR
+0098 900000      E     MOV     DPTR,#pbExBuf
+009B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 55
+009C 900000      E     MOV     DPTR,#wSensorAPID
+009F E0                MOVX    A,@DPTR
+00A0 900000      E     MOV     DPTR,#pbExBuf+01H
+00A3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 56
+00A4 900000      E     MOV     DPTR,#wExFirmwareVersion+01H
+00A7 E0                MOVX    A,@DPTR
+00A8 900000      E     MOV     DPTR,#pbExBuf+02H
+00AB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 57
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 16  
+
+00AC 900000      E     MOV     DPTR,#wExFirmwareVersion
+00AF E0                MOVX    A,@DPTR
+00B0 900000      E     MOV     DPTR,#pbExBuf+03H
+00B3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 58
+                                           ; SOURCE LINE # 59
+00B4         ?C0003:
+                                           ; SOURCE LINE # 60
+00B4 850000      E     MOV     bExGetLen,nLen
+                                           ; SOURCE LINE # 61
+00B7 22                RET     
+00B8         ?C0001:
+                                           ; SOURCE LINE # 63
+00B8 E500        E     MOV     A,wValue
+00BA B40612            CJNE    A,#06H,?C0012
+                                           ; SOURCE LINE # 65
+00BD AF00        R     MOV     R7,nLen
+00BF 7E00              MOV     R6,#00H
+00C1 E4                CLR     A
+00C2 2500        R     ADD     A,wAddr+01H
+00C4 FD                MOV     R5,A
+00C5 E4                CLR     A
+00C6 3500        R     ADDC    A,wAddr
+00C8 A805              MOV     R0,AR5
+00CA FC                MOV     R4,A
+00CB 7D01              MOV     R5,#01H
+                                           ; SOURCE LINE # 66
+00CD 8010              SJMP    ?C0218
+00CF         ?C0012:
+00CF E500        E     MOV     A,wValue
+00D1 B40814            CJNE    A,#08H,?C0014
+                                           ; SOURCE LINE # 68
+00D4 AF00        R     MOV     R7,nLen
+00D6 7E00              MOV     R6,#00H
+00D8 E500        R     MOV     A,wAddr+01H
+00DA F8                MOV     R0,A
+00DB 7C00              MOV     R4,#00H
+00DD 7D00              MOV     R5,#00H
+00DF         ?C0218:
+00DF 7B01              MOV     R3,#01H
+00E1 7A00        E     MOV     R2,#HIGH pbIBuf+03H
+00E3 7900        E     MOV     R1,#LOW pbIBuf+03H
+00E5 020000      E     LJMP    ?C?COPY
+                                           ; SOURCE LINE # 69
+00E8         ?C0014:
+                                           ; SOURCE LINE # 71
+00E8 120000      E     LCALL   ExCallBackFun_ToROM
+                                           ; SOURCE LINE # 72
+00EB 7B01              MOV     R3,#01H
+00ED 7A00        E     MOV     R2,#HIGH pbIBuf+03H
+00EF 7900        E     MOV     R1,#LOW pbIBuf+03H
+00F1 900000      E     MOV     DPTR,#_pfSensorI2CWriteData
+00F4 E0                MOVX    A,@DPTR
+00F5 FE                MOV     R6,A
+00F6 A3                INC     DPTR
+00F7 E0                MOVX    A,@DPTR
+00F8 F582              MOV     DPL,A
+00FA 8E83              MOV     DPH,R6
+00FC AD00        R     MOV     R5,nLen
+00FE AF00        R     MOV     R7,wAddr+01H
+0100 AE00        R     MOV     R6,wAddr
+0102 120000      E     LCALL   ?C?ICALL2
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 17  
+
+                                           ; SOURCE LINE # 73
+0105 120000      E     LCALL   ExCallBackFun_ToRAM
+                                           ; SOURCE LINE # 74
+                                           ; SOURCE LINE # 75
+                                           ; SOURCE LINE # 76
+0108         ?C0016:
+0108 22                RET     
+             ; FUNCTION RegSeqWriteControl (END)
+
+             ; FUNCTION L?0234 (BEGIN)
+0000 7DAA              MOV     R5,#0AAH
+0002         L?0235:
+0002 7455              MOV     A,#055H
+0004 FF                MOV     R7,A
+0005 FE                MOV     R6,A
+             ; FUNCTION _InternalROMProg (BEGIN)
+                                           ; SOURCE LINE # 78
+0006 8E00        R     MOV     wAddr,R6
+0008 8F00        R     MOV     wAddr+01H,R7
+;---- Variable 'bData' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+000A 900032            MOV     DPTR,#032H
+000D E500        R     MOV     A,wAddr+01H
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 81
+0010 A3                INC     DPTR
+0011 E500        R     MOV     A,wAddr
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 85
+0014 A3                INC     DPTR
+0015 ED                MOV     A,R5
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 86
+0017 22                RET     
+             ; FUNCTION _InternalROMProg (END)
+
+             ; FUNCTION UpgradeInteranlSetCtrl (BEGIN)
+                                           ; SOURCE LINE # 87
+                                           ; SOURCE LINE # 88
+                                           ; SOURCE LINE # 92
+0000 900000      E     MOV     DPTR,#pbIBuf
+0003 E0                MOVX    A,@DPTR
+0004 20E74F            JB      ACC.7,?C0018
+0007 20E64C            JB      ACC.6,?C0018
+                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 95
+000A A3                INC     DPTR
+000B E0                MOVX    A,@DPTR
+000C F500        R     MOV     wAddr,A
+                                           ; SOURCE LINE # 96
+000E A3                INC     DPTR
+000F E0                MOVX    A,@DPTR
+0010 F500        R     MOV     wAddr+01H,A
+                                           ; SOURCE LINE # 99
+0012 900030            MOV     DPTR,#030H
+0015 7411              MOV     A,#011H
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+0018 A3                INC     DPTR
+0019 E0                MOVX    A,@DPTR
+001A 54EF              ANL     A,#0EFH
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 18  
+
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+001D E4                CLR     A
+001E F500        R     MOV     i,A
+0020         ?C0019:
+0020 900000      E     MOV     DPTR,#pbIBuf
+0023 E0                MOVX    A,@DPTR
+0024 541F              ANL     A,#01FH
+0026 FF                MOV     R7,A
+0027 E500        R     MOV     A,i
+0029 C3                CLR     C
+002A 9F                SUBB    A,R7
+002B 5026              JNC     ?C0020
+                                           ; SOURCE LINE # 106
+002D 900032            MOV     DPTR,#032H
+0030 E500        R     MOV     A,wAddr+01H
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 108
+0033 A3                INC     DPTR
+0034 E500        R     MOV     A,wAddr
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+0037 A3                INC     DPTR
+0038 E0                MOVX    A,@DPTR
+0039 FE                MOV     R6,A
+003A 7400        E     MOV     A,#LOW pbExBuf
+003C 2500        R     ADD     A,i
+003E F582              MOV     DPL,A
+0040 E4                CLR     A
+0041 3400        E     ADDC    A,#HIGH pbExBuf
+0043 F583              MOV     DPH,A
+0045 EE                MOV     A,R6
+0046 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 110
+0047 0500        R     INC     i
+0049 0500        R     INC     wAddr+01H
+004B E500        R     MOV     A,wAddr+01H
+004D 70D1              JNZ     ?C0019
+004F 0500        R     INC     wAddr
+0051         ?C0213:
+0051 80CD              SJMP    ?C0019
+0053         ?C0020:
+                                           ; SOURCE LINE # 111
+0053 8F00        E     MOV     bExGetLen,R7
+                                           ; SOURCE LINE # 112
+0055 22                RET     
+0056         ?C0018:
+0056 900000      E     MOV     DPTR,#pbIBuf
+0059 E0                MOVX    A,@DPTR
+005A 30E631            JNB     ACC.6,?C0023
+                                           ; SOURCE LINE # 116
+005D 900030            MOV     DPTR,#030H
+0060 7411              MOV     A,#011H
+0062 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 118
+0063 A3                INC     DPTR
+0064 14                DEC     A
+0065 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 120
+0066 120000      R     LCALL   L?0234
+                                           ; SOURCE LINE # 127
+0069 7D55              MOV     R5,#055H
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 19  
+
+006B 7FAA              MOV     R7,#0AAH
+006D 7E2A              MOV     R6,#02AH
+006F 120000      R     LCALL   _InternalROMProg
+                                           ; SOURCE LINE # 134
+0072 7D80              MOV     R5,#080H
+0074 120000      R     LCALL   L?0235
+                                           ; SOURCE LINE # 141
+0077 7DAA              MOV     R5,#0AAH
+0079 120000      R     LCALL   _InternalROMProg
+                                           ; SOURCE LINE # 148
+007C 7D55              MOV     R5,#055H
+007E 7FAA              MOV     R7,#0AAH
+0080 7E2A              MOV     R6,#02AH
+0082 120000      R     LCALL   _InternalROMProg
+                                           ; SOURCE LINE # 155
+0085 7D10              MOV     R5,#010H
+0087 7455              MOV     A,#055H
+0089 FF                MOV     R7,A
+008A FE                MOV     R6,A
+008B 020000      R     LJMP    _InternalROMProg
+                                           ; SOURCE LINE # 161
+008E         ?C0023:
+                                           ; SOURCE LINE # 164
+008E 900000      E     MOV     DPTR,#pbIBuf+01H
+0091 E0                MOVX    A,@DPTR
+0092 F500        R     MOV     wAddr,A
+                                           ; SOURCE LINE # 165
+0094 A3                INC     DPTR
+0095 E0                MOVX    A,@DPTR
+0096 F500        R     MOV     wAddr+01H,A
+                                           ; SOURCE LINE # 167
+0098 900030            MOV     DPTR,#030H
+009B 7411              MOV     A,#011H
+009D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 169
+009E A3                INC     DPTR
+009F 14                DEC     A
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 170
+00A1 E4                CLR     A
+00A2 F500        R     MOV     i,A
+00A4         ?C0025:
+00A4 900000      E     MOV     DPTR,#pbIBuf
+00A7 E0                MOVX    A,@DPTR
+00A8 541F              ANL     A,#01FH
+00AA FF                MOV     R7,A
+00AB E500        R     MOV     A,i
+00AD C3                CLR     C
+00AE 9F                SUBB    A,R7
+00AF 5036              JNC     ?C0028
+                                           ; SOURCE LINE # 174
+00B1 120000      R     LCALL   L?0234
+                                           ; SOURCE LINE # 181
+00B4 7D55              MOV     R5,#055H
+00B6 7FAA              MOV     R7,#0AAH
+00B8 7E2A              MOV     R6,#02AH
+00BA 120000      R     LCALL   _InternalROMProg
+                                           ; SOURCE LINE # 188
+00BD 7DA0              MOV     R5,#0A0H
+00BF 120000      R     LCALL   L?0235
+                                           ; SOURCE LINE # 194
+00C2 7400        E     MOV     A,#LOW pbIBuf+03H
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 20  
+
+00C4 2500        R     ADD     A,i
+00C6 F582              MOV     DPL,A
+00C8 E4                CLR     A
+00C9 3400        E     ADDC    A,#HIGH pbIBuf+03H
+00CB F583              MOV     DPH,A
+00CD E0                MOVX    A,@DPTR
+00CE FD                MOV     R5,A
+00CF AF00        R     MOV     R7,wAddr+01H
+00D1 AE00        R     MOV     R6,wAddr
+00D3 120000      R     LCALL   _InternalROMProg
+                                           ; SOURCE LINE # 205
+00D6 7F02              MOV     R7,#02H
+00D8 120000      E     LCALL   _Delay10US
+                                           ; SOURCE LINE # 206
+00DB 0500        R     INC     i
+00DD 0500        R     INC     wAddr+01H
+00DF E500        R     MOV     A,wAddr+01H
+00E1 70C1              JNZ     ?C0025
+00E3 0500        R     INC     wAddr
+00E5         ?C0214:
+00E5 80BD              SJMP    ?C0025
+                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 209
+00E7         ?C0028:
+00E7 22                RET     
+             ; FUNCTION UpgradeInteranlSetCtrl (END)
+
+             ; FUNCTION UpgradeInteranlGetCtrl (BEGIN)
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 211
+                                           ; SOURCE LINE # 219
+0000 AF00        E     MOV     R7,bExGetLen
+0002 7E00              MOV     R6,#00H
+0004 7800        E     MOV     R0,#LOW pbEP0Buf+03H
+0006 7C00        E     MOV     R4,#HIGH pbEP0Buf+03H
+0008 7D01              MOV     R5,#01H
+000A 7B01              MOV     R3,#01H
+000C 7A00        E     MOV     R2,#HIGH pbExBuf
+000E 7900        E     MOV     R1,#LOW pbExBuf
+0010 020000      E     LJMP    ?C?COPY
+             ; FUNCTION UpgradeInteranlGetCtrl (END)
+
+             ; FUNCTION RegOTPControl (BEGIN)
+                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 229
+0000 900000      E     MOV     DPTR,#pbIBuf
+0003 E0                MOVX    A,@DPTR
+0004 B4F803            CJNE    A,#0F8H,?C0030
+                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 231
+0007 020000      E     LJMP    OTPModeEnter
+                                           ; SOURCE LINE # 232
+000A         ?C0030:
+000A 900000      E     MOV     DPTR,#pbIBuf
+000D E0                MOVX    A,@DPTR
+000E B4F403            CJNE    A,#0F4H,?C0032
+                                           ; SOURCE LINE # 233
+                                           ; SOURCE LINE # 234
+0011 020000      E     LJMP    OTPModeLeave
+                                           ; SOURCE LINE # 235
+0014         ?C0032:
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 21  
+
+0014 900000      E     MOV     DPTR,#pbIBuf
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+0019 20E722            JB      ACC.7,?C0034
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 237
+001C A3                INC     DPTR
+001D E0                MOVX    A,@DPTR
+001E F500        R     MOV     wAddr,A
+                                           ; SOURCE LINE # 238
+0020 A3                INC     DPTR
+0021 E0                MOVX    A,@DPTR
+0022 F500        R     MOV     wAddr+01H,A
+                                           ; SOURCE LINE # 253
+0024 EF                MOV     A,R7
+0025 541F              ANL     A,#01FH
+0027 FD                MOV     R5,A
+0028 7B01              MOV     R3,#01H
+002A 7A00        E     MOV     R2,#HIGH pbExBuf
+002C 7900        E     MOV     R1,#LOW pbExBuf
+002E AF00        R     MOV     R7,wAddr+01H
+0030 AE00        R     MOV     R6,wAddr
+0032 120000      E     LCALL   _OTPReadData
+                                           ; SOURCE LINE # 255
+0035 900000      E     MOV     DPTR,#pbIBuf
+0038 E0                MOVX    A,@DPTR
+0039 541F              ANL     A,#01FH
+003B F500        E     MOV     bExGetLen,A
+                                           ; SOURCE LINE # 257
+003D 22                RET     
+003E         ?C0034:
+                                           ; SOURCE LINE # 258
+                                           ; SOURCE LINE # 259
+003E 900000      E     MOV     DPTR,#pbIBuf
+0041 E0                MOVX    A,@DPTR
+0042 B4A003            CJNE    A,#0A0H,?C0036
+                                           ; SOURCE LINE # 260
+                                           ; SOURCE LINE # 261
+0045 020000      E     LJMP    OTPWriteEnable
+                                           ; SOURCE LINE # 262
+0048         ?C0036:
+0048 900000      E     MOV     DPTR,#pbIBuf
+004B E0                MOVX    A,@DPTR
+004C B4C003            CJNE    A,#0C0H,?C0038
+                                           ; SOURCE LINE # 263
+                                           ; SOURCE LINE # 264
+004F 020000      E     LJMP    OTPWriteDisable
+                                           ; SOURCE LINE # 265
+0052         ?C0038:
+                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 267
+0052 900000      E     MOV     DPTR,#pbIBuf+01H
+0055 E0                MOVX    A,@DPTR
+0056 F500        R     MOV     wAddr,A
+                                           ; SOURCE LINE # 268
+0058 A3                INC     DPTR
+0059 E0                MOVX    A,@DPTR
+005A F500        R     MOV     wAddr+01H,A
+                                           ; SOURCE LINE # 282
+005C 900000      E     MOV     DPTR,#pbIBuf
+005F E0                MOVX    A,@DPTR
+0060 541F              ANL     A,#01FH
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 22  
+
+0062 FD                MOV     R5,A
+0063 7B01              MOV     R3,#01H
+0065 7A00        E     MOV     R2,#HIGH pbIBuf+03H
+0067 7900        E     MOV     R1,#LOW pbIBuf+03H
+0069 AF00        R     MOV     R7,wAddr+01H
+006B AE00        R     MOV     R6,wAddr
+006D 120000      E     LCALL   _OTPWriteData
+                                           ; SOURCE LINE # 284
+                                           ; SOURCE LINE # 285
+                                           ; SOURCE LINE # 287
+0070         ?C0040:
+0070 22                RET     
+             ; FUNCTION RegOTPControl (END)
+
+             ; FUNCTION UpgradeExternalSetCtrl (BEGIN)
+                                           ; SOURCE LINE # 292
+                                           ; SOURCE LINE # 293
+                                           ; SOURCE LINE # 297
+0000 900000      E     MOV     DPTR,#pbIBuf+01H
+0003 E0                MOVX    A,@DPTR
+0004 F500        R     MOV     wAddr,A
+                                           ; SOURCE LINE # 298
+0006 A3                INC     DPTR
+0007 E0                MOVX    A,@DPTR
+0008 F500        R     MOV     wAddr+01H,A
+                                           ; SOURCE LINE # 299
+000A 900000      E     MOV     DPTR,#pbIBuf
+000D E0                MOVX    A,@DPTR
+000E FF                MOV     R7,A
+000F 541F              ANL     A,#01FH
+0011 F500        R     MOV     nLen,A
+                                           ; SOURCE LINE # 300
+0013 EF                MOV     A,R7
+0014 30E608            JNB     ACC.6,?C0041
+                                           ; SOURCE LINE # 303
+0017 300062      E     JNB     xSPIEnable,?C0219
+                                           ; SOURCE LINE # 304
+001A 120000      E     LCALL   EraseSPIFlash
+                                           ; SOURCE LINE # 305
+001D         ?C0042:
+                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 308
+001D 805D              SJMP    ?C0219
+001F         ?C0041:
+001F 900000      E     MOV     DPTR,#pbIBuf
+0022 E0                MOVX    A,@DPTR
+0023 30E75D            JNB     ACC.7,?C0044
+                                           ; SOURCE LINE # 314
+0026 E500        R     MOV     A,nLen
+0028 F582              MOV     DPL,A
+002A 758300            MOV     DPH,#00H
+002D E500        E     MOV     A,bExWrIdx
+002F 75F008            MOV     B,#08H
+0032 A4                MUL     AB
+0033 2400        E     ADD     A,#LOW pbExBuf
+0035 F9                MOV     R1,A
+0036 7400        E     MOV     A,#HIGH pbExBuf
+0038 35F0              ADDC    A,B
+003A A801              MOV     R0,AR1
+003C FC                MOV     R4,A
+003D 7D01              MOV     R5,#01H
+003F 7B01              MOV     R3,#01H
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 23  
+
+0041 7A00        E     MOV     R2,#HIGH pbIBuf+03H
+0043 7900        E     MOV     R1,#LOW pbIBuf+03H
+0045 7E00              MOV     R6,#00H
+0047 AF82              MOV     R7,DPL
+0049 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 315
+004C 900000      E     MOV     DPTR,#pbIBuf
+004F E0                MOVX    A,@DPTR
+0050 30E52D            JNB     ACC.5,?C0045
+                                           ; SOURCE LINE # 316
+0053 E500        R     MOV     A,nLen
+0055 C3                CLR     C
+0056 9408              SUBB    A,#08H
+0058 E500        E     MOV     A,bExWrIdx
+005A 500A              JNC     ?C0046
+                                           ; SOURCE LINE # 317
+005C 75F008            MOV     B,#08H
+005F A4                MUL     AB
+;---- Variable 'i' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 318
+0060 2500        R     ADD     A,nLen
+0062 F500        R     MOV     nLen,A
+                                           ; SOURCE LINE # 319
+0064 8007              SJMP    ?C0047
+0066         ?C0046:
+                                           ; SOURCE LINE # 320
+0066 04                INC     A
+0067 75F008            MOV     B,#08H
+006A A4                MUL     AB
+006B F500        R     MOV     nLen,A
+                                           ; SOURCE LINE # 321
+006D         ?C0047:
+                                           ; SOURCE LINE # 322
+006D 7B01              MOV     R3,#01H
+006F 7A00        E     MOV     R2,#HIGH pbExBuf
+0071 7900        E     MOV     R1,#LOW pbExBuf
+0073 AD00        R     MOV     R5,nLen
+0075 AF00        R     MOV     R7,wAddr+01H
+0077 AE00        R     MOV     R6,wAddr
+0079 120000      E     LCALL   _I2CEEPROMWriteData
+                                           ; SOURCE LINE # 326
+007C         ?C0048:
+                                           ; SOURCE LINE # 327
+007C         ?C0219:
+007C E4                CLR     A
+007D F500        E     MOV     bExWrIdx,A
+                                           ; SOURCE LINE # 328
+007F 22                RET     
+0080         ?C0045:
+                                           ; SOURCE LINE # 329
+0080 0500        E     INC     bExWrIdx
+                                           ; SOURCE LINE # 330
+                                           ; SOURCE LINE # 331
+0082 22                RET     
+0083         ?C0044:
+                                           ; SOURCE LINE # 339
+0083 AF00        R     MOV     R7,nLen
+0085 7E00              MOV     R6,#00H
+0087 7D00              MOV     R5,#00H
+0089 7B01              MOV     R3,#01H
+008B 7A00        E     MOV     R2,#HIGH pbExBuf
+008D 7900        E     MOV     R1,#LOW pbExBuf
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 24  
+
+008F 120000      E     LCALL   ?C?MEMSET
+                                           ; SOURCE LINE # 340
+0092 7B01              MOV     R3,#01H
+0094 7A00        E     MOV     R2,#HIGH pbExBuf
+0096 7900        E     MOV     R1,#LOW pbExBuf
+0098 AD00        R     MOV     R5,nLen
+009A AF00        R     MOV     R7,wAddr+01H
+009C AE00        R     MOV     R6,wAddr
+009E 120000      E     LCALL   _I2CEEPROMReadData
+                                           ; SOURCE LINE # 344
+00A1         ?C0051:
+                                           ; SOURCE LINE # 345
+00A1 850000      E     MOV     bExGetLen,nLen
+                                           ; SOURCE LINE # 346
+                                           ; SOURCE LINE # 347
+00A4         ?C0052:
+00A4 22                RET     
+             ; FUNCTION UpgradeExternalSetCtrl (END)
+
+             ; FUNCTION ExGetCtrlReturnData (BEGIN)
+                                           ; SOURCE LINE # 348
+                                           ; SOURCE LINE # 349
+                                           ; SOURCE LINE # 356
+0000 AF00        E     MOV     R7,bExGetLen
+0002 7E00              MOV     R6,#00H
+0004 7800        E     MOV     R0,#LOW pbEP0Buf+03H
+0006 7C00        E     MOV     R4,#HIGH pbEP0Buf+03H
+0008 7D01              MOV     R5,#01H
+000A 7B01              MOV     R3,#01H
+000C 7A00        E     MOV     R2,#HIGH pbExBuf
+000E 7900        E     MOV     R1,#LOW pbExBuf
+0010 020000      E     LJMP    ?C?COPY
+             ; FUNCTION ExGetCtrlReturnData (END)
+
+             ; FUNCTION _SetEEPROMSize (BEGIN)
+                                           ; SOURCE LINE # 359
+0000 8F00        R     MOV     eerombit,R7
+                                           ; SOURCE LINE # 360
+                                           ; SOURCE LINE # 361
+0002 E500        R     MOV     A,eerombit
+0004 B4FF0F            CJNE    A,#0FFH,?C0054
+                                           ; SOURCE LINE # 363
+0007 900000      E     MOV     DPTR,#wEEPROMSize
+000A 74FF              MOV     A,#0FFH
+000C F0                MOVX    @DPTR,A
+000D A3                INC     DPTR
+000E 74E0              MOV     A,#0E0H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 364
+0011 D200        E     SETB    xSPIEnable
+                                           ; SOURCE LINE # 366
+0013 020000      E     LJMP    SPIRDID
+                                           ; SOURCE LINE # 368
+0016         ?C0054:
+                                           ; SOURCE LINE # 369
+0016 E500        R     MOV     A,eerombit
+0018 75F080            MOV     B,#080H
+001B A4                MUL     AB
+001C FF                MOV     R7,A
+001D 900000      E     MOV     DPTR,#wEEPROMSize
+0020 E5F0              MOV     A,B
+0022 F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 25  
+
+0023 A3                INC     DPTR
+0024 EF                MOV     A,R7
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 370
+0026 C200        E     CLR     xSPIEnable
+                                           ; SOURCE LINE # 371
+                                           ; SOURCE LINE # 372
+0028         ?C0056:
+0028 22                RET     
+             ; FUNCTION _SetEEPROMSize (END)
+
+             ; FUNCTION SetWriteProtect (BEGIN)
+                                           ; SOURCE LINE # 374
+                                           ; SOURCE LINE # 375
+                                           ; SOURCE LINE # 376
+0000 900029            MOV     DPTR,#029H
+0003 E0                MOVX    A,@DPTR
+0004 4480              ORL     A,#080H
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 378
+0007 900000      E     MOV     DPTR,#pbIBuf
+000A E0                MOVX    A,@DPTR
+000B 6401              XRL     A,#01H
+000D 7025              JNZ     ?C0057
+                                           ; SOURCE LINE # 380
+000F 900020            MOV     DPTR,#020H
+0012 20000F      E     JB      xSPIEnable,?C0058
+                                           ; SOURCE LINE # 382
+0015 C083              PUSH    DPH
+0017 C082              PUSH    DPL
+0019 E0                MOVX    A,@DPTR
+001A FF                MOV     R7,A
+001B 900000      E     MOV     DPTR,#bWriteProtectGPIO
+001E E0                MOVX    A,@DPTR
+001F FE                MOV     R6,A
+0020 EF                MOV     A,R7
+0021 4E                ORL     A,R6
+                                           ; SOURCE LINE # 383
+0022 8024              SJMP    ?C0221
+0024         ?C0058:
+                                           ; SOURCE LINE # 385
+0024 C083              PUSH    DPH
+0026 C082              PUSH    DPL
+0028 E0                MOVX    A,@DPTR
+0029 FF                MOV     R7,A
+002A 900000      E     MOV     DPTR,#bWriteProtectGPIO
+002D E0                MOVX    A,@DPTR
+002E F4                CPL     A
+002F FE                MOV     R6,A
+0030 EF                MOV     A,R7
+0031 5E                ANL     A,R6
+0032         ?C0220:
+                                           ; SOURCE LINE # 386
+                                           ; SOURCE LINE # 387
+0032 8014              SJMP    ?C0221
+0034         ?C0057:
+                                           ; SOURCE LINE # 389
+0034 900020            MOV     DPTR,#020H
+0037 200015      E     JB      xSPIEnable,?C0061
+                                           ; SOURCE LINE # 391
+003A C083              PUSH    DPH
+003C C082              PUSH    DPL
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 26  
+
+003E E0                MOVX    A,@DPTR
+003F FF                MOV     R7,A
+0040 900000      E     MOV     DPTR,#bWriteProtectGPIO
+0043 E0                MOVX    A,@DPTR
+0044 F4                CPL     A
+0045 FE                MOV     R6,A
+0046 EF                MOV     A,R7
+0047 5E                ANL     A,R6
+0048         ?C0221:
+0048 D082              POP     DPL
+004A D083              POP     DPH
+004C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 392
+004D 8015              SJMP    ?C0060
+004F         ?C0061:
+                                           ; SOURCE LINE # 394
+004F C083              PUSH    DPH
+0051 C082              PUSH    DPL
+0053 E0                MOVX    A,@DPTR
+0054 FF                MOV     R7,A
+0055 900000      E     MOV     DPTR,#bWriteProtectGPIO
+0058 E0                MOVX    A,@DPTR
+0059 FE                MOV     R6,A
+005A EF                MOV     A,R7
+005B 4E                ORL     A,R6
+005C D082              POP     DPL
+005E D083              POP     DPH
+0060 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 395
+0061 120000      E     LCALL   SPIWriteEnable
+                                           ; SOURCE LINE # 396
+                                           ; SOURCE LINE # 397
+0064         ?C0060:
+                                           ; SOURCE LINE # 407
+0064 900029            MOV     DPTR,#029H
+0067 E0                MOVX    A,@DPTR
+0068 547F              ANL     A,#07FH
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 408
+006B 22                RET     
+             ; FUNCTION SetWriteProtect (END)
+
+             ; FUNCTION ExtensionUnitSetControl (BEGIN)
+                                           ; SOURCE LINE # 411
+                                           ; SOURCE LINE # 412
+                                           ; SOURCE LINE # 413
+0000 E4                CLR     A
+0001 F500        R     MOV     bRecBytesCnt,A
+0003         ?C0064:
+                                           ; SOURCE LINE # 414
+0003 900002            MOV     DPTR,#02H
+0006 E0                MOVX    A,@DPTR
+0007 30E0F9            JNB     ACC.0,?C0064
+000A         ?C0065:
+                                           ; SOURCE LINE # 416
+000A 900003            MOV     DPTR,#03H
+000D E0                MOVX    A,@DPTR
+000E 547F              ANL     A,#07FH
+0010 F500        R     MOV     bRecBytesCnt,A
+                                           ; SOURCE LINE # 421
+0012 FF                MOV     R7,A
+0013 7E00              MOV     R6,#00H
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 27  
+
+0015 7800        E     MOV     R0,#LOW pbIBuf
+0017 7C00        E     MOV     R4,#HIGH pbIBuf
+0019 7D01              MOV     R5,#01H
+001B 7B01              MOV     R3,#01H
+001D 7A00        E     MOV     R2,#HIGH pbEP0Buf
+001F 7900        E     MOV     R1,#LOW pbEP0Buf
+0021 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 423
+0024 900002            MOV     DPTR,#02H
+0027 E0                MOVX    A,@DPTR
+0028 54FE              ANL     A,#0FEH
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 424
+002B E500        E     MOV     A,wValue
+002D 120000      E     LCALL   ?C?CCASE
+0030 0000        R     DW      ?C0067
+0032 01                DB      01H
+0033 0000        R     DW      ?C0068
+0035 02                DB      02H
+0036 0000        R     DW      ?C0071
+0038 03                DB      03H
+0039 0000        R     DW      ?C0072
+003B 04                DB      04H
+003C 0000        R     DW      ?C0075
+003E 05                DB      05H
+003F 0000        R     DW      ?C0080
+0041 06                DB      06H
+0042 0000        R     DW      ?C0080
+0044 07                DB      07H
+0045 0000        R     DW      ?C0080
+0047 08                DB      08H
+0048 0000        R     DW      ?C0081
+004A 09                DB      09H
+004B 0000        R     DW      ?C0066
+004D 0A                DB      0AH
+004E 0000        R     DW      ?C0085
+0050 0B                DB      0BH
+0051 0000        R     DW      ?C0066
+0053 0C                DB      0CH
+0054 0000        R     DW      ?C0066
+0056 0D                DB      0DH
+0057 0000        R     DW      ?C0086
+0059 0E                DB      0EH
+005A 0000        R     DW      ?C0088
+005C 0F                DB      0FH
+005D 0000        R     DW      ?C0096
+005F 10                DB      010H
+0060 0000        R     DW      ?C0096
+0062 11                DB      011H
+0063 0000        R     DW      ?C0096
+0065 12                DB      012H
+0066 0000        R     DW      ?C0096
+0068 13                DB      013H
+0069 0000        R     DW      ?C0096
+006B 14                DB      014H
+006C 0000        R     DW      ?C0096
+006E 15                DB      015H
+006F 0000        R     DW      ?C0096
+0071 16                DB      016H
+0072 0000        R     DW      ?C0087
+0074 17                DB      017H
+0075 0000        R     DW      ?C0096
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 28  
+
+0077 18                DB      018H
+0078 0000              DW      00H
+007A 0000        R     DW      ?C0097
+                                           ; SOURCE LINE # 426
+007C         ?C0067:
+                                           ; SOURCE LINE # 427
+007C 900000      E     MOV     DPTR,#pbIBuf
+007F E0                MOVX    A,@DPTR
+0080 900000      E     MOV     DPTR,#bAdrID
+0083 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 428
+0084 900000      E     MOV     DPTR,#pbIBuf+02H
+0087 E0                MOVX    A,@DPTR
+0088 900000      E     MOV     DPTR,#wExtenAdr+01H
+008B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 429
+008C 900000      E     MOV     DPTR,#pbIBuf+03H
+008F E0                MOVX    A,@DPTR
+0090 900000      E     MOV     DPTR,#wExtenAdr
+0093 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 430
+0094 020000      R     LJMP    ?C0066
+                                           ; SOURCE LINE # 432
+0097         ?C0068:
+                                           ; SOURCE LINE # 433
+0097 900000      E     MOV     DPTR,#pbIBuf
+009A E0                MOVX    A,@DPTR
+009B 900000      E     MOV     DPTR,#wExtenValue+01H
+009E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 434
+009F 900000      E     MOV     DPTR,#pbIBuf+01H
+00A2 E0                MOVX    A,@DPTR
+00A3 900000      E     MOV     DPTR,#wExtenValue
+00A6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 435
+00A7 900000      E     MOV     DPTR,#bAdrID
+00AA E0                MOVX    A,@DPTR
+00AB B40115            CJNE    A,#01H,?C0069
+                                           ; SOURCE LINE # 436
+00AE 900000      E     MOV     DPTR,#wExtenValue+01H
+00B1 E0                MOVX    A,@DPTR
+00B2 FF                MOV     R7,A
+00B3 900000      E     MOV     DPTR,#wExtenAdr
+00B6 E0                MOVX    A,@DPTR
+00B7 FC                MOV     R4,A
+00B8 A3                INC     DPTR
+00B9 E0                MOVX    A,@DPTR
+00BA F582              MOV     DPL,A
+00BC 8C83              MOV     DPH,R4
+00BE EF                MOV     A,R7
+00BF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 437
+00C0 020000      R     LJMP    ?C0066
+00C3         ?C0069:
+                                           ; SOURCE LINE # 438
+00C3 120000      E     LCALL   ExCallBackFun_ToROM
+                                           ; SOURCE LINE # 439
+00C6 900000      E     MOV     DPTR,#wExtenAdr
+00C9 E0                MOVX    A,@DPTR
+00CA FE                MOV     R6,A
+00CB A3                INC     DPTR
+00CC E0                MOVX    A,@DPTR
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 29  
+
+00CD FF                MOV     R7,A
+00CE 7B01              MOV     R3,#01H
+00D0 7A00        E     MOV     R2,#HIGH pbIBuf
+00D2 7900        E     MOV     R1,#LOW pbIBuf
+00D4 900000      E     MOV     DPTR,#_pfSensorI2CWriteData
+00D7 E0                MOVX    A,@DPTR
+00D8 FC                MOV     R4,A
+00D9 A3                INC     DPTR
+00DA E0                MOVX    A,@DPTR
+00DB F582              MOV     DPL,A
+00DD 8C83              MOV     DPH,R4
+00DF AD00        R     MOV     R5,bRecBytesCnt
+00E1 120000      E     LCALL   ?C?ICALL2
+                                           ; SOURCE LINE # 440
+00E4 120000      E     LCALL   ExCallBackFun_ToRAM
+                                           ; SOURCE LINE # 441
+                                           ; SOURCE LINE # 442
+00E7 807B              SJMP    ?C0066
+                                           ; SOURCE LINE # 444
+00E9         ?C0071:
+                                           ; SOURCE LINE # 446
+00E9 120000      R     LCALL   UpgradeExternalSetCtrl
+                                           ; SOURCE LINE # 447
+00EC 8076              SJMP    ?C0066
+                                           ; SOURCE LINE # 449
+00EE         ?C0072:
+                                           ; SOURCE LINE # 450
+00EE 900000      E     MOV     DPTR,#pbIBuf
+00F1 E0                MOVX    A,@DPTR
+00F2 900000      E     MOV     DPTR,#bExtenUnitCtrl
+00F5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 451
+00F6 D200        E     SETB    xSetPropertyFlip
+                                           ; SOURCE LINE # 452
+00F8 30E108            JNB     ACC.1,?C0073
+                                           ; SOURCE LINE # 453
+00FB 900000      E     MOV     DPTR,#bFlip
+00FE 7401              MOV     A,#01H
+0100 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 454
+0101 8021              SJMP    ?C0222
+0103         ?C0073:
+                                           ; SOURCE LINE # 455
+0103 E4                CLR     A
+0104 900000      E     MOV     DPTR,#bFlip
+0107 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 456
+0108         ?C0074:
+                                           ; SOURCE LINE # 457
+                                           ; SOURCE LINE # 458
+0108 801A              SJMP    ?C0222
+                                           ; SOURCE LINE # 460
+010A         ?C0075:
+                                           ; SOURCE LINE # 461
+010A 900000      E     MOV     DPTR,#pbIBuf
+010D E0                MOVX    A,@DPTR
+010E 900000      E     MOV     DPTR,#bExtenUnitCtrl
+0111 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 462
+0112 D200        E     SETB    xSetPropertyMirror
+                                           ; SOURCE LINE # 463
+0114 30E008            JNB     ACC.0,?C0076
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 30  
+
+                                           ; SOURCE LINE # 464
+0117 900000      E     MOV     DPTR,#bMirror
+011A 7401              MOV     A,#01H
+011C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 465
+011D 8005              SJMP    ?C0077
+011F         ?C0076:
+                                           ; SOURCE LINE # 466
+011F E4                CLR     A
+0120 900000      E     MOV     DPTR,#bMirror
+0123 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 467
+0124         ?C0077:
+                                           ; SOURCE LINE # 468
+0124         ?C0222:
+0124 120000      E     LCALL   QueuePrpSaveReq
+                                           ; SOURCE LINE # 469
+0127 803B              SJMP    ?C0066
+                                           ; SOURCE LINE # 471
+                                           ; SOURCE LINE # 472
+                                           ; SOURCE LINE # 473
+0129         ?C0080:
+                                           ; SOURCE LINE # 476
+0129 120000      R     LCALL   RegSeqWriteControl
+                                           ; SOURCE LINE # 477
+012C 8036              SJMP    ?C0066
+                                           ; SOURCE LINE # 479
+012E         ?C0081:
+                                           ; SOURCE LINE # 481
+012E 120000      R     LCALL   UpgradeInteranlSetCtrl
+                                           ; SOURCE LINE # 483
+0131 8031              SJMP    ?C0066
+                                           ; SOURCE LINE # 485
+                                           ; SOURCE LINE # 486
+                                           ; SOURCE LINE # 487
+                                           ; SOURCE LINE # 489
+                                           ; SOURCE LINE # 491
+0133         ?C0085:
+                                           ; SOURCE LINE # 492
+0133 900000      E     MOV     DPTR,#pbIBuf
+0136 E0                MOVX    A,@DPTR
+0137 FF                MOV     R7,A
+0138 900000      E     MOV     DPTR,#bEEPromKBits
+013B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 493
+013C 120000      R     LCALL   _SetEEPROMSize
+                                           ; SOURCE LINE # 494
+013F 8023              SJMP    ?C0066
+                                           ; SOURCE LINE # 495
+0141         ?C0086:
+                                           ; SOURCE LINE # 497
+0141 120000      R     LCALL   SetWriteProtect
+                                           ; SOURCE LINE # 498
+0144 801E              SJMP    ?C0066
+                                           ; SOURCE LINE # 499
+0146         ?C0087:
+                                           ; SOURCE LINE # 500
+0146 7F07              MOV     R7,#07H
+0148 120000      E     LCALL   _EX_CallBackFunction
+                                           ; SOURCE LINE # 501
+014B 8017              SJMP    ?C0066
+                                           ; SOURCE LINE # 504
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 31  
+
+014D         ?C0088:
+                                           ; SOURCE LINE # 505
+014D 120000      R     LCALL   RegOTPControl
+                                           ; SOURCE LINE # 506
+0150 8012              SJMP    ?C0066
+                                           ; SOURCE LINE # 510
+                                           ; SOURCE LINE # 511
+                                           ; SOURCE LINE # 512
+                                           ; SOURCE LINE # 513
+                                           ; SOURCE LINE # 514
+                                           ; SOURCE LINE # 515
+                                           ; SOURCE LINE # 516
+                                           ; SOURCE LINE # 518
+0152         ?C0096:
+                                           ; SOURCE LINE # 520
+0152 900000      E     MOV     DPTR,#pfSensorExtenUnitCtrl
+0155 E0                MOVX    A,@DPTR
+0156 FE                MOV     R6,A
+0157 A3                INC     DPTR
+0158 E0                MOVX    A,@DPTR
+0159 AA06              MOV     R2,AR6
+015B F9                MOV     R1,A
+015C 120000      E     LCALL   ?C?ICALL
+                                           ; SOURCE LINE # 521
+015F 8003              SJMP    ?C0066
+                                           ; SOURCE LINE # 522
+0161         ?C0097:
+                                           ; SOURCE LINE # 523
+0161 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 525
+0164         ?C0066:
+                                           ; SOURCE LINE # 526
+0164 900002            MOV     DPTR,#02H
+0167 E0                MOVX    A,@DPTR
+0168 4440              ORL     A,#040H
+016A F0                MOVX    @DPTR,A
+016B         ?C0099:
+                                           ; SOURCE LINE # 527
+016B 900002            MOV     DPTR,#02H
+016E E0                MOVX    A,@DPTR
+016F 20E6F9            JB      ACC.6,?C0099
+                                           ; SOURCE LINE # 529
+0172         ?C0098:
+0172 22                RET     
+             ; FUNCTION ExtensionUnitSetControl (END)
+
+             ; FUNCTION _ExUnitGetCURCtrl (BEGIN)
+                                           ; SOURCE LINE # 532
+;---- Variable 'HwValue' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 535
+0000 EF                MOV     A,R7
+0001 120000      E     LCALL   ?C?CCASE
+0004 0000        R     DW      ?C0102
+0006 01                DB      01H
+0007 0000        R     DW      ?C0103
+0009 02                DB      02H
+000A 0000        R     DW      ?C0133
+000C 03                DB      03H
+000D 0000        R     DW      ?C0111
+000F 04                DB      04H
+0010 0000        R     DW      ?C0111
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 32  
+
+0012 05                DB      05H
+0013 0000        R     DW      ?C0133
+0015 06                DB      06H
+0016 0000        R     DW      ?C0133
+0018 07                DB      07H
+0019 0000        R     DW      ?C0133
+001B 08                DB      08H
+001C 0000        R     DW      ?C0116
+001E 09                DB      09H
+001F 0000        R     DW      ?C0117
+0021 0A                DB      0AH
+0022 0000        R     DW      ?C0118
+0024 0B                DB      0BH
+0025 0000        R     DW      ?C0119
+0027 0C                DB      0CH
+0028 0000        R     DW      ?C0127
+002A 0D                DB      0DH
+002B 0000        R     DW      ?C0132
+002D 0E                DB      0EH
+002E 0000        R     DW      ?C0133
+0030 0F                DB      0FH
+0031 0000        R     DW      ?C0141
+0033 10                DB      010H
+0034 0000        R     DW      ?C0141
+0036 11                DB      011H
+0037 0000        R     DW      ?C0141
+0039 12                DB      012H
+003A 0000        R     DW      ?C0141
+003C 13                DB      013H
+003D 0000        R     DW      ?C0141
+003F 14                DB      014H
+0040 0000        R     DW      ?C0141
+0042 15                DB      015H
+0043 0000        R     DW      ?C0141
+0045 16                DB      016H
+0046 0000        R     DW      ?C0133
+0048 17                DB      017H
+0049 0000        R     DW      ?C0141
+004B 18                DB      018H
+004C 0000              DW      00H
+004E 0000        R     DW      ?C0142
+                                           ; SOURCE LINE # 536
+0050         ?C0102:
+                                           ; SOURCE LINE # 537
+0050 E4                CLR     A
+0051 900000      E     MOV     DPTR,#pbEP0Buf
+0054 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 538
+0055 A3                INC     DPTR
+0056 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 539
+0057 A3                INC     DPTR
+0058 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 540
+0059 A3                INC     DPTR
+005A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 541
+005B 750004      R     MOV     bTmp,#04H
+                                           ; SOURCE LINE # 542
+005E 020000      R     LJMP    ?C0101
+                                           ; SOURCE LINE # 543
+0061         ?C0103:
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 33  
+
+                                           ; SOURCE LINE # 544
+0061 900000      E     MOV     DPTR,#bAdrID
+0064 E0                MOVX    A,@DPTR
+0065 FF                MOV     R7,A
+0066 B40115            CJNE    A,#01H,?C0104
+                                           ; SOURCE LINE # 545
+0069 900000      E     MOV     DPTR,#wExtenAdr
+006C E0                MOVX    A,@DPTR
+006D FC                MOV     R4,A
+006E A3                INC     DPTR
+006F E0                MOVX    A,@DPTR
+0070 F582              MOV     DPL,A
+0072 8C83              MOV     DPH,R4
+0074 E0                MOVX    A,@DPTR
+0075 900000      E     MOV     DPTR,#pbEP0Buf
+0078 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 546
+0079 E4                CLR     A
+007A A3                INC     DPTR
+007B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 547
+                                           ; SOURCE LINE # 548
+007C 8028              SJMP    ?C0223
+007E         ?C0104:
+007E EF                MOV     A,R7
+007F B4022A            CJNE    A,#02H,?C0106
+                                           ; SOURCE LINE # 549
+0082 120000      E     LCALL   ExCallBackFun_ToROM
+                                           ; SOURCE LINE # 550
+0085 900000      E     MOV     DPTR,#wExtenAdr
+0088 E0                MOVX    A,@DPTR
+0089 FE                MOV     R6,A
+008A A3                INC     DPTR
+008B E0                MOVX    A,@DPTR
+008C FF                MOV     R7,A
+008D 7B01              MOV     R3,#01H
+008F 7A00        E     MOV     R2,#HIGH pbEP0Buf
+0091 7900        E     MOV     R1,#LOW pbEP0Buf
+0093 900000      E     MOV     DPTR,#_pfSensorI2CReadData
+0096 E0                MOVX    A,@DPTR
+0097 FC                MOV     R4,A
+0098 A3                INC     DPTR
+0099 E0                MOVX    A,@DPTR
+009A F582              MOV     DPL,A
+009C 8C83              MOV     DPH,R4
+009E 7D02              MOV     R5,#02H
+00A0 120000      E     LCALL   ?C?ICALL2
+                                           ; SOURCE LINE # 551
+00A3 120000      E     LCALL   ExCallBackFun_ToRAM
+                                           ; SOURCE LINE # 552
+00A6         ?C0223:
+00A6 750002      R     MOV     bTmp,#02H
+                                           ; SOURCE LINE # 553
+00A9 020000      R     LJMP    ?C0101
+00AC         ?C0106:
+                                           ; SOURCE LINE # 554
+00AC 020000      R     LJMP    ?C0224
+                                           ; SOURCE LINE # 556
+                                           ; SOURCE LINE # 557
+                                           ; SOURCE LINE # 558
+                                           ; SOURCE LINE # 563
+                                           ; SOURCE LINE # 564
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 34  
+
+00AF         ?C0111:
+                                           ; SOURCE LINE # 565
+00AF 900000      E     MOV     DPTR,#bFlip
+00B2 E0                MOVX    A,@DPTR
+00B3 25E0              ADD     A,ACC
+00B5 FF                MOV     R7,A
+00B6 900000      E     MOV     DPTR,#bMirror
+00B9 E0                MOVX    A,@DPTR
+00BA 4F                ORL     A,R7
+                                           ; SOURCE LINE # 566
+                                           ; SOURCE LINE # 567
+00BB 020000      R     LJMP    ?C0230
+                                           ; SOURCE LINE # 568
+                                           ; SOURCE LINE # 569
+                                           ; SOURCE LINE # 570
+                                           ; SOURCE LINE # 571
+                                           ; SOURCE LINE # 577
+00BE         ?C0116:
+                                           ; SOURCE LINE # 579
+00BE 120000      R     LCALL   UpgradeInteranlGetCtrl
+                                           ; SOURCE LINE # 581
+                                           ; SOURCE LINE # 582
+00C1 020000      R     LJMP    ?C0232
+                                           ; SOURCE LINE # 583
+00C4         ?C0117:
+                                           ; SOURCE LINE # 584
+00C4 90003F            MOV     DPTR,#03FH
+00C7 E0                MOVX    A,@DPTR
+00C8         ?C0226:
+                                           ; SOURCE LINE # 585
+                                           ; SOURCE LINE # 586
+00C8 020000      R     LJMP    ?C0230
+                                           ; SOURCE LINE # 587
+00CB         ?C0118:
+                                           ; SOURCE LINE # 588
+00CB 900000      E     MOV     DPTR,#bEEPromKBits
+00CE E0                MOVX    A,@DPTR
+00CF         ?C0229:
+                                           ; SOURCE LINE # 589
+                                           ; SOURCE LINE # 590
+00CF 020000      R     LJMP    ?C0230
+                                           ; SOURCE LINE # 591
+00D2         ?C0119:
+                                           ; SOURCE LINE # 593
+00D2 E4                CLR     A
+00D3 F500        R     MOV     i,A
+00D5         ?C0120:
+                                           ; SOURCE LINE # 594
+00D5 7400        E     MOV     A,#LOW pbEP0Buf
+00D7 2500        R     ADD     A,i
+00D9 F582              MOV     DPL,A
+00DB E4                CLR     A
+00DC 3400        E     ADDC    A,#HIGH pbEP0Buf
+00DE F583              MOV     DPH,A
+00E0 E4                CLR     A
+00E1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 595
+00E2 0500        R     INC     i
+00E4 E500        R     MOV     A,i
+00E6 B40BEC            CJNE    A,#0BH,?C0120
+00E9         ?C0121:
+                                           ; SOURCE LINE # 596
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 35  
+
+00E9 7F48              MOV     R7,#048H
+00EB 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 597
+00EE 850000      R     MOV     bTmp,wLength+01H
+                                           ; SOURCE LINE # 598
+00F1 E4                CLR     A
+00F2 F500        R     MOV     i,A
+00F4         ?C0123:
+00F4 E500        R     MOV     A,i
+00F6 C3                CLR     C
+00F7 9500        R     SUBB    A,bTmp
+00F9 4003              JC      $ + 5H
+00FB 020000      R     LJMP    ?C0101
+                                           ; SOURCE LINE # 599
+00FE AF00        R     MOV     R7,i
+0100 7E00              MOV     R6,#00H
+0102 120000      E     LCALL   _GetTab
+0105 7400        E     MOV     A,#LOW pbEP0Buf
+0107 2500        R     ADD     A,i
+0109 F582              MOV     DPL,A
+010B E4                CLR     A
+010C 3400        E     ADDC    A,#HIGH pbEP0Buf
+010E F583              MOV     DPH,A
+0110 EF                MOV     A,R7
+0111 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 600
+0112 7400        E     MOV     A,#LOW pbEP0Buf
+0114 2500        R     ADD     A,i
+0116 F582              MOV     DPL,A
+0118 E4                CLR     A
+0119 3400        E     ADDC    A,#HIGH pbEP0Buf
+011B F583              MOV     DPH,A
+011D E0                MOVX    A,@DPTR
+011E 6060              JZ      ?C0101
+                                           ; SOURCE LINE # 601
+                                           ; SOURCE LINE # 602
+                                           ; SOURCE LINE # 603
+0120         ?C0125:
+0120 0500        R     INC     i
+0122 80D0              SJMP    ?C0123
+                                           ; SOURCE LINE # 604
+                                           ; SOURCE LINE # 605
+0124         ?C0127:
+                                           ; SOURCE LINE # 607
+0124 E4                CLR     A
+0125 F500        R     MOV     i,A
+0127         ?C0128:
+0127 C3                CLR     C
+0128 E500        R     MOV     A,i
+012A 9500        E     SUBB    A,wLength+01H
+012C E4                CLR     A
+012D 9500        E     SUBB    A,wLength
+012F 5020              JNC     ?C0129
+                                           ; SOURCE LINE # 608
+0131 E500        R     MOV     A,i
+0133 900000      E     MOV     DPTR,#InternalVersion
+0136 93                MOVC    A,@A+DPTR
+0137 FF                MOV     R7,A
+0138 7400        E     MOV     A,#LOW pbEP0Buf
+013A 2500        R     ADD     A,i
+013C F582              MOV     DPL,A
+013E E4                CLR     A
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 36  
+
+013F 3400        E     ADDC    A,#HIGH pbEP0Buf
+0141 F583              MOV     DPH,A
+0143 EF                MOV     A,R7
+0144 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 609
+0145 E500        R     MOV     A,i
+0147 900000      E     MOV     DPTR,#InternalVersion
+014A 93                MOVC    A,@A+DPTR
+014B 6004              JZ      ?C0129
+                                           ; SOURCE LINE # 610
+                                           ; SOURCE LINE # 611
+                                           ; SOURCE LINE # 612
+014D         ?C0130:
+014D 0500        R     INC     i
+014F 80D6              SJMP    ?C0128
+0151         ?C0129:
+                                           ; SOURCE LINE # 613
+0151         ?C0228:
+                                           ; SOURCE LINE # 614
+0151 8025              SJMP    ?C0232
+                                           ; SOURCE LINE # 615
+0153         ?C0132:
+                                           ; SOURCE LINE # 617
+0153 900000      E     MOV     DPTR,#bWriteProtectGPIO
+0156 E0                MOVX    A,@DPTR
+0157 FF                MOV     R7,A
+0158 900020            MOV     DPTR,#020H
+015B E0                MOVX    A,@DPTR
+015C 5F                ANL     A,R7
+015D         ?C0230:
+015D 900000      E     MOV     DPTR,#pbEP0Buf
+0160 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 618
+0161 750001      R     MOV     bTmp,#01H
+                                           ; SOURCE LINE # 619
+0164 801A              SJMP    ?C0101
+                                           ; SOURCE LINE # 621
+0166         ?C0133:
+                                           ; SOURCE LINE # 622
+0166         ?C0227:
+0166 120000      R     LCALL   ExGetCtrlReturnData
+                                           ; SOURCE LINE # 623
+0169         ?C0231:
+                                           ; SOURCE LINE # 624
+0169 800D              SJMP    ?C0232
+                                           ; SOURCE LINE # 628
+                                           ; SOURCE LINE # 629
+                                           ; SOURCE LINE # 630
+                                           ; SOURCE LINE # 631
+                                           ; SOURCE LINE # 632
+                                           ; SOURCE LINE # 633
+                                           ; SOURCE LINE # 634
+                                           ; SOURCE LINE # 636
+016B         ?C0141:
+                                           ; SOURCE LINE # 638
+016B 900000      E     MOV     DPTR,#pfSensorExtenUnitCtrl
+016E E0                MOVX    A,@DPTR
+016F FE                MOV     R6,A
+0170 A3                INC     DPTR
+0171 E0                MOVX    A,@DPTR
+0172 AA06              MOV     R2,AR6
+0174 F9                MOV     R1,A
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 37  
+
+0175 120000      E     LCALL   ?C?ICALL
+                                           ; SOURCE LINE # 639
+0178         ?C0232:
+0178 850000      R     MOV     bTmp,wLength+01H
+                                           ; SOURCE LINE # 640
+017B 8003              SJMP    ?C0101
+                                           ; SOURCE LINE # 641
+017D         ?C0142:
+                                           ; SOURCE LINE # 642
+017D         ?C0224:
+017D 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 644
+0180         ?C0101:
+                                           ; SOURCE LINE # 645
+0180 900003            MOV     DPTR,#03H
+0183 E500        R     MOV     A,bTmp
+0185 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 646
+0186 E4                CLR     A
+0187 900000      E     MOV     DPTR,#bRequestErrorCode
+018A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 647
+018B 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 648
+018E         ?C0108:
+018E 22                RET     
+             ; FUNCTION _ExUnitGetCURCtrl (END)
+
+             ; FUNCTION _ExUnitGetLENCtrl (BEGIN)
+                                           ; SOURCE LINE # 650
+;---- Variable 'HwValue' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 651
+                                           ; SOURCE LINE # 652
+0000 EF                MOV     A,R7
+0001 120000      E     LCALL   ?C?CCASE
+0004 0000        R     DW      ?C0144
+0006 01                DB      01H
+0007 0000        R     DW      ?C0145
+0009 02                DB      02H
+000A 0000        R     DW      ?C0167
+000C 03                DB      03H
+000D 0000        R     DW      ?C0150
+000F 04                DB      04H
+0010 0000        R     DW      ?C0150
+0012 05                DB      05H
+0013 0000        R     DW      ?C0167
+0015 06                DB      06H
+0016 0000        R     DW      ?C0167
+0018 07                DB      07H
+0019 0000        R     DW      ?C0167
+001B 08                DB      08H
+001C 0000        R     DW      ?C0167
+001E 09                DB      09H
+001F 0000        R     DW      ?C0150
+0021 0A                DB      0AH
+0022 0000        R     DW      ?C0150
+0024 0B                DB      0BH
+0025 0000        R     DW      ?C0167
+0027 0C                DB      0CH
+0028 0000        R     DW      ?C0167
+002A 0D                DB      0DH
+002B 0000        R     DW      ?C0150
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 38  
+
+002D 0E                DB      0EH
+002E 0000        R     DW      ?C0167
+0030 0F                DB      0FH
+0031 0000        R     DW      ?C0167
+0033 10                DB      010H
+0034 0000        R     DW      ?C0167
+0036 11                DB      011H
+0037 0000        R     DW      ?C0167
+0039 12                DB      012H
+003A 0000        R     DW      ?C0167
+003C 13                DB      013H
+003D 0000        R     DW      ?C0167
+003F 14                DB      014H
+0040 0000        R     DW      ?C0167
+0042 15                DB      015H
+0043 0000        R     DW      ?C0167
+0045 16                DB      016H
+0046 0000        R     DW      ?C0167
+0048 17                DB      017H
+0049 0000        R     DW      ?C0167
+004B 18                DB      018H
+004C 0000              DW      00H
+004E 0000        R     DW      ?C0168
+                                           ; SOURCE LINE # 653
+0050         ?C0144:
+                                           ; SOURCE LINE # 654
+0050 900000      E     MOV     DPTR,#pbEP0Buf
+0053 7404              MOV     A,#04H
+0055 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 655
+0056 801B              SJMP    ?C0143
+                                           ; SOURCE LINE # 656
+0058         ?C0145:
+                                           ; SOURCE LINE # 657
+0058 900000      E     MOV     DPTR,#pbEP0Buf
+005B 7402              MOV     A,#02H
+005D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 658
+005E 8013              SJMP    ?C0143
+                                           ; SOURCE LINE # 659
+                                           ; SOURCE LINE # 660
+                                           ; SOURCE LINE # 661
+                                           ; SOURCE LINE # 662
+                                           ; SOURCE LINE # 663
+0060         ?C0150:
+                                           ; SOURCE LINE # 664
+0060 900000      E     MOV     DPTR,#pbEP0Buf
+0063 7401              MOV     A,#01H
+0065 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 665
+0066 800B              SJMP    ?C0143
+                                           ; SOURCE LINE # 666
+                                           ; SOURCE LINE # 667
+                                           ; SOURCE LINE # 668
+                                           ; SOURCE LINE # 669
+                                           ; SOURCE LINE # 670
+                                           ; SOURCE LINE # 671
+                                           ; SOURCE LINE # 672
+                                           ; SOURCE LINE # 674
+                                           ; SOURCE LINE # 681
+                                           ; SOURCE LINE # 682
+                                           ; SOURCE LINE # 683
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 39  
+
+                                           ; SOURCE LINE # 684
+                                           ; SOURCE LINE # 685
+                                           ; SOURCE LINE # 686
+                                           ; SOURCE LINE # 687
+                                           ; SOURCE LINE # 688
+                                           ; SOURCE LINE # 689
+0068         ?C0167:
+                                           ; SOURCE LINE # 690
+0068 900000      E     MOV     DPTR,#pbEP0Buf
+006B 740B              MOV     A,#0BH
+006D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 691
+006E 8003              SJMP    ?C0143
+                                           ; SOURCE LINE # 692
+0070         ?C0168:
+                                           ; SOURCE LINE # 693
+0070 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 695
+0073         ?C0143:
+                                           ; SOURCE LINE # 696
+0073 E4                CLR     A
+0074 900000      E     MOV     DPTR,#pbEP0Buf+01H
+0077 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 697
+0078 900003            MOV     DPTR,#03H
+007B 7402              MOV     A,#02H
+007D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 698
+007E E4                CLR     A
+007F 900000      E     MOV     DPTR,#bRequestErrorCode
+0082 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 699
+0083 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 700
+0086         ?C0169:
+0086 22                RET     
+             ; FUNCTION _ExUnitGetLENCtrl (END)
+
+             ; FUNCTION _ExUnitGetMISCCtrl (BEGIN)
+                                           ; SOURCE LINE # 702
+;---- Variable 'HwValue' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 703
+                                           ; SOURCE LINE # 705
+0000 EF                MOV     A,R7
+0001 120000      E     LCALL   ?C?CCASE
+0004 0000        R     DW      ?C0171
+0006 01                DB      01H
+0007 0000        R     DW      ?C0172
+0009 02                DB      02H
+000A 0000        R     DW      ?C0189
+000C 03                DB      03H
+000D 0000        R     DW      ?C0197
+000F 04                DB      04H
+0010 0000        R     DW      ?C0197
+0012 05                DB      05H
+0013 0000        R     DW      ?C0189
+0015 06                DB      06H
+0016 0000        R     DW      ?C0189
+0018 07                DB      07H
+0019 0000        R     DW      ?C0189
+001B 08                DB      08H
+001C 0000        R     DW      ?C0189
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 40  
+
+001E 09                DB      09H
+001F 0000        R     DW      ?C0197
+0021 0A                DB      0AH
+0022 0000        R     DW      ?C0197
+0024 0B                DB      0BH
+0025 0000        R     DW      ?C0189
+0027 0C                DB      0CH
+0028 0000        R     DW      ?C0189
+002A 0D                DB      0DH
+002B 0000        R     DW      ?C0197
+002D 0E                DB      0EH
+002E 0000        R     DW      ?C0189
+0030 0F                DB      0FH
+0031 0000        R     DW      ?C0189
+0033 10                DB      010H
+0034 0000        R     DW      ?C0189
+0036 11                DB      011H
+0037 0000        R     DW      ?C0189
+0039 12                DB      012H
+003A 0000        R     DW      ?C0189
+003C 13                DB      013H
+003D 0000        R     DW      ?C0189
+003F 14                DB      014H
+0040 0000        R     DW      ?C0189
+0042 15                DB      015H
+0043 0000        R     DW      ?C0189
+0045 16                DB      016H
+0046 0000        R     DW      ?C0189
+0048 17                DB      017H
+0049 0000        R     DW      ?C0189
+004B 18                DB      018H
+004C 0000              DW      00H
+004E 0000        R     DW      ?C0198
+                                           ; SOURCE LINE # 706
+0050         ?C0171:
+                                           ; SOURCE LINE # 707
+0050 E4                CLR     A
+0051 900000      E     MOV     DPTR,#pbEP0Buf
+0054 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 708
+0055 A3                INC     DPTR
+0056 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 709
+0057 A3                INC     DPTR
+0058 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 710
+0059 A3                INC     DPTR
+005A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 711
+005B 750004      R     MOV     bTmp,#04H
+                                           ; SOURCE LINE # 712
+005E 802A              SJMP    ?C0170
+                                           ; SOURCE LINE # 713
+0060         ?C0172:
+                                           ; SOURCE LINE # 714
+0060 E4                CLR     A
+0061 900000      E     MOV     DPTR,#pbEP0Buf
+0064 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 715
+0065 A3                INC     DPTR
+0066 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 716
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 41  
+
+0067 750002      R     MOV     bTmp,#02H
+                                           ; SOURCE LINE # 717
+006A 801E              SJMP    ?C0170
+                                           ; SOURCE LINE # 718
+                                           ; SOURCE LINE # 719
+                                           ; SOURCE LINE # 720
+                                           ; SOURCE LINE # 721
+                                           ; SOURCE LINE # 722
+                                           ; SOURCE LINE # 723
+                                           ; SOURCE LINE # 724
+                                           ; SOURCE LINE # 725
+                                           ; SOURCE LINE # 728
+                                           ; SOURCE LINE # 729
+                                           ; SOURCE LINE # 730
+                                           ; SOURCE LINE # 731
+                                           ; SOURCE LINE # 732
+                                           ; SOURCE LINE # 733
+                                           ; SOURCE LINE # 734
+                                           ; SOURCE LINE # 735
+                                           ; SOURCE LINE # 736
+006C         ?C0189:
+                                           ; SOURCE LINE # 737
+;---- Variable 'i' assigned to Register 'R7' ----
+006C         ?C0190:
+                                           ; SOURCE LINE # 738
+006C 7F0B              MOV     R7,#0BH
+006E 900000      E     MOV     DPTR,#pbEP0Buf
+0071 E4                CLR     A
+0072         ?C0215:
+0072 F0                MOVX    @DPTR,A
+0073 A3                INC     DPTR
+0074 DFFC              DJNZ    R7,?C0215
+                                           ; SOURCE LINE # 739
+0076 7F0B              MOV     R7,#0BH
+0078         ?C0191:
+                                           ; SOURCE LINE # 740
+0078 75000B      R     MOV     bTmp,#0BH
+                                           ; SOURCE LINE # 741
+007B 800D              SJMP    ?C0170
+                                           ; SOURCE LINE # 742
+                                           ; SOURCE LINE # 743
+                                           ; SOURCE LINE # 744
+                                           ; SOURCE LINE # 745
+                                           ; SOURCE LINE # 746
+007D         ?C0197:
+                                           ; SOURCE LINE # 747
+007D E4                CLR     A
+007E 900000      E     MOV     DPTR,#pbEP0Buf
+0081 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 748
+0082 750001      R     MOV     bTmp,#01H
+                                           ; SOURCE LINE # 749
+0085 8003              SJMP    ?C0170
+                                           ; SOURCE LINE # 750
+0087         ?C0198:
+                                           ; SOURCE LINE # 751
+0087 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 753
+008A         ?C0170:
+                                           ; SOURCE LINE # 754
+008A 900003            MOV     DPTR,#03H
+008D E500        R     MOV     A,bTmp
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 42  
+
+008F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 755
+0090 E4                CLR     A
+0091 900000      E     MOV     DPTR,#bRequestErrorCode
+0094 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 756
+0095 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 757
+0098         ?C0199:
+0098 22                RET     
+             ; FUNCTION _ExUnitGetMISCCtrl (END)
+
+             ; FUNCTION ExtensionUnitGetControl (BEGIN)
+                                           ; SOURCE LINE # 758
+                                           ; SOURCE LINE # 759
+                                           ; SOURCE LINE # 760
+0000 E500        E     MOV     A,bRequest
+0002 247B              ADD     A,#07BH
+0004 6034              JZ      ?C0206
+0006 14                DEC     A
+0007 600F              JZ      ?C0202
+0009 2404              ADD     A,#04H
+000B 24FA              ADD     A,#0FAH
+000D 5030              JNC     ?C0210
+000F 2407              ADD     A,#07H
+0011 7031              JNZ     ?C0211
+                                           ; SOURCE LINE # 761
+0013         ?C0201:
+                                           ; SOURCE LINE # 762
+0013 AF00        E     MOV     R7,wValue
+0015 020000      R     LJMP    _ExUnitGetCURCtrl
+                                           ; SOURCE LINE # 763
+                                           ; SOURCE LINE # 764
+0018         ?C0202:
+                                           ; SOURCE LINE # 768
+0018 E500        E     MOV     A,wValue
+001A D3                SETB    C
+001B 9400              SUBB    A,#00H
+001D 4025              JC      ?C0233
+001F E500        E     MOV     A,wValue
+0021 D3                SETB    C
+0022 9418              SUBB    A,#018H
+0024 501E              JNC     ?C0233
+                                           ; SOURCE LINE # 770
+0026 900000      E     MOV     DPTR,#pbEP0Buf
+0029 7403              MOV     A,#03H
+002B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 771
+                                           ; SOURCE LINE # 774
+002C         ?C0204:
+                                           ; SOURCE LINE # 775
+002C 900003            MOV     DPTR,#03H
+002F 7401              MOV     A,#01H
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 776
+0032 E4                CLR     A
+0033 900000      E     MOV     DPTR,#bRequestErrorCode
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 777
+0037 020000      E     LJMP    WaitTXEnd
+                                           ; SOURCE LINE # 778
+                                           ; SOURCE LINE # 779
+C51 COMPILER V7.06   EXUNIT                                                                07/22/2020 17:08:20 PAGE 43  
+
+003A         ?C0206:
+                                           ; SOURCE LINE # 780
+003A AF00        E     MOV     R7,wValue
+003C 020000      R     LJMP    _ExUnitGetLENCtrl
+                                           ; SOURCE LINE # 781
+                                           ; SOURCE LINE # 782
+                                           ; SOURCE LINE # 783
+                                           ; SOURCE LINE # 784
+                                           ; SOURCE LINE # 785
+003F         ?C0210:
+                                           ; SOURCE LINE # 786
+003F AF00        E     MOV     R7,wValue
+0041 020000      R     LJMP    _ExUnitGetMISCCtrl
+                                           ; SOURCE LINE # 787
+                                           ; SOURCE LINE # 788
+0044         ?C0211:
+                                           ; SOURCE LINE # 789
+0044         ?C0233:
+0044 120000      E     LCALL   InvalidRequestandStall
+                                           ; SOURCE LINE # 790
+                                           ; SOURCE LINE # 791
+0047         ?C0205:
+0047 22                RET     
+             ; FUNCTION ExtensionUnitGetControl (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2116    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      18
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

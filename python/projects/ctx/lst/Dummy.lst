@@ -1,0 +1,189 @@
+C51 COMPILER V7.06   DUMMY                                                                 07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE DUMMY
+OBJECT MODULE PLACED IN .\output\Dummy.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Dummy.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\Dummy.lst
+                    -) OBJECT(.\output\Dummy.obj)
+
+stmt level    source
+
+   1          /************************************************************************|
+   2          |                  A L C O R   M I C R O,  C O R P.                      |
+   3          |                                                                        |
+   4          |         This source code is classified as confidential and             |
+   5          |         contains trade secrets owned by Alcor Micro, Corp.             |
+   6          |                                                                        |
+   7          |                         (C)Copyright 2008                              |
+   8          |                         Alcor Micro, Corp.                             |
+   9          |                        All rights reserved.                            |
+  10          |************************************************************************/
+  11          
+  12          #include "globaldef.h"
+  13          #include "dummy.h"
+  14          // Dummy function 
+  15          // External code will replace these  with real hook functions
+  16          
+  17          // USB setup command hook function
+  18          BYTE ExSetupHookFunc(void)
+  19          {
+  20   1          return FALSE;
+  21   1      }
+  22          // Main Loop hook function
+  23          void ExMainHookFunc(void)
+  24          {
+  25   1          return;
+  26   1      }
+  27          void ISROfTime1(void)
+  28          {
+  29   1              return;
+  30   1      }
+  31          // In-Deep Setup hook function
+  32          BYTE ExDeepSetupHook(void)
+  33          {
+  34   1              return FALSE;
+  35   1      }
+  36          
+  37          // Hook Get String Desc
+  38          BYTE HookGetStringDesc(void)
+  39          {
+  40   1              return FALSE;
+  41   1      }
+  42          
+  43          //For run in no sensor module code
+  44          void inExternalReset(void)
+  45          {
+  46   1              return;
+  47   1      }
+  48          
+  49           void inControlInterruptRoutine(void)
+  50           {
+  51   1              return;
+  52   1       }
+  53            void inSensorExtenUnitCtrl(void)
+  54          {
+C51 COMPILER V7.06   DUMMY                                                                 07/22/2020 17:08:20 PAGE 2   
+
+  55   1              return;
+  56   1      }
+  57            void inExStateFunction(void)
+  58          {
+  59   1              return;
+  60   1      }
+  61          
+  62          WORD DummyHIDStandCtrl(void)
+  63          {
+  64   1              return 0;
+  65   1      }
+  66          
+C51 COMPILER V7.06   DUMMY                                                                 07/22/2020 17:08:20 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION ExSetupHookFunc (BEGIN)
+                                           ; SOURCE LINE # 18
+                                           ; SOURCE LINE # 19
+                                           ; SOURCE LINE # 20
+0000 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 21
+0002         ?C0001:
+0002 22                RET     
+             ; FUNCTION ExSetupHookFunc (END)
+
+             ; FUNCTION ExMainHookFunc (BEGIN)
+                                           ; SOURCE LINE # 23
+                                           ; SOURCE LINE # 24
+                                           ; SOURCE LINE # 26
+0000         ?C0002:
+0000 22                RET     
+             ; FUNCTION ExMainHookFunc (END)
+
+             ; FUNCTION ISROfTime1 (BEGIN)
+                                           ; SOURCE LINE # 27
+                                           ; SOURCE LINE # 28
+                                           ; SOURCE LINE # 30
+0000         ?C0003:
+0000 22                RET     
+             ; FUNCTION ISROfTime1 (END)
+
+             ; FUNCTION ExDeepSetupHook (BEGIN)
+                                           ; SOURCE LINE # 32
+                                           ; SOURCE LINE # 33
+                                           ; SOURCE LINE # 34
+0000 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 35
+0002         ?C0004:
+0002 22                RET     
+             ; FUNCTION ExDeepSetupHook (END)
+
+             ; FUNCTION HookGetStringDesc (BEGIN)
+                                           ; SOURCE LINE # 38
+                                           ; SOURCE LINE # 39
+                                           ; SOURCE LINE # 40
+0000 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 41
+0002         ?C0005:
+0002 22                RET     
+             ; FUNCTION HookGetStringDesc (END)
+
+             ; FUNCTION inExternalReset (BEGIN)
+                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 47
+0000         ?C0006:
+0000 22                RET     
+             ; FUNCTION inExternalReset (END)
+
+             ; FUNCTION inControlInterruptRoutine (BEGIN)
+                                           ; SOURCE LINE # 49
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 52
+0000         ?C0007:
+C51 COMPILER V7.06   DUMMY                                                                 07/22/2020 17:08:20 PAGE 4   
+
+0000 22                RET     
+             ; FUNCTION inControlInterruptRoutine (END)
+
+             ; FUNCTION inSensorExtenUnitCtrl (BEGIN)
+                                           ; SOURCE LINE # 53
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 56
+0000         ?C0008:
+0000 22                RET     
+             ; FUNCTION inSensorExtenUnitCtrl (END)
+
+             ; FUNCTION inExStateFunction (BEGIN)
+                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 58
+                                           ; SOURCE LINE # 60
+0000         ?C0009:
+0000 22                RET     
+             ; FUNCTION inExStateFunction (END)
+
+             ; FUNCTION DummyHIDStandCtrl (BEGIN)
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 64
+0000 E4                CLR     A
+0001 FE                MOV     R6,A
+0002 FF                MOV     R7,A
+                                           ; SOURCE LINE # 65
+0003         ?C0010:
+0003 22                RET     
+             ; FUNCTION DummyHIDStandCtrl (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     19    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,15 @@
+rcle round
+thow do you turn this on
+this is my first test file using vim
+#incluce "stdio.h"
+#include "stdlib.h"
+#include "stderr.h"
+#include "math.h"
+int main(void) {
+	printf("how do you turn this on ");
+}
+
+int funca(int a) {
+	printf("this a c test file ...");
+
+}

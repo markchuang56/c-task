@@ -1,0 +1,15 @@
+#include "stdio.h"
+#include "stdlib.h"
+#include "math.h"
+
+void func(void);
+
+int main(int argc, const char *argv[]) {
+	printf("this is my second test file \n");
+	exit(0);
+}
+
+void func(void) {
+	printf("the file have been modified!!");
+
+}

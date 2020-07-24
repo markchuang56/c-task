@@ -1,0 +1,3881 @@
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE AUDIOHANDLE
+OBJECT MODULE PLACED IN .\output\AudioHandle.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE AudioHandle.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\Aud
+                    -ioHandle.lst) OBJECT(.\output\AudioHandle.obj)
+
+stmt level    source
+
+   1          //*****************************************************************************************************//
+   2          //                 (C) Copyright 2007, Alcor Micro, Corp.                                                                                                          //
+   3          //                                 ALL RIGHTS RESERVED                                                                                                                             //
+   4          //                              Alcor Micro CONFIDENTIAL                                                                                                                           //
+   5          //*****************************************************************************************************//
+   6          // Project        : EDWIN
+   7          // Module         : AudioHandle
+   8          // File name  : AudioHandle.c
+   9          // Author         : EricLee
+  10          // Description: Audio function
+  11          //                              In this c file, we handle USB audio function and codec function.
+  12          //
+  13          // Environment: Kernel Mode
+  14          //
+  15          // Date                         Rev                     By              Description
+  16          //========================================================================================================
+  17          //
+  18          //========================================================================================================
+  19          /************************************************************************|
+  20          |                                  A L C O R   M I C R O,  C O R P.                                      |
+  21          |                                                                                                                                                |
+  22          |                 This source code is classified as confidential and                     |
+  23          |                 contains trade secrets owned by Alcor Micro, Corp.                     |
+  24          |                                                                                                                                                |
+  25          |                                                 (C)Copyright 2007, 2008                                                |
+  26          |                                                 Alcor Micro, Corp.                                                     |
+  27          |                                                All rights reserved.                                                    |
+  28          |************************************************************************/
+  29          
+  30          #ifndef __AUDIOHANDLE_C__
+  31          #define __AUDIOHANDLE_C__
+  32          
+  33          #include "globaldef.h"
+  34          #include "regmap.h"
+  35          #include "globalvar.h"
+  36          #include "base.h"
+  37          #include "xsensor.h"
+  38          #include "SettingDef.h"
+  39          #include "setintf.h"
+  40          #include "util.h"
+  41          #include "usbif.h"
+  42          #include "string.h"
+  43          
+  44          #include "AudioDef.h"
+  45          #include "AudioHandle.h"
+  46          
+  47          //#pragma ot(9,size)
+  48          //=======================  Initial Value ===============================//
+  49          #define COFREM_EXFIR_EXIST  0x08
+  50          #define COFREM_EXIIR_EXIST  0x80
+  51          code BYTE AU_FIR_Index[8]=
+  52          {  //low 4 bit for a FIR, high 4 bit for IIR check;   
+  53             //4th bit is high=> get data from Setting file 
+  54                  0x00,               //8k
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 2   
+
+  55                  0x00,
+  56                  0x00,
+  57                  0x00,
+  58                  0x11,
+  59                  0x11,
+  60                  0x22,
+  61                  0x22                //48k
+  62          };
+  63          
+  64          #define FIR_FULL_SET 0
+  65          #define FIR_LOW_SET 1
+  66          code WORD AUDIO_Coefram_FIR[3][48]=
+  67          {//Setting from 0x400~0x45F   
+  68              #if 0
+                  //FULL FIR VALUE //default
+                  {       
+                     0xfdff,0xf5ff,0xe4ff,0xcbff,0xb1ff,0xa3ff,0xafff,0xdeff,
+                     0x2800,0x7300,0x9700,0x7000,0xfbff,0x5eff,0xe4fe,0xdffe,
+                     0x76ff,0x8500,0x9301,0x0702,0x7101,0xddff,0xedfd,0xa3fc,
+                     0xe5fc,0xf2fe,0x1102,0xbe04,0x5805,0x0603,0x66fe,0x8af9,
+                     0x23f7,0x26f9,0x81ff,0xac07,0x790d,0xf30c,0x9604,0xc0f6,
+                     0x7be9,0x7ae4,0xe7ed,0x5b07,0x662c,0x8553,0x4071,0x567c
+                  },
+                  //LOW FIR Value
+                  /*{   
+                     0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,
+                     0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,
+                     0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,
+                     0x8100,0x9e00,0xf700,0x6d01,0x0102,0xb802,0x9103,0x8e04,
+                     0xb005,0xf206,0x5308,0xcd09,0x590b,0xf20c,0x8c0e,0x2110,
+                     0xa411,0x0d13,0x5214,0x6a15,0x4d16,0xf316,0x5917,0x7c17
+                  }*/
+                  {
+                     0xfaff,0xf3ff,0xe7ff,0xd4ff,0xbaff,0x9aff,0x72ff,0x46ff,
+                     0x19ff,0xf0fe,0xd0fe,0xc0fe,0xc7fe,0xebfe,0x31ff,0x99ff,
+                     0x2200,0xc400,0x7501,0x2502,0xc002,0x3203,0x6503,0x4603,
+                     0xc902,0xe601,0xa200,0x0bff,0x3dfd,0x5efb,0x9ef9,0x32f8,
+                     0x53f7,0x36f7,0x09f8,0xecf9,0xeffc,0x0e01,0x2c06,0x1b0c,
+                     0x9412,0x4419,0xce1f,0xd125,0xee2a,0xd62e,0x4931,0x1f32
+                  }
+                  #endif
+  96              //Revised 20100318 Eric
+  97              {   //for 8K~16k default
+  98                  0x3a00,0x7d00,0xcb00,0xf800,0xdd00,0x6b00,0xc2ff,0x29ff,
+  99                  0xf4fe,0x55ff,0x3000,0x1c01,0x8f01,0x2a01,0xfbff,0x92fe,
+ 100                  0xbcfd,0x1bfe,0xb1ff,0xc601,0x2e03,0xed02,0xdb00,0xe2fd,
+ 101                  0xa4fb,0xa3fb,0x47fe,0x7302,0xe705,0x6806,0x1803,0x41fd,
+ 102                  0xf3f7,0x86f6,0xa7fa,0x0003,0x660b,0xb10e,0x8d09,0xd0fc,
+ 103                  0x11ee,0xd3e5,0xdceb,0x4f03,0x6a28,0x2751,0xc270,0xa77c
+ 104              },
+ 105              {   //for 22.025k~24(32)k        
+ 106                  0x1300,0x3100,0x6600,0xaf00,0x0801,0x6201,0xa901,0xc401,
+ 107                  0xa001,0x3101,0x7e00,0xa1ff,0xc4fe,0x1ffe,0xe4fd,0x35fe,
+ 108                  0x13ff,0x5800,0xbc01,0xe002,0x6403,0x0603,0xbb01,0xb6ff,
+ 109                  0x6cfd,0x7bfb,0x82fa,0xf5fa,0xf5fc,0x3500,0xff03,0x5207,
+ 110                  0x2009,0x9608,0x6105,0xdfff,0x27f9,0xe2f2,0xfdee,0x3fef,
+ 111                  0xdbf4,0x1100,0x0b10,0xe222,0xf335,0x5446,0x6251,0x4955
+ 112              },
+ 113              {   //for 44.1k 48k
+ 114                  0xc1ff,0xb0ff,0x83ff,0x4eff,0x12ff,0xd3fe,0x97fe,0x63fe,
+ 115                  0x40fe,0x33fe,0x45fe,0x79fe,0xd3fe,0x52ff,0xf2ff,0xab00,
+ 116                  0x7101,0x3502,0xe402,0x6b03,0xb803,0xbb03,0x6603,0xb302,
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 3   
+
+ 117                  0xa501,0x4300,0xa2fe,0xddfc,0x17fb,0x79f9,0x2ff8,0x67f7,
+ 118                  0x49f7,0xf8f7,0x8cf9,0x11fc,0x85ff,0xd403,0xdd08,0x6f0e,
+ 119                  0x4d14,0x321a,0xd41f,0xea24,0x3029,0x6b2c,0x6f2e,0x1e2f
+ 120              }
+ 121          };
+ 122          code WORD AUDIO_Coefram_IIR[3][16]=    
+ 123          {   //Setting from 0x460~0x470   
+ 124             #if 0 
+                 0x843f,0x0080,0x0040,0x057f,0xf4c0,0xdb3e,0x0080,0x0040,
+                 0xb27d,0x48c2,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
+                 #endif
+ 128             //Revised 20100318 Eric
+ 129             {//for 8K~16k default
+ 130               0x893e,0x0080,0x0040,0xf67c,0xd2c2,0xa53c,0x0080,0x0040,
+ 131               0x3079,0x9ac6,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
+ 132             },
+ 133             {//for 22.025k~24(32)k 
+ 134               0x073f,0x0080,0x0040,0x027e,0xe5c1,0xbc3d,0x0080,0x0040,
+ 135               0x6d7b,0x7bc4,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
+ 136             },
+ 137             {//for 44.1k 48k 
+ 138               0x843f,0x0080,0x0040,0x057f,0xf4c0,0xdb3e,0x0080,0x0040,
+ 139               0xb27d,0x48c2,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
+ 140             }
+ 141          };
+ 142          
+ 143          //=======================  Audio Descriptor  ============================//
+ 144          // Interface alternateseting 1
+ 145          code USB_ST_INTERFACE_DESC       USBInterfaceDescAlt1 =
+ 146          {
+ 147                  sizeof(USB_ST_INTERFACE_DESC),                  //0x09
+ 148                  DESC_INTERFACE,                                                         //0x04
+ 149                  INTERFACE_NB3,                                                  //0x03
+ 150                  (IF3_ALTERNATE0+1),                                             //0x01
+ 151                  IF3_ALT1_NB_EP,                                                         //0x01
+ 152                  INTERFACE3_CLASS,                                               //0x01
+ 153                  INTERFACE3_SUB_CLASS,                                   //0x02
+ 154                  INTERFACE3_PROTOCOL,                                    //0x00
+ 155                  IF3_ALT0_INDEX                                                  //0x00
+ 156          };
+ 157          
+ 158          //class-specified AS Interface Desc-General=>Header
+ 159          code USB_CS_AS_INTERFACE_DESC   CSASDesc=
+ 160          {//IF3
+ 161                  sizeof(USB_CS_AS_INTERFACE_DESC),               //0x07
+ 162                  DESC_CS_INTERFACE,                                              //0x24
+ 163                  AS_GENERAL,                                                             //0x01
+ 164                  AU_DMIC_OT_ID,                                                  //0x03, bTerminalLink
+ 165                  CS_AS_DELAY,                                                    //01,bDelay
+ 166                  CS_AS_FORMAT                                                    //0x0100,wFormatTag     
+ 167          };
+ 168          //format type Desc
+ 169          code USB_CS_AS_TI_FORMAT_DESC TIDef_Desc=
+ 170          {
+ 171                  sizeof(USB_CS_AS_TI_FORMAT_DESC),
+ 172                  DESC_CS_INTERFACE,                                      //0x24
+ 173                  AS_FORMAT_TYPE,                                         //0x02
+ 174                  FORMAT_TYPE_I,                                          //0x01
+ 175                  TI_CHANNEL,                                                     //x0x2
+ 176                  TI_SUBFRAME_SIZE,                                       /// 2
+ 177                  TI_BITRESOLUTION,                                       //      0x10
+ 178                  TI_SAMFREQ_TYPE                                         //  9
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 4   
+
+ 179          };
+ 180          
+ 181          // EP3 alternate setting 1
+ 182          code USB_ST_AS_ENDPOINT_DESC    EPAlt1Desc =
+ 183          {
+ 184                  sizeof(USB_ST_AS_ENDPOINT_DESC),        //0x09
+ 185                  DESC_ENDPOINT,                                          //0x05
+ 186                  ENDPOINT3_NB,                                           //0x83
+ 187                  EP3_ATTRIBUTES,                                                 //0x0D
+ 188                  EP3_SIZE,                                                       //      0xC800
+ 189                  EP3_INTERVAL,                                           //0x04
+ 190                  0,                                                              //bRefresh
+ 191                  0                                                               //bSynchAddress
+ 192          };
+ 193          
+ 194          // Class specific AS  endpoint 3 descriptor
+ 195          code USB_AS_ENDPOINT_DESC CSEPoint =
+ 196          {
+ 197                  sizeof(USB_AS_ENDPOINT_DESC),                   //0x07
+ 198                  DESC_CS_ENDPOINT,                                               //0x25
+ 199                  CS_EP_GENERAL,                                                  //0x01
+ 200                  CS_EP3_ATTROBUTE,                                               //0x01
+ 201                  CS_EP3_DELAYUNIT,
+ 202                  CS_EP3_LOCKDELAY
+ 203          };
+ 204          
+ 205          
+ 206          //==================================================================//   
+ 207          code BYTE DMIC_Array_Info[]=
+ 208          {       //guidMicArrayID {07FE86C1-8948-4DB5-B184-C5162D4AD314}   16 byte
+ 209                   0x07, 0xFE, 0x86, 0xC1, 0x89, 0x48, 0x4D, 0xB5, 
+ 210                   0xB1, 0x84, 0xC5, 0x16, 0x2D, 0x4A, 0xD3, 0x14,
+ 211                  //Microphone_Array_Info length(include GUID)
+ 212                   0x3c, 0x00,//44+16=60=0x3c
+ 213                  //Microphone_Array_Spec. BCD number 
+ 214                   0x00, 0x01,    
+ 215                   //MicroPhone Array Type D0: Linear; D1: Planar; D2: 3D D3-D15 reserve
+ 216                   0x01, 0x00,    
+ 217                   //start of the work volume vertical angle -30
+ 218                   0xE2, 0xFF,
+ 219                   //End of the work volume vertical angle 30
+ 220                   0x1E, 0x00,
+ 221                   //beginning of the work volume horizontal angle -25
+ 222                   0xE7, 0xFF,
+ 223                   //End of the work volume horizontal angle 25
+ 224                   0x19, 0x00,
+ 225                   //The lower bound of the work frequency range 8K
+ 226                   0x40, 0x1F,
+ 227                   //The upper bound of the work frequency range 48k
+ 228                   0x80, 0xBB,
+ 229                   //wNumberOfMics
+ 230                   0x02, 0x00,
+ 231                   //wMicrophoneType
+ 232                   0x01, 0x00,
+ 233                   //wXCoordinate(microphone 0)
+ 234                   0x00, 0x00,
+ 235                   //wYCoordinate(microphone 0)
+ 236                   0x32,0x00,//0xF4, 0x01,
+ 237                   //wZCoordinate(microphone 0)
+ 238                   0x00, 0x00,
+ 239                   //wMicVertAngle(microphone 0)
+ 240                   0x00, 0x00,
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 5   
+
+ 241                   //wMicHorAngle(micro phone 0)
+ 242                   0x00, 0x00,
+ 243                   //wMicrophoneType
+ 244                   0x01, 0x00,
+ 245                   //wXCoordinate(microphone 1)
+ 246                   0x00, 0x00,
+ 247                   //wYCoordinate(microphone 1)
+ 248                   0xCE, 0xFF,//0x0C, 0xFE,
+ 249                   //wZCoordinate(microphone 1)
+ 250                   0x00, 0x00,
+ 251                   //wMicVertAngle(microphone 1)
+ 252                   0x00, 0x00,
+ 253                   //wMicHorAngle(micro phone 1)
+ 254                   0x00, 0x00     
+ 255          };      
+ 256          //#endif
+ 257          
+ 258          //=======================  Setting Value ===============================//
+ 259          #define DB_STEPS        12       //12 level between gain 1~ gain 2<=>0db ~ 6db  , sep 0.5 db
+ 260          //gain1=>256,gain2=>512; gain=1=>0 dB , gain=2=>6db
+ 261          code INT16 dB_Table[DB_STEPS] = {256, 271, 287, 304, 322, 341, 362, 383, 406, 430, 455, 482};
+ 262          
+ 263          
+ 264          #define NumSampFre      7  //HW just support 9 sample rate
+ 265          code WORD SampingFreq[8]=
+ 266          {                                                               
+ 267                  0xBB80,                                                 //48K
+ 268                  0xAC44,                                                 //44.1K
+ 269                  //0x7D00,                                               //32k
+ 270                  0x5DC0,                                                 //24K
+ 271                  0x5622,                                                 //22.05K
+ 272                  0x3E80,                                                 //16K
+ 273                  0x2EE0,                                                 //12K
+ 274                  0x2B11,                                                 //11.025K
+ 275                  0x1F40                                                  //8K
+ 276          };
+ 277          
+ 278          #define VOLVAL_MIN      0
+ 279          #define VOLVAL_MAX 2
+ 280          #define VOLVAL_STEP 4
+ 281          code AUDIO_PARA_RANGE_SIGNED DMICVolumnDBDefault=  //db value
+ 282          {  
+ 283                  //Min, Max, Res 
+ 284                  0xFA00,0x1400,0x0080,                           //-6db, 20db,0.5db  for MIC of GPIO;
+ 285          };      
+ 286          
+ 287          
+ 288          code BYTE AudioDefaultSetting[4]=
+ 289          {
+ 290                  MICSEL_ADC,     //input select
+ 291                  0xFF,                                           //support sample rate, MIC,GPIO don't support 32k, 0x0169 for ADC with codec 
+ 292                  (DMIC_ARRAY|0x13),                                              //support format for MIC, b00 010 011=> 2chl, 16bit, 1chl 16 bit ; bit 7 for Mic 
+             -Array, 1:array, 0:normal  
+ 293                 0x28                                             //support format number;H:altenat, L:sampleFreq ;support 9 sampFreq ,2 altersetting
+ 294          };
+ 295          
+ 296          code BYTE AU_VolGGain[1]=
+ 297          {
+ 298                  0xEE
+ 299          };
+ 300          
+ 301          code WORD AU_DelayTime[2]=
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 6   
+
+ 302          {//Minimun value is 1
+ 303              0x0020, //delay time to open EP3 buf
+ 304              0x0280  //delay time to clear Mute
+ 305          };
+ 306          //================================================================//
+ 307          //====================== Function Routine in AudioHandle=====================//
+ 308          //================================================================//
+ 309          INT16 dB2GainConvert(INT16 wVolumeValue)
+ 310          {
+ 311   1              INT16 data wVolumedB_Div,wVolumedB_Div_Rem;
+ 312   1              static INT16 idata wdBValue;
+ 313   1              if(wVolumeValue==0x8000)
+ 314   1                      return 0;
+ 315   1      
+ 316   1              //in this routine can't use << or>>, because this is signed parameters
+ 317   1              wdBValue=(wVolumeValue)/128; //a basic volume  6db=>gain
+ 318   1                              //=(wVolumeValue)/256)*DB_STEPS/6;       //(wVolumeValue*(1/256)) /(6/12),      6:6db 1 loop  
+ 319   1                              //6/12: resolution:0.5db level
+ 320   1      
+ 321   1              wVolumedB_Div= wdBValue / DB_STEPS;
+ 322   1              wVolumedB_Div_Rem= wdBValue % DB_STEPS;
+ 323   1      
+ 324   1              if (wVolumedB_Div_Rem < 0)
+ 325   1              {
+ 326   2                              wVolumedB_Div--;
+ 327   2                              wVolumedB_Div_Rem += DB_STEPS;
+ 328   2              }
+ 329   1              
+ 330   1              if(wVolumedB_Div >= 0)
+ 331   1                      return (dB_Table[wVolumedB_Div_Rem] << wVolumedB_Div);
+ 332   1              else
+ 333   1                      return (dB_Table[wVolumedB_Div_Rem] >> -wVolumedB_Div);
+ 334   1      }
+ 335          
+ 336          
+ 337          void DMICVolume(void)
+ 338          {
+ 339   1              //static BOOLEAN idata isMIC;
+ 340   1              INT16 data wGainValue;
+ 341   1      
+ 342   1                      wGainValue=(DMICCurSetting.bMuteCur_L & 0x80)? 0:dB2GainConvert(DMICCurSetting.wVolumedB_L);    //for volum
+             -e revised to minimum  
+ 343   1                      
+ 344   1                      WriteReg(REG_GAINL_L, LoByteOfWord(wGainValue));
+ 345   1                      WriteReg(REG_GAINL_H, HiByteOfWord(wGainValue));
+ 346   1      
+ 347   1      
+ 348   1                      wGainValue=(DMICCurSetting.bMuteCur_R & 0x80)? 0:dB2GainConvert(DMICCurSetting.wVolumedB_R);
+ 349   1                      WriteReg(REG_GAINR_L, LoByteOfWord(wGainValue));
+ 350   1                      WriteReg(REG_GAINR_H, HiByteOfWord(wGainValue));        
+ 351   1              
+ 352   1      }
+ 353          
+ 354          void DMICMute(void)
+ 355          {
+ 356   1                      if(DMICCurSetting.bMuteCur_L & 0x01)
+ 357   1                              SetRegBits(REG_MIC_CTRL, MUTE_LCHAN);
+ 358   1                      else if(xCheckDMICMute==FALSE)
+ 359   1                              ClrRegBits(REG_MIC_CTRL, MUTE_LCHAN);
+ 360   1      
+ 361   1                      if(DMICCurSetting.bMuteCur_R & 0x01)
+ 362   1                              SetRegBits(REG_MIC_CTRL, MUTE_RCHAN);
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 7   
+
+ 363   1                      else if(xCheckDMICMute==FALSE)
+ 364   1                              ClrRegBits(REG_MIC_CTRL, MUTE_RCHAN);
+ 365   1      }
+ 366          
+ 367          
+ 368          
+ 369          //================================================================//
+ 370          //====================== Function Routine be called============================//
+ 371          //================================================================//
+ 372          void AudioDefaultFormat(void)
+ 373          {
+ 374   1              //===== Initial  Audio Supported format =====//
+ 375   1              xExAuSetExist=TRUE;
+ 376   1          //be able to be revised by mapping table
+ 377   1              SetPtrTabEx(path_AU_FormatSetting); // if Ex Audio Format exist, xExAuSetExist=FALSE 
+ 378   1          
+ 379   1              bDMICInput=GetTab(0);                           // to descide MIC input 
+ 380   1              bSupSampFreq=GetTab(1); 
+ 381   1              bSupFormat=GetTab(2);
+ 382   1              bNumOfSup=GetTab(3);
+ 383   1      
+ 384   1          if(xExAuSetExist==FALSE)
+ 385   1          {   //check Bonding
+ 386   2              if((xBDGP16 == 0) && (xBDGP13 == 1) ){
+ 387   3                              //3841, support MJ, 1 channel audio
+ 388   3                              bDMICInput=MICSEL_ADC;
+ 389   3                              bSupFormat=0x02; 
+ 390   3                  bNumOfSup=(bNumOfSup&0x0f)|0x10;
+ 391   3                      }else if((xBDGP16 == 0) && (xBDGP13 == 0))
+ 392   2                      {  //3840, support MJ , without Audio
+ 393   3                  bDMICInput=MICSEL_NONE;
+ 394   3              }/*
+ 395   2              else if((xBDGP16 == 1) && (xBDGP13 == 0)){
+ 396   2                              //3832, no MJ, two chl audio
+ 397   2                              wTabAddr = (WORD)&USBDeviceDescCN;
+ 398   2                      }
+ 399   2              */
+ 400   2          }
+ 401   1      }
+ 402          
+ 403          void AudioInitialize(void)
+ 404          {       
+ 405   1          WORD idata i;
+ 406   1          //===== Set coeframe value =====//
+ 407   1              for(i=0;i<48;i++){      
+ 408   2                      (*((WORD *)&Reg[ REG_COEFRAM_FIR_START+(i<<1)]))=AUDIO_Coefram_FIR[0][i];
+ 409   2              } 
+ 410   1      
+ 411   1          //SetPtrTabEx(path_AU_IIRSET);
+ 412   1          for(i=0;i<16;i++){  
+ 413   2              //      (*((WORD *)&Reg[ REG_COEFRAM_IIR_START+(i<<1)]))=GetTabW(i<<1);
+ 414   2              (*((WORD *)&Reg[ REG_COEFRAM_IIR_START+(i<<1)]))=AUDIO_Coefram_IIR[0][i];       
+ 415   2          } 
+ 416   1      
+ 417   1              //===== Initial parameters =====//
+ 418   1              bDMICAltSetting=0;
+ 419   1              
+ 420   1              DMICCurSetting.bSampFreq=NumSampFre;  //48K
+ 421   1              DMICCurSetting.bCofremSet=0x00;            //default use FIR_FULL, IID_Internal  
+ 422   1              DMICCurSetting.bMuteCur_L=0;
+ 423   1              DMICCurSetting.bMuteCur_R=0;    
+ 424   1              DMICCurSetting.wVolumedB_L=0x1000;  // 16 db  
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 8   
+
+ 425   1              DMICCurSetting.wVolumedB_R=0x1000;
+ 426   1      
+ 427   1              bBassBoost_DMIC=0;              //prepare for future in bass boost
+ 428   1              xCheckDMICMute=FALSE;   // for DMIC from digital mic to check mute afer 100 ms
+ 429   1      
+ 430   1          //Initial MICControl
+ 431   1          WriteReg(REG_MIC_CTRL,(TWOCHAN_ENABLE|MUTE_LCHAN|MUTE_RCHAN));      
+ 432   1            //set Mic clock 48K
+ 433   1              WriteReg(REG_MICCLK_SEL,0x07);  
+ 434   1          
+ 435   1              //===== Set MIC Volume gain =====//     
+ 436   1              i=dB2GainConvert(DMICCurSetting.wVolumedB_L);
+ 437   1              WriteReg(REG_GAINL_L,LoByteOfWord(i));
+ 438   1              WriteReg(REG_GAINL_H,HiByteOfWord(i));
+ 439   1              i=dB2GainConvert(DMICCurSetting.wVolumedB_R);
+ 440   1              WriteReg(REG_GAINR_L,LoByteOfWord(i));
+ 441   1              WriteReg(REG_GAINR_H,HiByteOfWord(i));
+ 442   1      
+ 443   1      
+ 444   1              //===== Set DMIC Audio Control =====//
+ 445   1              WriteReg(REG_AUDIO_CTL,bDMICInput);//disable DMIC buf, select MIC input                 
+ 446   1              //set max bytes of EP3
+ 447   1              WriteReg(REG_AU_MAXBYTES,0x1F); //248 bytes,HW default
+ 448   1      
+ 449   1              //===== set Global gain =====//
+ 450   1              xExVolGainExist=TRUE;
+ 451   1              SetPtrTabEx(path_AU_VolGGain);
+ 452   1              if(bDMICInput!=MICSEL_ADC)
+ 453   1              {       //DMIC
+ 454   2              Reg[REG_GGAIN]=(xExVolGainExist)? GetTab(0):GGAIN_8;
+ 455   2              // WriteReg(REG_GGAIN,GGAIN_1); //set global gain             
+ 456   2              }else
+ 457   1              {   //ADC
+ 458   2                  Reg[REG_ADC_GAIN]=(xExVolGainExist)? GetTab(0):0xEE;
+ 459   2                      //WriteReg(REG_ADC_GAIN,0xEE); //set global gain  
+ 460   2              // Open ADC Regulator  
+ 461   2              ClrRegBits(REG_ADC_CTL,LDOOFF);
+ 462   2              //pfDelay1MS(1);
+ 463   2              //ClrRegBits(REG_ADC_CTL,(POWEROFF_CH1|POWEROFF_CH2));
+ 464   2              
+ 465   2              SetRegBits(REG_MIC_CTRL,RCHAN_ENABLE);  //Default is Right Channel
+ 466   2              }
+ 467   1          
+ 468   1      
+ 469   1              //===== Set PLL, Default Value =====//
+ 470   1      /*      WriteReg(REG_PLL_INIT,0xb4);        //12.288:0xb4, 11.225:0xC4
+ 471   1              WriteReg(REG_PLL_CTL,0x00);
+ 472   1      
+ 473   1            WriteReg(REG_DKIN8_1,0x87);       //12.288:0x87, 11.225:0x94
+ 474   1              WriteReg(REG_PSC_PLLCA,0x45);
+ 475   1              WriteReg(REG_SSCKD,0x0c);       
+ 476   1              WriteReg(REG_DKIN0,0x00);
+ 477   1              WriteReg(REG_MKIN8_1,0x7f);
+ 478   1              WriteReg(REG_MKIN0,0x03);
+ 479   1              WriteReg(REG_DNLIMT8_1,0x82);
+ 480   1              WriteReg(REG_DNLIMT0,0x00);
+ 481   1              WriteReg(REG_UPLIMT8_1,0x8C);
+ 482   1              WriteReg(REG_UPLIMT0,0x00);
+ 483   1              WriteReg(REG_DITHEN,0x05);  
+ 484   1      */
+ 485   1      
+ 486   1              //===== Set Function point =====//
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 9   
+
+ 487   1            //ADC or GPIO
+ 488   1              {       //pfAudioVolume=DMICVolume;
+ 489   2                      //pfAudioMute=DMICMute;
+ 490   2      
+ 491   2                      //===== Protect Machanism =====//
+ 492   2                      //don't support 32k sample rate in GPIO or ADC
+ 493   2                      //bit 2
+ 494   2                      //wSupSampFreq=wSupSampFreq&0xFFFB; //clear 32k support
+ 495   2                  /*
+ 496   2                  //check real support sample rate number
+ 497   2                      bRequest=0;
+ 498   2                      wValue=0;
+ 499   2                      for(i=0;i<=NumSampFre;i++)
+ 500   2                      {
+ 501   2                              if((wSupSampFreq >>i)&0x01) //supported samp freq enter
+ 502   2                              {               bRequest++;
+ 503   2                              }
+ 504   2                              if((wSupSampFreq >>i)&0x01) //supported samp freq enter
+ 505   2                              {               wValue++;
+ 506   2                              }
+ 507   2                      }
+ 508   2              
+ 509   2                      if((bNumOfSup&0x0F)>bRequest)
+ 510   2                      {
+ 511   2                              bNumOfSup=(bNumOfSup&0xF0)|bRequest;
+ 512   2                      }               */
+ 513   2              }
+ 514   1      }
+ 515          
+ 516          void EnableDMIC(void)
+ 517          {
+ 518   1              BYTE data i,j,bCofremSet;
+ 519   1      
+ 520   1           //Close JPEG/ISP Clock for patch Audio Noise
+ 521   1          //Add by Eric, 2010_03_04
+ 522   1          Reg[REG_DYN_CLK_CTL]=0x00;
+ 523   1        
+ 524   1          if(EX_CallBackFunction(FUNSEL_EnableDMIC)==TRUE)//(pfAUEnableDMIC() == TRUE)
+ 525   1          {
+ 526   2                      return;
+ 527   2              }
+ 528   1          //===== Set ADC Power =====//
+ 529   1          if(bDMICInput==MICSEL_ADC)
+ 530   1          {
+ 531   2              //ClrRegBits(REG_ADC_CTL,LDOOFF);
+ 532   2              //pfDelay1MS(1);
+ 533   2              if(!(bSupFormat&(0x01<<((bDMICAltSetting-1)*3))))
+ 534   2              {   //Only one channel(right)
+ 535   3                  ClrRegBits(REG_ADC_CTL,POWEROFF_CH2);
+ 536   3              }else
+ 537   2              {
+ 538   3                  ClrRegBits(REG_ADC_CTL,(POWEROFF_CH1|POWEROFF_CH2));
+ 539   3              }
+ 540   2         }
+ 541   1          
+ 542   1          //===== set Mic sample rate =====//
+ 543   1              //WriteReg(REG_MICCLK_SEL, 0x07);     //set sample rate 48k to accerlate HW stable
+ 544   1          WriteReg(REG_MICCLK_SEL, DMICCurSetting.bSampFreq);
+ 545   1              //=====Enable DMIC =====//
+ 546   1              if((!xHighSpdMode)||(!(bSupFormat&(0x01<<((bDMICAltSetting-1)*3)))) )
+ 547   1                      SetRegBits(REG_MIC_CTRL,(MUTE_LCHAN|MUTE_RCHAN|MIC_CLK_EN));  //one channel
+ 548   1              else  //two channel
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 10  
+
+ 549   1                  SetRegBits(REG_MIC_CTRL,(TWOCHAN_ENABLE|MUTE_LCHAN|MUTE_RCHAN|MIC_CLK_EN)); 
+ 550   1      
+ 551   1          SetRegBits(REG_MIC_CTRL, (MUTE_LCHAN|MUTE_RCHAN)); 
+ 552   1          //===== Set FIR =====//
+ 553   1             SetPtrTabEx(path_AU_COFREM_INDEX);
+ 554   1             bCofremSet=GetTab(DMICCurSetting.bSampFreq);
+ 555   1             i= bCofremSet^DMICCurSetting.bCofremSet; //different bit would be high  
+ 556   1      
+ 557   1             if(i) 
+ 558   1             {//need to revise FIR or IIR             
+ 559   2                  DMICCurSetting.bCofremSet=bCofremSet; //update IIR/FIR set
+ 560   2                  bCofremSet=i;   //utilize to save variable
+ 561   2             
+ 562   2                  if( bCofremSet & 0x0f)
+ 563   2                  {   //need to revise FIR
+ 564   3                      j=(DMICCurSetting.bCofremSet&0x07);   
+ 565   3                      if(DMICCurSetting.bCofremSet & COFREM_EXFIR_EXIST) 
+ 566   3                      {  //load external FIR Table value  
+ 567   4                          SetPtrTabEx(path_AU_FIRSET);
+ 568   4                          j=j*96;                     //96 bytes is FIR length 
+ 569   4                          for(i=0;i<48;i++)
+ 570   4                              {       
+ 571   5                                    (*((WORD *)&Reg[ REG_COEFRAM_FIR_START+(i<<1)]))=
+ 572   5                                                  GetTabW((i<<1)+j);
+ 573   5                              }
+ 574   4                      }else
+ 575   3                      {  //load internal FIR Table value
+ 576   4                          if(j>2) j=2;    //avoid Err number
+ 577   4                          for(i=0;i<48;i++)
+ 578   4                              {       
+ 579   5                                   (*((WORD *)&Reg[ REG_COEFRAM_FIR_START+(i<<1)]))=
+ 580   5                                                   AUDIO_Coefram_FIR[j][i];
+ 581   5                              }
+ 582   4                      }    
+ 583   3                  }
+ 584   2                      
+ 585   2                  
+ 586   2                  if(bCofremSet &0xf0)
+ 587   2                  {  // need to revise IIR
+ 588   3                      j=((DMICCurSetting.bCofremSet&0x70)>>4);  
+ 589   3                      if(DMICCurSetting.bCofremSet & COFREM_EXIIR_EXIST) 
+ 590   3                      {  //load external IIR table  
+ 591   4                          SetPtrTabEx(path_AU_IIRSET);
+ 592   4                           j=j*32;   
+ 593   4                            for(i=0;i<16;i++)
+ 594   4                           {  
+ 595   5                                  (*((WORD *)&Reg[ REG_COEFRAM_IIR_START+(i<<1)]))=
+ 596   5                                                      GetTabW((i<<1)+j);
+ 597   5                           }
+ 598   4                      }else
+ 599   3                      {   //load internal IIR table
+ 600   4                           /* for(i=0;i<16;i++)
+ 601   4                            {
+ 602   4                                       (*((WORD *)&Reg[ REG_COEFRAM_IIR_START+(i<<1)]))=
+ 603   4                                                      AUDIO_Coefram_IIR[i];
+ 604   4                                } */
+ 605   4                          if(j>2) j=2;    //avoid Err number
+ 606   4                          for(i=0;i<16;i++)
+ 607   4                              {       
+ 608   5                                   (*((WORD *)&Reg[ REG_COEFRAM_IIR_START+(i<<1)]))=
+ 609   5                                                   AUDIO_Coefram_IIR[j][i];
+ 610   5                              }
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 11  
+
+ 611   4                      }
+ 612   3                  }
+ 613   2             }
+ 614   1              
+ 615   1             //enable MIC     
+ 616   1                 SetRegBits(REG_MIC_CTRL, MIC_ENABLE);   
+ 617   1      
+ 618   1             //Set variable to delay 200 ms 
+ 619   1             xCheckDMICMute=TRUE;
+ 620   1             SetPtrTabEx(path_AU_DelayTime);
+ 621   1                 wDMICMuteDelay=GetTabW(0);//0x0018; //delay 6ms
+ 622   1                 //UARTString("Delay");
+ 623   1                 //UARTWord2Hex(wDMICMuteDelay);
+ 624   1      }
+ 625          
+ 626          void DisableDMIC(void)
+ 627          {
+ 628   1          if(EX_CallBackFunction(FUNSEL_DisableDMIC)==TRUE)//(pfAUDisableDMIC() == TRUE)
+ 629   1          {
+ 630   2                      return;
+ 631   2              }
+ 632   1          //===== Close Audio Stream =====// 
+ 633   1              ClrRegBits(REG_AUDIO_CTL, ABUFRDY);  //close audio buf
+ 634   1              ClrRegBits(REG_END_P2_EN, ENABLE_EP3); //disable EP3
+ 635   1      
+ 636   1          xCheckDMICMute=FALSE;                   //stop mute check
+ 637   1      
+ 638   1              //clear enable
+ 639   1              ClrRegBits(REG_MIC_CTRL,MIC_ENABLE);
+ 640   1      
+ 641   1              //set mute 
+ 642   1              SetRegBits(REG_MIC_CTRL, (MUTE_LCHAN|MUTE_RCHAN));
+ 643   1      
+ 644   1              //clear clk & two channel
+ 645   1              ClrRegBits(REG_MIC_CTRL,(TWOCHAN_ENABLE|MIC_CLK_EN));  //for AUDIO_REDUCE_NOISE to clear two channel enab
+             -le
+ 646   1      
+ 647   1          //Close  ADC Power
+ 648   1          if(bDMICInput==MICSEL_ADC)
+ 649   1          {
+ 650   2              SetRegBits(REG_ADC_CTL,(POWEROFF_CH1|POWEROFF_CH2));
+ 651   2            //  SetRegBits(REG_ADC_CTL,LDOOFF);
+ 652   2          }
+ 653   1      
+ 654   1              //enable clock off 
+ 655   1              if((xHighSpdMode==TRUE) && (!bAltSetting)) //video and speaker must be also close 
+ 656   1          {   
+ 657   2             if(bFWLoadState==FWS_NORM)      //don't move partial FW
+ 658   2                 SetRegBits(USB_CLK_CTL, ENABLE_USB_CLK_OFF); 
+ 659   2          }
+ 660   1      
+ 661   1          //Enable JPEG/ISP Clock for patch Audio Noise
+ 662   1          //Add by Eric, 2010_03_04
+ 663   1          Reg[REG_DYN_CLK_CTL]=JPEG_CLOCK_OFF_EN; 
+ 664   1          //Check whether YUV Scale up,Eric Added
+ 665   1          if(!(Reg[REG_SCALUP_CTRL]&YUV_SCALUP))
+ 666   1          {    Reg[REG_DYN_CLK_CTL]|=ISP_CLOCK_OFF_EN;  
+ 667   2          }
+ 668   1      }
+ 669          
+ 670          
+ 671          #define ST_STREAMIF     0
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 12  
+
+ 672          #define ST_ASIF         1
+ 673          #define ST_FORMAT       2
+ 674          #define ST_ISOEP                3
+ 675          #define ST_CSEP         4
+ 676          void AudioDescGen(BYTE Stage)
+ 677          {
+ 678   1              BYTE data bformatLevel,i;
+ 679   1              WORD data wCalcul;
+ 680   1      
+ 681   1              static BYTE idata bStage;
+ 682   1      
+ 683   1              bStage=Stage;
+ 684   1              
+ 685   1              bformatLevel=bStage/5;
+ 686   1              switch((bStage%5))
+ 687   1              {
+ 688   2                      case ST_STREAMIF: //streaming interface descriptor with alternate setting
+ 689   2                              memcpy(pbTmpBuf,&USBInterfaceDescAlt1,sizeof(USB_ST_INTERFACE_DESC));   
+ 690   2                              pbTmpBuf[3]=USBInterfaceDescAlt1.bAlternateSetting+bformatLevel;  //alternate setting
+ 691   2                              break;
+ 692   2                      case ST_ASIF:   //as interface descriptor
+ 693   2                              memcpy(pbTmpBuf,&CSASDesc,sizeof(USB_CS_AS_INTERFACE_DESC));                    
+ 694   2                              break;
+ 695   2                      case ST_FORMAT: //format descriptor
+ 696   2                              {
+ 697   3                                      memcpy(pbTmpBuf,&TIDef_Desc,sizeof(USB_CS_AS_INTERFACE_DESC));                          
+ 698   3                                                              
+ 699   3                                      if(xHighSpdMode)
+ 700   3                                      {
+ 701   4                                              bformatLevel=(bSupFormat>>(bformatLevel*3))& 0x07;
+ 702   4                                              
+ 703   4                                              pbTmpBuf[4]=(bformatLevel & 0x01) ? 2:1;        //channel 
+ 704   4                                              pbTmpBuf[5]=(bformatLevel>>1)+1;        //bytes=>1,2,3
+ 705   4                                              pbTmpBuf[6]=pbTmpBuf[5]*8;                      //bits
+ 706   4                                              pbTmpBuf[7]=bNumOfSup&0x0f;  //supported sample frequency numbers
+ 707   4                                              
+ 708   4                                              pbTmpBuf[0]=sizeof(USB_CS_AS_TI_FORMAT_DESC)+(3*pbTmpBuf[7]); //desc length
+ 709   4      
+ 710   4                                              bformatLevel=8;
+ 711   4                                              for(i=0;i<=NumSampFre;i++)
+ 712   4                                              {
+ 713   5                                                      if((bSupSampFreq >>i)&0x01) //supported samp freq enter
+ 714   5                                                      {
+ 715   6                                                              wCalcul=SampingFreq[i];
+ 716   6                                                              pbTmpBuf[bformatLevel++]=LoByteOfWord(wCalcul);
+ 717   6                                                              pbTmpBuf[bformatLevel++]=HiByteOfWord(wCalcul);
+ 718   6                                                              pbTmpBuf[bformatLevel++]=0x00;
+ 719   6                                                      }
+ 720   5                                              }
+ 721   4                                      }
+ 722   3                                      else    //full speed(16bit, 8k & 16k , 1 channel)
+ 723   3                                      {       
+ 724   4                                              pbTmpBuf[0]=sizeof(USB_CS_AS_TI_FORMAT_DESC)+6;  //desc length
+ 725   4                                      
+ 726   4                                              pbTmpBuf[4]=1;                   // 1 channel
+ 727   4                                              pbTmpBuf[7]=2;                   // 1 sample frq
+ 728   4                                              wCalcul=SampingFreq[NumSampFre]; //8k
+ 729   4                                              pbTmpBuf[8]=LoByteOfWord(wCalcul);
+ 730   4                                              pbTmpBuf[9]=HiByteOfWord(wCalcul);
+ 731   4                                              pbTmpBuf[10]=0x00;
+ 732   4                                              wCalcul=SampingFreq[NumSampFre-3]; //16k
+ 733   4                                              pbTmpBuf[11]=LoByteOfWord(wCalcul);
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 13  
+
+ 734   4                                              pbTmpBuf[12]=HiByteOfWord(wCalcul);
+ 735   4                                              pbTmpBuf[13]=0x00;
+ 736   4                                      }
+ 737   3                              }
+ 738   2                              break;
+ 739   2                      case ST_ISOEP:  //isochronous ep desc
+ 740   2                              memcpy(pbTmpBuf,&EPAlt1Desc,sizeof(USB_ST_AS_ENDPOINT_DESC));                           
+ 741   2      
+ 742   2                              if(xHighSpdMode)
+ 743   2                              {
+ 744   3                                      bformatLevel=(bSupFormat>>(bformatLevel*3))& 0x07; //this alternate setting formate
+ 745   3                                      
+ 746   3                                      wCalcul=((bformatLevel>>1)+1)<<(bformatLevel&0x01); //byte * chl  
+ 747   3      
+ 748   3                                      for(i=0;i <= NumSampFre;i++)
+ 749   3                                      {       if((bSupSampFreq>>i)&0x01)
+ 750   4                                              {
+ 751   5                                                      wCalcul=(((SampingFreq[i]/1000)+2)*wCalcul);    // to protect byte exceed
+ 752   5                                                      pbTmpBuf[4]=LoByteOfWord(wCalcul);
+ 753   5                                                      pbTmpBuf[5]=HiByteOfWord(wCalcul);
+ 754   5                                                      break;
+ 755   5                                              }
+ 756   4                                      }
+ 757   3                              }
+ 758   2                              else    //full speed    
+ 759   2                              //if(!xHighSpdMode) 
+ 760   2                              {               pbTmpBuf[4]=0x28;       //Max:40 byte for full speed(16bit, 8k, 1 channel) 
+ 761   3                                              pbTmpBuf[5]=0x00;
+ 762   3                                              pbTmpBuf[6]=0x01;       // in full speed, 1ms
+ 763   3                              }
+ 764   2                              break;
+ 765   2                      case ST_CSEP:   
+ 766   2                              memcpy(pbTmpBuf,&CSEPoint,sizeof(USB_AS_ENDPOINT_DESC));                                        
+ 767   2                              break;
+ 768   2                      default:
+ 769   2                              // This is impossible
+ 770   2                              break;
+ 771   2              }
+ 772   1      
+ 773   1      }
+ 774          
+ 775          
+ 776          void USBAudioControl(void)
+ 777          {
+ 778   1              switch(bHwIndex)
+ 779   1              {
+ 780   2                      case AU_DMIC_FU_ID:
+ 781   2                              if(bRequestType&0x80)
+ 782   2                                      FUGetCtrl(TRUE);
+ 783   2                              else
+ 784   2                                      FUSetCtrl();
+ 785   2                              break;
+ 786   2                      case AU_DMIC_IT_ID:
+ 787   2                              if(bRequest==REQ_GET_MEM)       //for microphone array
+ 788   2                              {
+ 789   3                                      SetPtrTabEx(path_AU_MicArrayDesc);
+ 790   3                                      //memcpy(pbEP0Buf,DMIC_Array_Info,bLwLength);
+ 791   3                                      for( bHwIndex = 0 ;bHwIndex < bLwLength ; bHwIndex++ ){
+ 792   4                                              pbIBuf[bHwIndex] = GetTab(bHwIndex);
+ 793   4                                      }
+ 794   3                                      bHwIndex=AU_DMIC_IT_ID;
+ 795   3                                      Reg[REG_EP0_FIFO_LEN]=(BYTE)bLwLength;                    
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 14  
+
+ 796   3                                      WaitTXEnd();
+ 797   3                              }
+ 798   2                              break;
+ 799   2      /*              case AU_SPE_FU_ID:
+ 800   2                              if(bRequestType&0x80)
+ 801   2                                      FUGetCtrl(FALSE);
+ 802   2                              else
+ 803   2                                      FUSetCtrl(FALSE);
+ 804   2                              break;
+ 805   2      */              case AU_DMIC_OT_ID:
+ 806   2      //              case AU_SPE_IT_ID:
+ 807   2      //              case AU_SPE_OT_ID:
+ 808   2                      default:
+ 809   2                              InvalidCtrlandStall();
+ 810   2                              break;  
+ 811   2              }
+ 812   1      }
+ 813          
+ 814          void FUGetCtrl(BOOLEAN isDMIC)
+ 815          {
+ 816   1              BYTE data  bLen=0;
+ 817   1              WORD data  wTmpL, wTmpR;
+ 818   1      
+ 819   1              switch(bHwValue)
+ 820   1              {
+ 821   2                      case  CTRL_FU_MUTE: //only support get current
+ 822   2                                      if((bLwValue & CH_L) ||(bLwValue==0))   //include master channel
+ 823   2                                              pbEP0Buf[bLen++]=DMICCurSetting.bMuteCur_L;
+ 824   2      
+ 825   2                                      if(bLwValue & CH_R)
+ 826   2                                              pbEP0Buf[bLen++]=DMICCurSetting.bMuteCur_R;
+ 827   2              
+ 828   2                                      if(!bLen)
+ 829   2                                      {       OutofRangeCtrlandStall();
+ 830   3                                              return;
+ 831   3                                      }
+ 832   2                                      
+ 833   2                                      Reg[REG_EP0_FIFO_LEN]=bLen;
+ 834   2                                      break;
+ 835   2                      case  CTRL_FU_VOLUME:
+ 836   2                      {
+ 837   3                                      //xExVolExist=TRUE;
+ 838   3                                      SetPtrTabEx(path_AU_VolumnSetting_MIC);
+ 839   3                                      
+ 840   3                                      switch(bRequest)
+ 841   3                                      {
+ 842   4                                              case REQ_GET_CUR:
+ 843   4                                                      wTmpL=DMICCurSetting.wVolumedB_L;
+ 844   4                                                      wTmpR=DMICCurSetting.wVolumedB_R;
+ 845   4                                                      break;
+ 846   4                                              case REQ_GET_MIN:
+ 847   4                                                      wTmpL=GetTabW(VOLVAL_MIN);
+ 848   4                                                      wTmpR=wTmpL;
+ 849   4                                                      break;
+ 850   4                                              case REQ_GET_MAX:
+ 851   4                                                      wTmpL=GetTabW(VOLVAL_MAX);
+ 852   4                                                      wTmpR=wTmpL;
+ 853   4                                                      break;
+ 854   4                                              case REQ_GET_RES:
+ 855   4                                                      wTmpL=GetTabW(VOLVAL_STEP);
+ 856   4                                                      wTmpR=wTmpL;
+ 857   4                                                      break;
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 15  
+
+ 858   4                                      }
+ 859   3      
+ 860   3                                      if((bLwValue & CH_L) ||(bLwValue==0))
+ 861   3                                      {       pbEP0Buf[bLen++]=LoByteOfWord(wTmpL);
+ 862   4                                              pbEP0Buf[bLen++]=HiByteOfWord(wTmpL);
+ 863   4                                      }
+ 864   3                                      if(bLwValue & CH_R)
+ 865   3                                      {       pbEP0Buf[bLen++]=LoByteOfWord(wTmpR);
+ 866   4                                              pbEP0Buf[bLen++]=HiByteOfWord(wTmpR);
+ 867   4                                      }
+ 868   3                                      if(!bLen)
+ 869   3                                      {       OutofRangeCtrlandStall();
+ 870   4                                              return;
+ 871   4                                      }
+ 872   3                                      Reg[REG_EP0_FIFO_LEN]=bLen;
+ 873   3      
+ 874   3                      }               
+ 875   2                                      break;
+ 876   2                      case  CTRL_FU_BASS:     
+ 877   2                      case  CTRL_FU_MID:      
+ 878   2                      case  CTRL_FU_TREBLE:   
+ 879   2                      case  CTRL_FU_GRAPHIC_EQUALIZER:        
+ 880   2                      case  CTRL_FU_AUTOMATIC_GAIN:   
+ 881   2                      case  CTRL_FU_DELAY:    
+ 882   2                      case  CTRL_FU_BASS_BOOST:       
+ 883   2                      {
+ 884   3                              if(isDMIC&& bLwValue==0)  //for AC97 MIC 
+ 885   3                              {
+ 886   4                                              pbEP0Buf[0]=bBassBoost_DMIC;
+ 887   4                                              Reg[REG_EP0_FIFO_LEN]=1;
+ 888   4                              }else
+ 889   3                              {
+ 890   4                                      OutofRangeCtrlandStall();
+ 891   4                                      return;
+ 892   4                              }
+ 893   3                      }
+ 894   2                              break;
+ 895   2                      case  CTRL_FU_LOUDNESS: 
+ 896   2                      default:
+ 897   2                                      InvalidCtrlandStall();
+ 898   2                                      return;
+ 899   2                                      break;
+ 900   2              }
+ 901   1              bRequestErrorCode = EC_NO_ERROR;
+ 902   1              WaitTXEnd();
+ 903   1      }
+ 904          
+ 905          void FUSetCtrl(void)
+ 906          {
+ 907   1              BYTE data blen;
+ 908   1              //AU_CUR_SET xdata * data CurSet;
+ 909   1              
+ 910   1              while( !(Reg[REG_EP0_FIFO_CTRL] & EP0_IN_FIFO_READY) );//accept value from host
+ 911   1              blen = Reg[REG_EP0_FIFO_LEN] & EP0_FIFO_BYTE_LEN_MASK;
+ 912   1              memcpy(pbIBuf,pbEP0Buf,blen);
+ 913   1              Reg[REG_EP0_FIFO_CTRL]&=~EP0_IN_FIFO_READY;
+ 914   1      
+ 915   1              //CurSet=&DMICCurSetting;       
+ 916   1              
+ 917   1              blen=0;
+ 918   1              switch(bHwValue)
+ 919   1              {
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 16  
+
+ 920   2                      case  CTRL_FU_MUTE: //only support set current
+ 921   2                      {               
+ 922   3                                      if((bLwValue & CH_L)||(bLwValue==0))
+ 923   3                                      {       DMICCurSetting.bMuteCur_L=pbIBuf[0];    
+ 924   4                                              blen=blen+(1*(bLwValue&CH_L));
+ 925   4                                      }                       
+ 926   3                                      
+ 927   3                                      if((bLwValue & CH_R)||(bLwValue==0))
+ 928   3                                      {       DMICCurSetting.bMuteCur_R=pbIBuf[blen++];  
+ 929   4                                      }
+ 930   3                                      
+ 931   3                                      //pfAudioMute(isMIC);           
+ 932   3                                DMICMute();  
+ 933   3                      }
+ 934   2                              break;
+ 935   2                      case  CTRL_FU_VOLUME:
+ 936   2                      {                               
+ 937   3                                      //SetPtrTabEx(path_AU_VolumnSetting);
+ 938   3                                      //xExVolExist=TRUE;
+ 939   3                                      SetPtrTabEx(path_AU_VolumnSetting_MIC);
+ 940   3                              
+ 941   3                                      switch(bRequest)
+ 942   3                                      {
+ 943   4                                              case REQ_SET_CUR:
+ 944   4                                              {
+ 945   5                                                      if((bLwValue & CH_L)||(bLwValue==0))
+ 946   5                                                      {       DMICCurSetting.wVolumedB_L=pbIBuf[0]+(pbIBuf[1]<<8);
+ 947   6                                                              blen=blen+(2*(bLwValue&CH_L)); //if bLwValue==0, blen=0
+ 948   6      
+ 949   6                                                              DMICCurSetting.bMuteCur_L=(DMICCurSetting.wVolumedB_L==0x8000)?(DMICCurSetting.bMuteCur_L|0x80)
+ 950   6                                                                                              :(DMICCurSetting.b
+             -MuteCur_L&0x7F);
+ 951   6                      
+ 952   6                                                              if((INT16)DMICCurSetting.wVolumedB_L<(INT16)GetTabW(VOLVAL_MIN))  //min
+ 953   6                                                                              DMICCurSetting.wVolumedB_L=GetTabW(VOLVAL_MIN);
+ 954   6                                                              if((INT16)DMICCurSetting.wVolumedB_L>(INT16)GetTabW(VOLVAL_MAX)) //max
+ 955   6                                                                              DMICCurSetting.wVolumedB_L=GetTabW(VOLVAL_MAX);
+ 956   6                                                                                              
+ 957   6                                                      }
+ 958   5                                                      
+ 959   5                                                      if((bLwValue & CH_R) ||(bLwValue==0))
+ 960   5                                                      {       
+ 961   6                                                              DMICCurSetting.wVolumedB_R=pbIBuf[blen]+ ( pbIBuf[blen+1]<<8 );
+ 962   6                                                              //blen=blen+2;
+ 963   6                                                              
+ 964   6                                                              DMICCurSetting.bMuteCur_R=(DMICCurSetting.wVolumedB_R==0x8000)?(DMICCurSetting.bMuteCur_R|0x80)
+ 965   6                                                                                                          :(DMICCurSetting.bMuteCur_R & 0x7F);
+ 966   6                      
+ 967   6                                                              if((INT16)DMICCurSetting.wVolumedB_R<(INT16)GetTabW(VOLVAL_MIN))
+ 968   6                                                                      DMICCurSetting.wVolumedB_R=GetTabW(VOLVAL_MIN);
+ 969   6                                                              if((INT16)DMICCurSetting.wVolumedB_R>(INT16)GetTabW(VOLVAL_MAX))
+ 970   6                                                                      DMICCurSetting.wVolumedB_R=GetTabW(VOLVAL_MAX);                 
+ 971   6                                                      }
+ 972   5      
+ 973   5                                                      //pfAudioVolume(isMIC);
+ 974   5                                            DMICVolume();
+ 975   5                                              }// end of bDMICInput
+ 976   4                                                      break;
+ 977   4                                              case REQ_SET_MIN:
+ 978   4                                              case REQ_GET_MAX:
+ 979   4                                              case REQ_GET_RES:
+ 980   4                                                      break;
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 17  
+
+ 981   4                                      }
+ 982   3                                      
+ 983   3                      }               
+ 984   2                                      break;
+ 985   2                      case  CTRL_FU_BASS: 
+ 986   2                      case  CTRL_FU_MID:      
+ 987   2                      case  CTRL_FU_TREBLE:   
+ 988   2                      case  CTRL_FU_GRAPHIC_EQUALIZER:        
+ 989   2                      case  CTRL_FU_AUTOMATIC_GAIN:   
+ 990   2                      case  CTRL_FU_DELAY:    
+ 991   2                      case  CTRL_FU_BASS_BOOST:       
+ 992   2                      {                       
+ 993   3                              /*if(isMIC &&  bLwValue==0)  //for AC97 MIC 
+ 994   3                              {
+ 995   3                              }*/
+ 996   3                      }
+ 997   2                              break;
+ 998   2                      case  CTRL_FU_LOUDNESS: 
+ 999   2                      default:
+1000   2                                      InvalidCtrlandStall();
+1001   2                                      return;
+1002   2                                      break;
+1003   2              }
+1004   1              bRequestErrorCode = EC_NO_ERROR;
+1005   1              Reg[REG_EP0_FIFO_CTRL]=EP0_STATUS_OUT_NO_DATA;
+1006   1      
+1007   1      }
+1008          
+1009          
+1010          void USBAudioStreamingEP(void)          
+1011          {
+1012   1              BYTE  data bRecBytesCnt,i;
+1013   1              WORD data SampFreqTmp;
+1014   1              //AU_CUR_SET xdata * data CurSet;
+1015   1      
+1016   1              //CurSet=&DMICCurSetting;
+1017   1      
+1018   1      
+1019   1              if(bRequestType&0x80)  
+1020   1              {
+1021   2              //=============== GET Command ===============//
+1022   2                      switch(bRequest)
+1023   2                      {
+1024   3                              case REQ_GET_CUR:
+1025   3                                      //bRecBytesCnt=ReadReg(REG_MICCLK_SEL);
+1026   3                                      if(bHwValue==CTRL_EP_SAMPLING_FREQ)
+1027   3                                      {
+1028   4                                                      //SetPtrTabEx(path_AU_SampFreq);        //point to sample freq
+1029   4                                                      SampFreqTmp=SampingFreq[NumSampFre -  DMICCurSetting.bSampFreq];//GetTabW(( NumSampFre -  CurSet->bS
+             -ampFreq)<<1); 
+1030   4                                                      //(*(WORD *)(pbEP0Buf))=SampFreqTmp;
+1031   4                                                      pbEP0Buf[0]=LoByteOfWord(SampFreqTmp);
+1032   4                                                      pbEP0Buf[1]=HiByteOfWord(SampFreqTmp);
+1033   4                                                      pbEP0Buf[2]=0x00;
+1034   4                                                      bRecBytesCnt=3;
+1035   4                                      }else  //CTRL_EP_PITCH
+1036   3                                      {
+1037   4                                              InvalidCtrlandStall();
+1038   4                                              return;
+1039   4                                      }
+1040   3                                      break;
+1041   3                              case REQ_GET_MIN:
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 18  
+
+1042   3                                      if(bHwValue==CTRL_EP_SAMPLING_FREQ)
+1043   3                                      {
+1044   4                                              for(i=NumSampFre;i > 0;i--)
+1045   4                                              {
+1046   5                                                      if(bSupSampFreq &(1<< i )) //supported samp freq enter
+1047   5                                                      {
+1048   6                                                              break;
+1049   6                                                      }
+1050   5                                              }
+1051   4                                              SampFreqTmp=SampingFreq[i];
+1052   4                                              pbEP0Buf[0]=LoByteOfWord(SampFreqTmp);
+1053   4                                              pbEP0Buf[1]=HiByteOfWord(SampFreqTmp);
+1054   4                                              pbEP0Buf[2]=0x00;
+1055   4                                              bRecBytesCnt=3;
+1056   4                                      }else   //CTRL_EP_PITCH
+1057   3                                      {
+1058   4                                              InvalidCtrlandStall();
+1059   4                                              return;
+1060   4                                      }
+1061   3                                      break;
+1062   3                              case REQ_GET_MAX:
+1063   3                                      if(bHwValue==CTRL_EP_SAMPLING_FREQ)
+1064   3                                      {
+1065   4                                              for(i=0;i <=NumSampFre;i++)
+1066   4                                              {
+1067   5                                                      if(bSupSampFreq &(1<< i )) 
+1068   5                                                      {       //supported samp freq enter
+1069   6                                                              break;
+1070   6                                                      }
+1071   5                                              }
+1072   4                                              SampFreqTmp=SampingFreq[i];
+1073   4                                              pbEP0Buf[0]=LoByteOfWord(SampFreqTmp);
+1074   4                                              pbEP0Buf[1]=HiByteOfWord(SampFreqTmp);
+1075   4                                              pbEP0Buf[2]=0x00;
+1076   4                                              bRecBytesCnt=3;
+1077   4                                      }else           //CTRL_EP_PITCH
+1078   3                                      {
+1079   4                                              InvalidCtrlandStall();
+1080   4                                              return;
+1081   4                                      }
+1082   3                                      break;
+1083   3                              case REQ_GET_RES:  //this won't be used in normal condition, except continuous sample rate
+1084   3                              /*      if(bHwValue==CTRL_EP_SAMPLING_FREQ)
+1085   3                                      {
+1086   3                                              pbEP0Buf[0]=0xA0;    // 4K: random number 
+1087   3                                              pbEP0Buf[1]=0x0F;
+1088   3                                              pbEP0Buf[2]=0x00;
+1089   3                                              bRecBytesCnt=3;
+1090   3                                      }else           //CTRL_EP_PITCH
+1091   3                                      */{
+1092   4                                              InvalidCtrlandStall();
+1093   4                                              return;
+1094   4                                      }
+1095   3                                      break;
+1096   3                              case REQ_GET_MEM:
+1097   3                              default:
+1098   3                                      InvalidCtrlandStall();
+1099   3                                      return;
+1100   3                                      break;
+1101   3                              }
+1102   2                      
+1103   2                              Reg[REG_EP0_FIFO_LEN]=bRecBytesCnt;  //send response
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 19  
+
+1104   2                              WaitTXEnd();
+1105   2                      }
+1106   1              else //SET Command
+1107   1              {
+1108   2              //=============== SET Command ===============//
+1109   2                      while( !(Reg[REG_EP0_FIFO_CTRL] & EP0_IN_FIFO_READY) );
+1110   2                      bRecBytesCnt = Reg[REG_EP0_FIFO_LEN] & EP0_FIFO_BYTE_LEN_MASK;
+1111   2                      memcpy(pbIBuf,pbEP0Buf,bRecBytesCnt);
+1112   2                      Reg[REG_EP0_FIFO_CTRL]&=~EP0_IN_FIFO_READY;
+1113   2      
+1114   2                      switch(bRequest)
+1115   2                      {
+1116   3                              case REQ_SET_CUR:
+1117   3                                      if(bHwValue==CTRL_EP_SAMPLING_FREQ)
+1118   3                                      {//set sample freq      
+1119   4                                              SampFreqTmp=pbIBuf[0]+(pbIBuf[1]<<8);   
+1120   4                                      
+1121   4                                              for(i=0; i<= NumSampFre; i++)
+1122   4                                              {       if( (SampFreqTmp >= SampingFreq[i]) || (i==NumSampFre))
+1123   5                                                      {       
+1124   6                                                              DMICCurSetting.bSampFreq= NumSampFre-i ;                                
+1125   6                                                              break; //leave this for loop
+1126   6                                                      }
+1127   5                                              }
+1128   4      
+1129   4                                      //===== Revise PLL CLK for matching sample rate=====//
+1130   4                                              if(bDMICAltSetting)
+1131   4                                              {       /*if(xHighSpdMode)
+1132   5                                                      {       ClrRegBits(USB_CLK_CTL, ENABLE_USB_CLK_OFF); //disable clock off
+1133   5                                                      }*/
+1134   5                                                                                              
+1135   5                                                      EnableDMIC();
+1136   5                                              }       
+1137   4                                                                                              
+1138   4                                      }               
+1139   3                                      else
+1140   3                                      {
+1141   4                                              InvalidCtrlandStall();
+1142   4                                              return;
+1143   4                                      }
+1144   3      
+1145   3                                      break;
+1146   3                              case REQ_SET_MIN:
+1147   3                              case REQ_SET_MAX:
+1148   3                              case REQ_SET_RES:
+1149   3                                      break;
+1150   3                              case REQ_SET_MEM:
+1151   3                                      break;  
+1152   3                              default:
+1153   3                                      InvalidCtrlandStall();
+1154   3                                      return;
+1155   3                                      break;
+1156   3                      }
+1157   2              
+1158   2                      bRequestErrorCode = EC_NO_ERROR;
+1159   2                      Reg[REG_EP0_FIFO_CTRL]|=EP0_STATUS_OUT_NO_DATA; 
+1160   2      
+1161   2              }
+1162   1      
+1163   1      }
+1164          
+1165          
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 20  
+
+1166          #endif  //__AUDIOHANDLE_C__
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 21  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION L?0252 (BEGIN)
+0000 900000      E     MOV     DPTR,#DMICCurSetting+04H
+0003         L?0253:
+0003 E0                MOVX    A,@DPTR
+0004 FE                MOV     R6,A
+0005 A3                INC     DPTR
+0006 E0                MOVX    A,@DPTR
+0007 FF                MOV     R7,A
+             ; FUNCTION _dB2GainConvert (BEGIN)
+                                           ; SOURCE LINE # 309
+;---- Variable 'wVolumeValue' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 310
+                                           ; SOURCE LINE # 313
+0008 E4                CLR     A
+0009 B50708            CJNE    A,AR7,?C0001
+000C EE                MOV     A,R6
+000D B48004            CJNE    A,#080H,?C0001
+                                           ; SOURCE LINE # 314
+0010 E4                CLR     A
+0011 FE                MOV     R6,A
+0012 FF                MOV     R7,A
+0013 22                RET     
+0014         ?C0001:
+                                           ; SOURCE LINE # 317
+0014 7C00              MOV     R4,#00H
+0016 7D80              MOV     R5,#080H
+0018 120000      E     LCALL   ?C?SIDIV
+001B 7800        R     MOV     R0,#LOW wdBValue
+001D A606              MOV     @R0,AR6
+001F 08                INC     R0
+0020 A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 321
+0022 18                DEC     R0
+0023 E6                MOV     A,@R0
+0024 FA                MOV     R2,A
+0025 08                INC     R0
+0026 E6                MOV     A,@R0
+0027 FB                MOV     R3,A
+0028 7C00              MOV     R4,#00H
+002A 7D0C              MOV     R5,#0CH
+002C FF                MOV     R7,A
+002D AE02              MOV     R6,AR2
+002F 120000      E     LCALL   ?C?SIDIV
+0032 8E00        R     MOV     wVolumedB_Div,R6
+0034 8F00        R     MOV     wVolumedB_Div+01H,R7
+                                           ; SOURCE LINE # 322
+0036 7C00              MOV     R4,#00H
+0038 7D0C              MOV     R5,#0CH
+003A AF03              MOV     R7,AR3
+003C AE02              MOV     R6,AR2
+003E 120000      E     LCALL   ?C?SIDIV
+;---- Variable 'wVolumedB_Div_Rem' assigned to Register 'R4/R5' ----
+                                           ; SOURCE LINE # 324
+0041 C3                CLR     C
+0042 EC                MOV     A,R4
+0043 6480              XRL     A,#080H
+0045 9480              SUBB    A,#080H
+0047 500F              JNC     ?C0003
+                                           ; SOURCE LINE # 325
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 22  
+
+                                           ; SOURCE LINE # 326
+0049 E500        R     MOV     A,wVolumedB_Div+01H
+004B 1500        R     DEC     wVolumedB_Div+01H
+004D 7002              JNZ     ?C0211
+004F 1500        R     DEC     wVolumedB_Div
+0051         ?C0211:
+                                           ; SOURCE LINE # 327
+0051 740C              MOV     A,#0CH
+0053 2D                ADD     A,R5
+0054 FD                MOV     R5,A
+0055 E4                CLR     A
+0056 3C                ADDC    A,R4
+0057 FC                MOV     R4,A
+                                           ; SOURCE LINE # 328
+0058         ?C0003:
+                                           ; SOURCE LINE # 330
+0058 C3                CLR     C
+0059 E500        R     MOV     A,wVolumedB_Div
+005B 6480              XRL     A,#080H
+005D 9480              SUBB    A,#080H
+005F 4025              JC      ?C0004
+                                           ; SOURCE LINE # 331
+0061 ED                MOV     A,R5
+0062 25E0              ADD     A,ACC
+0064 FF                MOV     R7,A
+0065 EC                MOV     A,R4
+0066 33                RLC     A
+0067 FE                MOV     R6,A
+0068 7400        R     MOV     A,#LOW dB_Table
+006A 2F                ADD     A,R7
+006B F582              MOV     DPL,A
+006D 7400        R     MOV     A,#HIGH dB_Table
+006F 3E                ADDC    A,R6
+0070 F583              MOV     DPH,A
+0072 E4                CLR     A
+0073 93                MOVC    A,@A+DPTR
+0074 FE                MOV     R6,A
+0075 7401              MOV     A,#01H
+0077 93                MOVC    A,@A+DPTR
+0078 A800        R     MOV     R0,wVolumedB_Div+01H
+007A 08                INC     R0
+007B 8005              SJMP    ?C0213
+007D         ?C0212:
+007D C3                CLR     C
+007E 33                RLC     A
+007F CE                XCH     A,R6
+0080 33                RLC     A
+0081 CE                XCH     A,R6
+0082         ?C0213:
+0082 D8F9              DJNZ    R0,?C0212
+0084 FF                MOV     R7,A
+0085 22                RET     
+0086         ?C0004:
+                                           ; SOURCE LINE # 333
+0086 ED                MOV     A,R5
+0087 25E0              ADD     A,ACC
+0089 FF                MOV     R7,A
+008A EC                MOV     A,R4
+008B 33                RLC     A
+008C FE                MOV     R6,A
+008D 7400        R     MOV     A,#LOW dB_Table
+008F 2F                ADD     A,R7
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 23  
+
+0090 F582              MOV     DPL,A
+0092 7400        R     MOV     A,#HIGH dB_Table
+0094 3E                ADDC    A,R6
+0095 F583              MOV     DPH,A
+0097 E500        R     MOV     A,wVolumedB_Div+01H
+0099 F4                CPL     A
+009A 04                INC     A
+009B FF                MOV     R7,A
+009C E4                CLR     A
+009D 93                MOVC    A,@A+DPTR
+009E FE                MOV     R6,A
+009F 7401              MOV     A,#01H
+00A1 93                MOVC    A,@A+DPTR
+00A2 A807              MOV     R0,AR7
+00A4 08                INC     R0
+00A5 8006              SJMP    ?C0215
+00A7         ?C0214:
+00A7 CE                XCH     A,R6
+00A8 A2E7              MOV     C,ACC.7
+00AA 13                RRC     A
+00AB CE                XCH     A,R6
+00AC 13                RRC     A
+00AD         ?C0215:
+00AD D8F8              DJNZ    R0,?C0214
+00AF FF                MOV     R7,A
+                                           ; SOURCE LINE # 334
+00B0         ?C0002:
+00B0 22                RET     
+             ; FUNCTION _dB2GainConvert (END)
+
+             ; FUNCTION DMICVolume (BEGIN)
+                                           ; SOURCE LINE # 337
+                                           ; SOURCE LINE # 338
+                                           ; SOURCE LINE # 342
+0000 900000      E     MOV     DPTR,#DMICCurSetting+02H
+0003 E0                MOVX    A,@DPTR
+0004 30E706            JNB     ACC.7,?C0006
+0007 7E00              MOV     R6,#00H
+0009 7F00              MOV     R7,#00H
+000B 8003              SJMP    ?C0007
+000D         ?C0006:
+000D 120000      R     LCALL   L?0252
+0010         ?C0007:
+0010 8E00        R     MOV     wGainValue,R6
+0012 8F00        R     MOV     wGainValue+01H,R7
+                                           ; SOURCE LINE # 344
+0014 9004C1            MOV     DPTR,#04C1H
+0017 E500        R     MOV     A,wGainValue+01H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 345
+001A A3                INC     DPTR
+001B E500        R     MOV     A,wGainValue
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 348
+001E 900000      E     MOV     DPTR,#DMICCurSetting+03H
+0021 E0                MOVX    A,@DPTR
+0022 30E706            JNB     ACC.7,?C0008
+0025 7E00              MOV     R6,#00H
+0027 7F00              MOV     R7,#00H
+0029 8006              SJMP    ?C0009
+002B         ?C0008:
+002B 900000      E     MOV     DPTR,#DMICCurSetting+06H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 24  
+
+002E 120000      R     LCALL   L?0253
+0031         ?C0009:
+0031 8E00        R     MOV     wGainValue,R6
+0033 8F00        R     MOV     wGainValue+01H,R7
+                                           ; SOURCE LINE # 349
+0035 9004C3            MOV     DPTR,#04C3H
+0038 E500        R     MOV     A,wGainValue+01H
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 350
+003B A3                INC     DPTR
+003C E500        R     MOV     A,wGainValue
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 352
+003F 22                RET     
+             ; FUNCTION DMICVolume (END)
+
+             ; FUNCTION DMICMute (BEGIN)
+                                           ; SOURCE LINE # 354
+                                           ; SOURCE LINE # 355
+                                           ; SOURCE LINE # 356
+0000 900000      E     MOV     DPTR,#DMICCurSetting+02H
+0003 E0                MOVX    A,@DPTR
+0004 30E009            JNB     ACC.0,?C0011
+                                           ; SOURCE LINE # 357
+0007 9004C0            MOV     DPTR,#04C0H
+000A E0                MOVX    A,@DPTR
+000B 4420              ORL     A,#020H
+000D F0                MOVX    @DPTR,A
+000E 800A              SJMP    ?C0012
+0010         ?C0011:
+                                           ; SOURCE LINE # 358
+0010 200007      E     JB      xCheckDMICMute,?C0012
+                                           ; SOURCE LINE # 359
+0013 9004C0            MOV     DPTR,#04C0H
+0016 E0                MOVX    A,@DPTR
+0017 54DF              ANL     A,#0DFH
+0019 F0                MOVX    @DPTR,A
+001A         ?C0012:
+                                           ; SOURCE LINE # 361
+001A 900000      E     MOV     DPTR,#DMICCurSetting+03H
+001D E0                MOVX    A,@DPTR
+001E 30E008            JNB     ACC.0,?C0014
+                                           ; SOURCE LINE # 362
+0021 9004C0            MOV     DPTR,#04C0H
+0024 E0                MOVX    A,@DPTR
+0025 4410              ORL     A,#010H
+0027 F0                MOVX    @DPTR,A
+0028 22                RET     
+0029         ?C0014:
+                                           ; SOURCE LINE # 363
+0029 200007      E     JB      xCheckDMICMute,?C0017
+                                           ; SOURCE LINE # 364
+002C 9004C0            MOV     DPTR,#04C0H
+002F E0                MOVX    A,@DPTR
+0030 54EF              ANL     A,#0EFH
+0032 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 365
+0033         ?C0017:
+0033 22                RET     
+             ; FUNCTION DMICMute (END)
+
+             ; FUNCTION AudioDefaultFormat (BEGIN)
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 25  
+
+                                           ; SOURCE LINE # 372
+                                           ; SOURCE LINE # 373
+                                           ; SOURCE LINE # 375
+0000 D200        E     SETB    xExAuSetExist
+                                           ; SOURCE LINE # 377
+0002 7F68              MOV     R7,#068H
+0004 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 379
+0007 E4                CLR     A
+0008 FF                MOV     R7,A
+0009 FE                MOV     R6,A
+000A 120000      E     LCALL   _GetTab
+000D 900000      E     MOV     DPTR,#bDMICInput
+0010 EF                MOV     A,R7
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 380
+0012 7F01              MOV     R7,#01H
+0014 7E00              MOV     R6,#00H
+0016 120000      E     LCALL   _GetTab
+0019 900000      E     MOV     DPTR,#bSupSampFreq
+001C EF                MOV     A,R7
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 381
+001E 7F02              MOV     R7,#02H
+0020 7E00              MOV     R6,#00H
+0022 120000      E     LCALL   _GetTab
+0025 900000      E     MOV     DPTR,#bSupFormat
+0028 EF                MOV     A,R7
+0029 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 382
+002A 7F03              MOV     R7,#03H
+002C 7E00              MOV     R6,#00H
+002E 120000      E     LCALL   _GetTab
+0031 900000      E     MOV     DPTR,#bNumOfSup
+0034 EF                MOV     A,R7
+0035 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 384
+0036 200027      E     JB      xExAuSetExist,?C0022
+                                           ; SOURCE LINE # 385
+                                           ; SOURCE LINE # 386
+0039 200019      E     JB      xBDGP16,?C0019
+003C 300016      E     JNB     xBDGP13,?C0019
+                                           ; SOURCE LINE # 388
+003F 900000      E     MOV     DPTR,#bDMICInput
+0042 7410              MOV     A,#010H
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 389
+0045 900000      E     MOV     DPTR,#bSupFormat
+0048 7402              MOV     A,#02H
+004A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 390
+004B 900000      E     MOV     DPTR,#bNumOfSup
+004E E0                MOVX    A,@DPTR
+004F 540F              ANL     A,#0FH
+0051 4410              ORL     A,#010H
+0053 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 391
+0054 22                RET     
+0055         ?C0019:
+0055 200008      E     JB      xBDGP16,?C0022
+0058 200005      E     JB      xBDGP13,?C0022
+                                           ; SOURCE LINE # 392
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 26  
+
+                                           ; SOURCE LINE # 393
+005B E4                CLR     A
+005C 900000      E     MOV     DPTR,#bDMICInput
+005F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 394
+                                           ; SOURCE LINE # 400
+                                           ; SOURCE LINE # 401
+0060         ?C0022:
+0060 22                RET     
+             ; FUNCTION AudioDefaultFormat (END)
+
+             ; FUNCTION AudioInitialize (BEGIN)
+                                           ; SOURCE LINE # 403
+                                           ; SOURCE LINE # 404
+                                           ; SOURCE LINE # 407
+0000 E4                CLR     A
+0001 7800        R     MOV     R0,#LOW i
+0003 F6                MOV     @R0,A
+0004 08                INC     R0
+0005 F6                MOV     @R0,A
+0006         ?C0023:
+                                           ; SOURCE LINE # 408
+0006 7800        R     MOV     R0,#LOW i
+0008 E6                MOV     A,@R0
+0009 FC                MOV     R4,A
+000A 08                INC     R0
+000B E6                MOV     A,@R0
+000C FD                MOV     R5,A
+000D 25E0              ADD     A,ACC
+000F FF                MOV     R7,A
+0010 EC                MOV     A,R4
+0011 33                RLC     A
+0012 FE                MOV     R6,A
+0013 7400        R     MOV     A,#LOW AUDIO_Coefram_FIR
+0015 2F                ADD     A,R7
+0016 F582              MOV     DPL,A
+0018 7400        R     MOV     A,#HIGH AUDIO_Coefram_FIR
+001A 3E                ADDC    A,R6
+001B F583              MOV     DPH,A
+001D E4                CLR     A
+001E 93                MOVC    A,@A+DPTR
+001F FA                MOV     R2,A
+0020 7401              MOV     A,#01H
+0022 93                MOVC    A,@A+DPTR
+0023 FB                MOV     R3,A
+0024 ED                MOV     A,R5
+0025 25E0              ADD     A,ACC
+0027 FF                MOV     R7,A
+0028 EC                MOV     A,R4
+0029 33                RLC     A
+002A FE                MOV     R6,A
+002B E4                CLR     A
+002C 2F                ADD     A,R7
+002D F582              MOV     DPL,A
+002F 7404              MOV     A,#04H
+0031 3E                ADDC    A,R6
+0032 F583              MOV     DPH,A
+0034 EA                MOV     A,R2
+0035 F0                MOVX    @DPTR,A
+0036 A3                INC     DPTR
+0037 EB                MOV     A,R3
+0038 F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 27  
+
+                                           ; SOURCE LINE # 409
+0039 06                INC     @R0
+003A E6                MOV     A,@R0
+003B 18                DEC     R0
+003C 7001              JNZ     ?C0216
+003E 06                INC     @R0
+003F         ?C0216:
+003F 7800        R     MOV     R0,#LOW i+01H
+0041 E6                MOV     A,@R0
+0042 6430              XRL     A,#030H
+0044 18                DEC     R0
+0045 46                ORL     A,@R0
+0046 70BE              JNZ     ?C0023
+0048         ?C0024:
+                                           ; SOURCE LINE # 412
+0048 E4                CLR     A
+0049 7800        R     MOV     R0,#LOW i
+004B F6                MOV     @R0,A
+004C 08                INC     R0
+004D F6                MOV     @R0,A
+004E         ?C0026:
+                                           ; SOURCE LINE # 414
+004E 7800        R     MOV     R0,#LOW i
+0050 E6                MOV     A,@R0
+0051 FC                MOV     R4,A
+0052 08                INC     R0
+0053 E6                MOV     A,@R0
+0054 FD                MOV     R5,A
+0055 25E0              ADD     A,ACC
+0057 FF                MOV     R7,A
+0058 EC                MOV     A,R4
+0059 33                RLC     A
+005A FE                MOV     R6,A
+005B 7400        R     MOV     A,#LOW AUDIO_Coefram_IIR
+005D 2F                ADD     A,R7
+005E F582              MOV     DPL,A
+0060 7400        R     MOV     A,#HIGH AUDIO_Coefram_IIR
+0062 3E                ADDC    A,R6
+0063 F583              MOV     DPH,A
+0065 E4                CLR     A
+0066 93                MOVC    A,@A+DPTR
+0067 FA                MOV     R2,A
+0068 7401              MOV     A,#01H
+006A 93                MOVC    A,@A+DPTR
+006B FB                MOV     R3,A
+006C ED                MOV     A,R5
+006D 25E0              ADD     A,ACC
+006F FF                MOV     R7,A
+0070 EC                MOV     A,R4
+0071 33                RLC     A
+0072 FE                MOV     R6,A
+0073 7460              MOV     A,#060H
+0075 2F                ADD     A,R7
+0076 F582              MOV     DPL,A
+0078 7404              MOV     A,#04H
+007A 3E                ADDC    A,R6
+007B F583              MOV     DPH,A
+007D EA                MOV     A,R2
+007E F0                MOVX    @DPTR,A
+007F A3                INC     DPTR
+0080 EB                MOV     A,R3
+0081 F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 28  
+
+                                           ; SOURCE LINE # 415
+0082 06                INC     @R0
+0083 E6                MOV     A,@R0
+0084 18                DEC     R0
+0085 7001              JNZ     ?C0217
+0087 06                INC     @R0
+0088         ?C0217:
+0088 7800        R     MOV     R0,#LOW i+01H
+008A E6                MOV     A,@R0
+008B 6410              XRL     A,#010H
+008D 18                DEC     R0
+008E 46                ORL     A,@R0
+008F 70BD              JNZ     ?C0026
+0091         ?C0027:
+                                           ; SOURCE LINE # 418
+0091 E4                CLR     A
+0092 900000      E     MOV     DPTR,#bDMICAltSetting
+0095 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 420
+0096 900000      E     MOV     DPTR,#DMICCurSetting
+0099 7407              MOV     A,#07H
+009B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 421
+009C E4                CLR     A
+009D A3                INC     DPTR
+009E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 422
+009F A3                INC     DPTR
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 423
+00A1 A3                INC     DPTR
+00A2 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 424
+00A3 A3                INC     DPTR
+00A4 7410              MOV     A,#010H
+00A6 F0                MOVX    @DPTR,A
+00A7 A3                INC     DPTR
+00A8 E4                CLR     A
+00A9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 425
+00AA A3                INC     DPTR
+00AB 7410              MOV     A,#010H
+00AD F0                MOVX    @DPTR,A
+00AE A3                INC     DPTR
+00AF E4                CLR     A
+00B0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 427
+00B1 900000      E     MOV     DPTR,#bBassBoost_DMIC
+00B4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 428
+00B5 C200        E     CLR     xCheckDMICMute
+                                           ; SOURCE LINE # 431
+00B7 9004C0            MOV     DPTR,#04C0H
+00BA 7432              MOV     A,#032H
+00BC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 433
+00BD 9004C5            MOV     DPTR,#04C5H
+00C0 7407              MOV     A,#07H
+00C2 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 436
+00C3 120000      R     LCALL   L?0252
+00C6 7800        R     MOV     R0,#LOW i
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 29  
+
+00C8 A606              MOV     @R0,AR6
+00CA 08                INC     R0
+00CB A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 437
+00CD E6                MOV     A,@R0
+00CE 9004C1            MOV     DPTR,#04C1H
+00D1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 438
+00D2 18                DEC     R0
+00D3 E6                MOV     A,@R0
+00D4 A3                INC     DPTR
+00D5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 439
+00D6 900000      E     MOV     DPTR,#DMICCurSetting+06H
+00D9 120000      R     LCALL   L?0253
+00DC 7800        R     MOV     R0,#LOW i
+00DE A606              MOV     @R0,AR6
+00E0 08                INC     R0
+00E1 A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 440
+00E3 E6                MOV     A,@R0
+00E4 9004C3            MOV     DPTR,#04C3H
+00E7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 441
+00E8 18                DEC     R0
+00E9 E6                MOV     A,@R0
+00EA A3                INC     DPTR
+00EB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 445
+00EC 900000      E     MOV     DPTR,#bDMICInput
+00EF E0                MOVX    A,@DPTR
+00F0 9004DC            MOV     DPTR,#04DCH
+00F3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 447
+00F4 9004DF            MOV     DPTR,#04DFH
+00F7 741F              MOV     A,#01FH
+00F9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 450
+00FA D200        E     SETB    xExVolGainExist
+                                           ; SOURCE LINE # 451
+00FC 7F6A              MOV     R7,#06AH
+00FE 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 452
+0101 900000      E     MOV     DPTR,#bDMICInput
+0104 E0                MOVX    A,@DPTR
+0105 6410              XRL     A,#010H
+0107 6013              JZ      ?C0029
+                                           ; SOURCE LINE # 453
+                                           ; SOURCE LINE # 454
+0109 300008      E     JNB     xExVolGainExist,?C0030
+010C E4                CLR     A
+010D FF                MOV     R7,A
+010E FE                MOV     R6,A
+010F 120000      E     LCALL   _GetTab
+0112 8002              SJMP    ?C0031
+0114         ?C0030:
+0114 7F03              MOV     R7,#03H
+0116         ?C0031:
+0116 9004C6            MOV     DPTR,#04C6H
+0119 EF                MOV     A,R7
+011A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 456
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 30  
+
+011B 22                RET     
+011C         ?C0029:
+                                           ; SOURCE LINE # 457
+                                           ; SOURCE LINE # 458
+011C 300008      E     JNB     xExVolGainExist,?C0033
+011F E4                CLR     A
+0120 FF                MOV     R7,A
+0121 FE                MOV     R6,A
+0122 120000      E     LCALL   _GetTab
+0125 8002              SJMP    ?C0034
+0127         ?C0033:
+0127 7FEE              MOV     R7,#0EEH
+0129         ?C0034:
+0129 9004D2            MOV     DPTR,#04D2H
+012C EF                MOV     A,R7
+012D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 461
+012E 9004D0            MOV     DPTR,#04D0H
+0131 E0                MOVX    A,@DPTR
+0132 547F              ANL     A,#07FH
+0134 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 465
+0135 9004C0            MOV     DPTR,#04C0H
+0138 E0                MOVX    A,@DPTR
+0139 4404              ORL     A,#04H
+013B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 466
+                                           ; SOURCE LINE # 488
+                                           ; SOURCE LINE # 513
+                                           ; SOURCE LINE # 514
+013C         ?C0035:
+013C 22                RET     
+             ; FUNCTION AudioInitialize (END)
+
+             ; FUNCTION EnableDMIC (BEGIN)
+                                           ; SOURCE LINE # 516
+                                           ; SOURCE LINE # 517
+                                           ; SOURCE LINE # 522
+0000 90003E            MOV     DPTR,#03EH
+0003 E4                CLR     A
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 524
+0005 7F04              MOV     R7,#04H
+0007 120000      E     LCALL   _EX_CallBackFunction
+000A EF                MOV     A,R7
+000B 6401              XRL     A,#01H
+000D 7003              JNZ     $ + 5H
+000F 020000      R     LJMP    ?C0037
+                                           ; SOURCE LINE # 525
+                                           ; SOURCE LINE # 527
+0012         ?C0036:
+                                           ; SOURCE LINE # 529
+0012 900000      E     MOV     DPTR,#bDMICInput
+0015 E0                MOVX    A,@DPTR
+0016 6410              XRL     A,#010H
+0018 7031              JNZ     ?C0038
+                                           ; SOURCE LINE # 530
+                                           ; SOURCE LINE # 533
+001A 900000      E     MOV     DPTR,#bDMICAltSetting
+001D E0                MOVX    A,@DPTR
+001E 14                DEC     A
+001F 75F003            MOV     B,#03H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 31  
+
+0022 A4                MUL     AB
+0023 FF                MOV     R7,A
+0024 7401              MOV     A,#01H
+0026 7E00              MOV     R6,#00H
+0028 A807              MOV     R0,AR7
+002A 08                INC     R0
+002B 8005              SJMP    ?C0219
+002D         ?C0218:
+002D C3                CLR     C
+002E 33                RLC     A
+002F CE                XCH     A,R6
+0030 33                RLC     A
+0031 CE                XCH     A,R6
+0032         ?C0219:
+0032 D8F9              DJNZ    R0,?C0218
+0034 FF                MOV     R7,A
+0035 900000      E     MOV     DPTR,#bSupFormat
+0038 E0                MOVX    A,@DPTR
+0039 FD                MOV     R5,A
+003A EF                MOV     A,R7
+003B 5D                ANL     A,R5
+003C 9004D0            MOV     DPTR,#04D0H
+003F 7006              JNZ     ?C0039
+                                           ; SOURCE LINE # 534
+                                           ; SOURCE LINE # 535
+0041 E0                MOVX    A,@DPTR
+0042 54EF              ANL     A,#0EFH
+0044 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 536
+0045 8004              SJMP    ?C0038
+0047         ?C0039:
+                                           ; SOURCE LINE # 537
+                                           ; SOURCE LINE # 538
+0047 E0                MOVX    A,@DPTR
+0048 54EE              ANL     A,#0EEH
+004A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 539
+                                           ; SOURCE LINE # 540
+004B         ?C0038:
+                                           ; SOURCE LINE # 544
+004B 900000      E     MOV     DPTR,#DMICCurSetting
+004E E0                MOVX    A,@DPTR
+004F 9004C5            MOV     DPTR,#04C5H
+0052 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 546
+0053 300024      E     JNB     xHighSpdMode,?C0042
+0056 900000      E     MOV     DPTR,#bDMICAltSetting
+0059 E0                MOVX    A,@DPTR
+005A 14                DEC     A
+005B 75F003            MOV     B,#03H
+005E A4                MUL     AB
+005F FF                MOV     R7,A
+0060 7401              MOV     A,#01H
+0062 7E00              MOV     R6,#00H
+0064 A807              MOV     R0,AR7
+0066 08                INC     R0
+0067 8005              SJMP    ?C0221
+0069         ?C0220:
+0069 C3                CLR     C
+006A 33                RLC     A
+006B CE                XCH     A,R6
+006C 33                RLC     A
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 32  
+
+006D CE                XCH     A,R6
+006E         ?C0221:
+006E D8F9              DJNZ    R0,?C0220
+0070 FF                MOV     R7,A
+0071 900000      E     MOV     DPTR,#bSupFormat
+0074 E0                MOVX    A,@DPTR
+0075 FD                MOV     R5,A
+0076 EF                MOV     A,R7
+0077 5D                ANL     A,R5
+0078 7009              JNZ     ?C0041
+007A         ?C0042:
+                                           ; SOURCE LINE # 547
+007A 9004C0            MOV     DPTR,#04C0H
+007D E0                MOVX    A,@DPTR
+007E 4470              ORL     A,#070H
+0080 F0                MOVX    @DPTR,A
+0081 8007              SJMP    ?C0043
+0083         ?C0041:
+                                           ; SOURCE LINE # 549
+0083 9004C0            MOV     DPTR,#04C0H
+0086 E0                MOVX    A,@DPTR
+0087 4472              ORL     A,#072H
+0089 F0                MOVX    @DPTR,A
+008A         ?C0043:
+                                           ; SOURCE LINE # 551
+008A 9004C0            MOV     DPTR,#04C0H
+008D E0                MOVX    A,@DPTR
+008E 4430              ORL     A,#030H
+0090 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 553
+0091 7F6B              MOV     R7,#06BH
+0093 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 554
+0096 900000      E     MOV     DPTR,#DMICCurSetting
+0099 E0                MOVX    A,@DPTR
+009A FF                MOV     R7,A
+009B 7E00              MOV     R6,#00H
+009D 120000      E     LCALL   _GetTab
+00A0 8F00        R     MOV     bCofremSet,R7
+                                           ; SOURCE LINE # 555
+00A2 900000      E     MOV     DPTR,#DMICCurSetting+01H
+00A5 E0                MOVX    A,@DPTR
+00A6 6500        R     XRL     A,bCofremSet
+00A8 F500        R     MOV     i,A
+                                           ; SOURCE LINE # 557
+00AA 7003              JNZ     $ + 5H
+00AC 020000      R     LJMP    ?C0044
+                                           ; SOURCE LINE # 558
+                                           ; SOURCE LINE # 559
+00AF E500        R     MOV     A,bCofremSet
+00B1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 560
+00B2 850000      R     MOV     bCofremSet,i
+                                           ; SOURCE LINE # 562
+00B5 E500        R     MOV     A,bCofremSet
+00B7 540F              ANL     A,#0FH
+00B9 7003              JNZ     $ + 5H
+00BB 020000      R     LJMP    ?C0045
+                                           ; SOURCE LINE # 563
+                                           ; SOURCE LINE # 564
+00BE E0                MOVX    A,@DPTR
+00BF FF                MOV     R7,A
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 33  
+
+00C0 5407              ANL     A,#07H
+00C2 F500        R     MOV     j,A
+                                           ; SOURCE LINE # 565
+00C4 EF                MOV     A,R7
+00C5 30E349            JNB     ACC.3,?C0046
+                                           ; SOURCE LINE # 566
+                                           ; SOURCE LINE # 567
+00C8 7F6D              MOV     R7,#06DH
+00CA 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 568
+00CD E500        R     MOV     A,j
+00CF 75F060            MOV     B,#060H
+00D2 A4                MUL     AB
+00D3 F500        R     MOV     j,A
+                                           ; SOURCE LINE # 569
+00D5 E4                CLR     A
+00D6 F500        R     MOV     i,A
+00D8         ?C0047:
+                                           ; SOURCE LINE # 570
+                                           ; SOURCE LINE # 571
+00D8 E500        R     MOV     A,i
+00DA 25E0              ADD     A,ACC
+00DC FF                MOV     R7,A
+00DD E4                CLR     A
+00DE 33                RLC     A
+00DF FE                MOV     R6,A
+00E0 7C00              MOV     R4,#00H
+00E2 EF                MOV     A,R7
+00E3 2500        R     ADD     A,j
+00E5 FF                MOV     R7,A
+00E6 EC                MOV     A,R4
+00E7 3E                ADDC    A,R6
+00E8 FE                MOV     R6,A
+00E9 120000      E     LCALL   _GetTabW
+00EC AC06              MOV     R4,AR6
+00EE AD07              MOV     R5,AR7
+00F0 E500        R     MOV     A,i
+00F2 25E0              ADD     A,ACC
+00F4 FF                MOV     R7,A
+00F5 E4                CLR     A
+00F6 33                RLC     A
+00F7 FE                MOV     R6,A
+00F8 E4                CLR     A
+00F9 2F                ADD     A,R7
+00FA F582              MOV     DPL,A
+00FC 7404              MOV     A,#04H
+00FE 3E                ADDC    A,R6
+00FF F583              MOV     DPH,A
+0101 EC                MOV     A,R4
+0102 F0                MOVX    @DPTR,A
+0103 A3                INC     DPTR
+0104 ED                MOV     A,R5
+0105 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 573
+0106 0500        R     INC     i
+0108 E500        R     MOV     A,i
+010A C3                CLR     C
+010B 9430              SUBB    A,#030H
+010D 40C9              JC      ?C0047
+010F 8044              SJMP    ?C0045
+                                           ; SOURCE LINE # 574
+0111         ?C0046:
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 34  
+
+                                           ; SOURCE LINE # 575
+                                           ; SOURCE LINE # 576
+0111 E500        R     MOV     A,j
+0113 D3                SETB    C
+0114 9402              SUBB    A,#02H
+0116 4003              JC      ?C0051
+0118 750002      R     MOV     j,#02H
+011B         ?C0051:
+                                           ; SOURCE LINE # 577
+011B E4                CLR     A
+011C F500        R     MOV     i,A
+011E         ?C0052:
+                                           ; SOURCE LINE # 578
+                                           ; SOURCE LINE # 579
+011E 75F060            MOV     B,#060H
+0121 E500        R     MOV     A,j
+0123 900000      R     MOV     DPTR,#AUDIO_Coefram_FIR
+0126 120000      E     LCALL   ?C?OFFXADD
+0129 75F002            MOV     B,#02H
+012C E500        R     MOV     A,i
+012E 120000      E     LCALL   ?C?OFFXADD
+0131 E4                CLR     A
+0132 93                MOVC    A,@A+DPTR
+0133 FC                MOV     R4,A
+0134 7401              MOV     A,#01H
+0136 93                MOVC    A,@A+DPTR
+0137 FD                MOV     R5,A
+0138 E500        R     MOV     A,i
+013A 25E0              ADD     A,ACC
+013C FF                MOV     R7,A
+013D E4                CLR     A
+013E 33                RLC     A
+013F FE                MOV     R6,A
+0140 E4                CLR     A
+0141 2F                ADD     A,R7
+0142 F582              MOV     DPL,A
+0144 7404              MOV     A,#04H
+0146 3E                ADDC    A,R6
+0147 F583              MOV     DPH,A
+0149 EC                MOV     A,R4
+014A F0                MOVX    @DPTR,A
+014B A3                INC     DPTR
+014C ED                MOV     A,R5
+014D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 581
+014E 0500        R     INC     i
+0150 E500        R     MOV     A,i
+0152 B430C9            CJNE    A,#030H,?C0052
+                                           ; SOURCE LINE # 582
+                                           ; SOURCE LINE # 583
+0155         ?C0045:
+                                           ; SOURCE LINE # 586
+0155 E500        R     MOV     A,bCofremSet
+0157 54F0              ANL     A,#0F0H
+0159 7003              JNZ     $ + 5H
+015B 020000      R     LJMP    ?C0044
+                                           ; SOURCE LINE # 587
+                                           ; SOURCE LINE # 588
+015E 900000      E     MOV     DPTR,#DMICCurSetting+01H
+0161 E0                MOVX    A,@DPTR
+0162 FF                MOV     R7,A
+0163 5470              ANL     A,#070H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 35  
+
+0165 FE                MOV     R6,A
+0166 C4                SWAP    A
+0167 540F              ANL     A,#0FH
+0169 F500        R     MOV     j,A
+                                           ; SOURCE LINE # 589
+016B EF                MOV     A,R7
+016C 30E74A            JNB     ACC.7,?C0056
+                                           ; SOURCE LINE # 590
+                                           ; SOURCE LINE # 591
+016F 7F6C              MOV     R7,#06CH
+0171 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 592
+0174 E500        R     MOV     A,j
+0176 C4                SWAP    A
+0177 33                RLC     A
+0178 54E0              ANL     A,#0E0H
+017A F500        R     MOV     j,A
+                                           ; SOURCE LINE # 593
+017C E4                CLR     A
+017D F500        R     MOV     i,A
+017F         ?C0057:
+                                           ; SOURCE LINE # 594
+                                           ; SOURCE LINE # 595
+017F E500        R     MOV     A,i
+0181 25E0              ADD     A,ACC
+0183 FF                MOV     R7,A
+0184 E4                CLR     A
+0185 33                RLC     A
+0186 FE                MOV     R6,A
+0187 7C00              MOV     R4,#00H
+0189 EF                MOV     A,R7
+018A 2500        R     ADD     A,j
+018C FF                MOV     R7,A
+018D EC                MOV     A,R4
+018E 3E                ADDC    A,R6
+018F FE                MOV     R6,A
+0190 120000      E     LCALL   _GetTabW
+0193 AC06              MOV     R4,AR6
+0195 AD07              MOV     R5,AR7
+0197 E500        R     MOV     A,i
+0199 25E0              ADD     A,ACC
+019B FF                MOV     R7,A
+019C E4                CLR     A
+019D 33                RLC     A
+019E FE                MOV     R6,A
+019F 7460              MOV     A,#060H
+01A1 2F                ADD     A,R7
+01A2 F582              MOV     DPL,A
+01A4 7404              MOV     A,#04H
+01A6 3E                ADDC    A,R6
+01A7 F583              MOV     DPH,A
+01A9 EC                MOV     A,R4
+01AA F0                MOVX    @DPTR,A
+01AB A3                INC     DPTR
+01AC ED                MOV     A,R5
+01AD F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 597
+01AE 0500        R     INC     i
+01B0 E500        R     MOV     A,i
+01B2 C3                CLR     C
+01B3 9410              SUBB    A,#010H
+01B5 40C8              JC      ?C0057
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 36  
+
+01B7 8049              SJMP    ?C0044
+                                           ; SOURCE LINE # 598
+01B9         ?C0056:
+                                           ; SOURCE LINE # 599
+                                           ; SOURCE LINE # 605
+01B9 E500        R     MOV     A,j
+01BB D3                SETB    C
+01BC 9402              SUBB    A,#02H
+01BE 4003              JC      ?C0061
+01C0 750002      R     MOV     j,#02H
+01C3         ?C0061:
+                                           ; SOURCE LINE # 606
+01C3 E4                CLR     A
+01C4 F500        R     MOV     i,A
+01C6         ?C0062:
+                                           ; SOURCE LINE # 607
+                                           ; SOURCE LINE # 608
+01C6 E500        R     MOV     A,j
+01C8 C4                SWAP    A
+01C9 33                RLC     A
+01CA 54E0              ANL     A,#0E0H
+01CC 2400        R     ADD     A,#LOW AUDIO_Coefram_IIR
+01CE F582              MOV     DPL,A
+01D0 E4                CLR     A
+01D1 3400        R     ADDC    A,#HIGH AUDIO_Coefram_IIR
+01D3 F583              MOV     DPH,A
+01D5 75F002            MOV     B,#02H
+01D8 E500        R     MOV     A,i
+01DA 120000      E     LCALL   ?C?OFFXADD
+01DD E4                CLR     A
+01DE 93                MOVC    A,@A+DPTR
+01DF FC                MOV     R4,A
+01E0 7401              MOV     A,#01H
+01E2 93                MOVC    A,@A+DPTR
+01E3 FD                MOV     R5,A
+01E4 E500        R     MOV     A,i
+01E6 25E0              ADD     A,ACC
+01E8 FF                MOV     R7,A
+01E9 E4                CLR     A
+01EA 33                RLC     A
+01EB FE                MOV     R6,A
+01EC 7460              MOV     A,#060H
+01EE 2F                ADD     A,R7
+01EF F582              MOV     DPL,A
+01F1 7404              MOV     A,#04H
+01F3 3E                ADDC    A,R6
+01F4 F583              MOV     DPH,A
+01F6 EC                MOV     A,R4
+01F7 F0                MOVX    @DPTR,A
+01F8 A3                INC     DPTR
+01F9 ED                MOV     A,R5
+01FA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 610
+01FB 0500        R     INC     i
+01FD E500        R     MOV     A,i
+01FF B410C4            CJNE    A,#010H,?C0062
+                                           ; SOURCE LINE # 611
+                                           ; SOURCE LINE # 612
+                                           ; SOURCE LINE # 613
+0202         ?C0044:
+                                           ; SOURCE LINE # 616
+0202 9004C0            MOV     DPTR,#04C0H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 37  
+
+0205 E0                MOVX    A,@DPTR
+0206 4401              ORL     A,#01H
+0208 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 619
+0209 D200        E     SETB    xCheckDMICMute
+                                           ; SOURCE LINE # 620
+020B 7F6E              MOV     R7,#06EH
+020D 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 621
+0210 E4                CLR     A
+0211 FF                MOV     R7,A
+0212 FE                MOV     R6,A
+0213 120000      E     LCALL   _GetTabW
+0216 900000      E     MOV     DPTR,#wDMICMuteDelay
+0219 EE                MOV     A,R6
+021A F0                MOVX    @DPTR,A
+021B A3                INC     DPTR
+021C EF                MOV     A,R7
+021D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 624
+021E         ?C0037:
+021E 22                RET     
+             ; FUNCTION EnableDMIC (END)
+
+             ; FUNCTION DisableDMIC (BEGIN)
+                                           ; SOURCE LINE # 626
+                                           ; SOURCE LINE # 627
+                                           ; SOURCE LINE # 628
+0000 7F06              MOV     R7,#06H
+0002 120000      E     LCALL   _EX_CallBackFunction
+0005 EF                MOV     A,R7
+0006 6401              XRL     A,#01H
+0008 6055              JZ      ?C0066
+                                           ; SOURCE LINE # 629
+                                           ; SOURCE LINE # 631
+000A         ?C0065:
+                                           ; SOURCE LINE # 633
+000A 9004DC            MOV     DPTR,#04DCH
+000D E0                MOVX    A,@DPTR
+000E 54FE              ANL     A,#0FEH
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 634
+0011 900010            MOV     DPTR,#010H
+0014 E0                MOVX    A,@DPTR
+0015 54EF              ANL     A,#0EFH
+0017 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 636
+0018 C200        E     CLR     xCheckDMICMute
+                                           ; SOURCE LINE # 639
+001A 9004C0            MOV     DPTR,#04C0H
+001D E0                MOVX    A,@DPTR
+001E 54FE              ANL     A,#0FEH
+0020 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 642
+0021 E0                MOVX    A,@DPTR
+0022 4430              ORL     A,#030H
+0024 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 645
+0025 E0                MOVX    A,@DPTR
+0026 54BD              ANL     A,#0BDH
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 648
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 38  
+
+0029 900000      E     MOV     DPTR,#bDMICInput
+002C E0                MOVX    A,@DPTR
+002D B41007            CJNE    A,#010H,?C0067
+                                           ; SOURCE LINE # 649
+                                           ; SOURCE LINE # 650
+0030 9004D0            MOV     DPTR,#04D0H
+0033 E0                MOVX    A,@DPTR
+0034 4411              ORL     A,#011H
+0036 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 652
+0037         ?C0067:
+                                           ; SOURCE LINE # 655
+0037 300011      E     JNB     xHighSpdMode,?C0068
+003A 900000      E     MOV     DPTR,#bAltSetting
+003D E0                MOVX    A,@DPTR
+003E 700B              JNZ     ?C0068
+                                           ; SOURCE LINE # 656
+                                           ; SOURCE LINE # 657
+0040 E500        E     MOV     A,bFWLoadState
+0042 7007              JNZ     ?C0068
+                                           ; SOURCE LINE # 658
+0044 900016            MOV     DPTR,#016H
+0047 E0                MOVX    A,@DPTR
+0048 4410              ORL     A,#010H
+004A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 659
+004B         ?C0068:
+                                           ; SOURCE LINE # 663
+004B 90003E            MOV     DPTR,#03EH
+004E 7402              MOV     A,#02H
+0050 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 665
+0051 900069            MOV     DPTR,#069H
+0054 E0                MOVX    A,@DPTR
+0055 20E707            JB      ACC.7,?C0066
+                                           ; SOURCE LINE # 666
+0058 90003E            MOV     DPTR,#03EH
+005B E0                MOVX    A,@DPTR
+005C 4401              ORL     A,#01H
+005E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 667
+                                           ; SOURCE LINE # 668
+005F         ?C0066:
+005F 22                RET     
+             ; FUNCTION DisableDMIC (END)
+
+             ; FUNCTION _AudioDescGen (BEGIN)
+                                           ; SOURCE LINE # 676
+;---- Variable 'Stage' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 677
+                                           ; SOURCE LINE # 683
+0000 7800        R     MOV     R0,#LOW bStage
+0002 A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 685
+0004 E6                MOV     A,@R0
+0005 FF                MOV     R7,A
+0006 75F005            MOV     B,#05H
+0009 84                DIV     AB
+000A F500        R     MOV     bformatLevel,A
+                                           ; SOURCE LINE # 686
+000C EF                MOV     A,R7
+000D 75F005            MOV     B,#05H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 39  
+
+0010 84                DIV     AB
+0011 E5F0              MOV     A,B
+0013 14                DEC     A
+0014 6035              JZ      ?C0073
+0016 14                DEC     A
+0017 6041              JZ      ?C0074
+0019 14                DEC     A
+001A 7003              JNZ     $ + 5H
+001C 020000      R     LJMP    ?C0083
+001F 14                DEC     A
+0020 7003              JNZ     $ + 5H
+0022 020000      R     LJMP    ?C0090
+0025 2404              ADD     A,#04H
+0027 6003              JZ      $ + 5H
+0029 020000      R     LJMP    ?C0092
+                                           ; SOURCE LINE # 687
+                                           ; SOURCE LINE # 688
+002C         ?C0072:
+                                           ; SOURCE LINE # 689
+002C 7800        E     MOV     R0,#LOW pbTmpBuf
+002E 7C00        E     MOV     R4,#HIGH pbTmpBuf
+0030 7D01              MOV     R5,#01H
+0032 7BFF              MOV     R3,#0FFH
+0034 7A00        R     MOV     R2,#HIGH USBInterfaceDescAlt1
+0036 7900        R     MOV     R1,#LOW USBInterfaceDescAlt1
+0038 7E00              MOV     R6,#00H
+003A 7F09              MOV     R7,#09H
+003C 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 690
+003F 900000      R     MOV     DPTR,#USBInterfaceDescAlt1+03H
+0042 E4                CLR     A
+0043 93                MOVC    A,@A+DPTR
+0044 2500        R     ADD     A,bformatLevel
+0046 900000      E     MOV     DPTR,#pbTmpBuf+03H
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 691
+004A 22                RET     
+                                           ; SOURCE LINE # 692
+004B         ?C0073:
+                                           ; SOURCE LINE # 693
+004B 7800        E     MOV     R0,#LOW pbTmpBuf
+004D 7C00        E     MOV     R4,#HIGH pbTmpBuf
+004F 7D01              MOV     R5,#01H
+0051 7BFF              MOV     R3,#0FFH
+0053 7A00        R     MOV     R2,#HIGH CSASDesc
+0055 7900        R     MOV     R1,#LOW CSASDesc
+                                           ; SOURCE LINE # 694
+0057 020000      R     LJMP    ?C0238
+                                           ; SOURCE LINE # 695
+005A         ?C0074:
+                                           ; SOURCE LINE # 696
+                                           ; SOURCE LINE # 697
+005A 7800        E     MOV     R0,#LOW pbTmpBuf
+005C 7C00        E     MOV     R4,#HIGH pbTmpBuf
+005E 7D01              MOV     R5,#01H
+0060 7BFF              MOV     R3,#0FFH
+0062 7A00        R     MOV     R2,#HIGH TIDef_Desc
+0064 7900        R     MOV     R1,#LOW TIDef_Desc
+0066 7E00              MOV     R6,#00H
+0068 7F07              MOV     R7,#07H
+006A 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 699
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 40  
+
+006D 200003      E     JB      xHighSpdMode,$ + 6H
+0070 020000      R     LJMP    ?C0075
+                                           ; SOURCE LINE # 700
+                                           ; SOURCE LINE # 701
+0073 E500        R     MOV     A,bformatLevel
+0075 75F003            MOV     B,#03H
+0078 A4                MUL     AB
+0079 FF                MOV     R7,A
+007A 900000      E     MOV     DPTR,#bSupFormat
+007D E0                MOVX    A,@DPTR
+007E FE                MOV     R6,A
+007F A807              MOV     R0,AR7
+0081 08                INC     R0
+0082 8002              SJMP    ?C0223
+0084         ?C0222:
+0084 C3                CLR     C
+0085 13                RRC     A
+0086         ?C0223:
+0086 D8FC              DJNZ    R0,?C0222
+0088 5407              ANL     A,#07H
+008A F500        R     MOV     bformatLevel,A
+                                           ; SOURCE LINE # 703
+008C 30E004            JNB     ACC.0,?C0076
+008F 7F02              MOV     R7,#02H
+0091 8002              SJMP    ?C0077
+0093         ?C0076:
+0093 7F01              MOV     R7,#01H
+0095         ?C0077:
+0095 900000      E     MOV     DPTR,#pbTmpBuf+04H
+0098 EF                MOV     A,R7
+0099 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 704
+009A E500        R     MOV     A,bformatLevel
+009C C3                CLR     C
+009D 13                RRC     A
+009E 04                INC     A
+009F A3                INC     DPTR
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 705
+00A1 75F008            MOV     B,#08H
+00A4 A4                MUL     AB
+00A5 A3                INC     DPTR
+00A6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 706
+00A7 900000      E     MOV     DPTR,#bNumOfSup
+00AA E0                MOVX    A,@DPTR
+00AB 540F              ANL     A,#0FH
+00AD 900000      E     MOV     DPTR,#pbTmpBuf+07H
+00B0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 708
+00B1 75F003            MOV     B,#03H
+00B4 A4                MUL     AB
+00B5 2408              ADD     A,#08H
+00B7 900000      E     MOV     DPTR,#pbTmpBuf
+00BA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 710
+00BB 750008      R     MOV     bformatLevel,#08H
+                                           ; SOURCE LINE # 711
+00BE E4                CLR     A
+00BF F500        R     MOV     i,A
+00C1         ?C0078:
+                                           ; SOURCE LINE # 712
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 41  
+
+                                           ; SOURCE LINE # 713
+00C1 AF00        R     MOV     R7,i
+00C3 900000      E     MOV     DPTR,#bSupSampFreq
+00C6 E0                MOVX    A,@DPTR
+00C7 FE                MOV     R6,A
+00C8 A807              MOV     R0,AR7
+00CA 08                INC     R0
+00CB 8002              SJMP    ?C0225
+00CD         ?C0224:
+00CD C3                CLR     C
+00CE 13                RRC     A
+00CF         ?C0225:
+00CF D8FC              DJNZ    R0,?C0224
+00D1 30E048            JNB     ACC.0,?C0080
+                                           ; SOURCE LINE # 714
+                                           ; SOURCE LINE # 715
+00D4 E500        R     MOV     A,i
+00D6 25E0              ADD     A,ACC
+00D8 2400        R     ADD     A,#LOW SampingFreq
+00DA F582              MOV     DPL,A
+00DC E4                CLR     A
+00DD 3400        R     ADDC    A,#HIGH SampingFreq
+00DF F583              MOV     DPH,A
+00E1 E4                CLR     A
+00E2 93                MOVC    A,@A+DPTR
+00E3 F500        R     MOV     wCalcul,A
+00E5 7401              MOV     A,#01H
+00E7 93                MOVC    A,@A+DPTR
+00E8 F500        R     MOV     wCalcul+01H,A
+                                           ; SOURCE LINE # 716
+00EA AF00        R     MOV     R7,bformatLevel
+00EC 0500        R     INC     bformatLevel
+00EE 7400        E     MOV     A,#LOW pbTmpBuf
+00F0 2F                ADD     A,R7
+00F1 F582              MOV     DPL,A
+00F3 E4                CLR     A
+00F4 3400        E     ADDC    A,#HIGH pbTmpBuf
+00F6 F583              MOV     DPH,A
+00F8 E500        R     MOV     A,wCalcul+01H
+00FA F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 717
+00FB AF00        R     MOV     R7,bformatLevel
+00FD 0500        R     INC     bformatLevel
+00FF 7400        E     MOV     A,#LOW pbTmpBuf
+0101 2F                ADD     A,R7
+0102 F582              MOV     DPL,A
+0104 E4                CLR     A
+0105 3400        E     ADDC    A,#HIGH pbTmpBuf
+0107 F583              MOV     DPH,A
+0109 E500        R     MOV     A,wCalcul
+010B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 718
+010C AF00        R     MOV     R7,bformatLevel
+010E 0500        R     INC     bformatLevel
+0110 7400        E     MOV     A,#LOW pbTmpBuf
+0112 2F                ADD     A,R7
+0113 F582              MOV     DPL,A
+0115 E4                CLR     A
+0116 3400        E     ADDC    A,#HIGH pbTmpBuf
+0118 F583              MOV     DPH,A
+011A E4                CLR     A
+011B F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 42  
+
+                                           ; SOURCE LINE # 719
+                                           ; SOURCE LINE # 720
+011C         ?C0080:
+011C 0500        R     INC     i
+011E E500        R     MOV     A,i
+0120 B4089E            CJNE    A,#08H,?C0078
+0123 22                RET     
+                                           ; SOURCE LINE # 721
+0124         ?C0075:
+                                           ; SOURCE LINE # 723
+                                           ; SOURCE LINE # 724
+0124 900000      E     MOV     DPTR,#pbTmpBuf
+0127 740E              MOV     A,#0EH
+0129 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 726
+012A 900000      E     MOV     DPTR,#pbTmpBuf+04H
+012D 7401              MOV     A,#01H
+012F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 727
+0130 900000      E     MOV     DPTR,#pbTmpBuf+07H
+0133 04                INC     A
+0134 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 728
+0135 900000      R     MOV     DPTR,#SampingFreq+0EH
+0138 E4                CLR     A
+0139 93                MOVC    A,@A+DPTR
+013A F500        R     MOV     wCalcul,A
+013C 7401              MOV     A,#01H
+013E 93                MOVC    A,@A+DPTR
+013F F500        R     MOV     wCalcul+01H,A
+                                           ; SOURCE LINE # 729
+0141 900000      E     MOV     DPTR,#pbTmpBuf+08H
+0144 E500        R     MOV     A,wCalcul+01H
+0146 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 730
+0147 A3                INC     DPTR
+0148 E500        R     MOV     A,wCalcul
+014A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 731
+014B E4                CLR     A
+014C A3                INC     DPTR
+014D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 732
+014E 900000      R     MOV     DPTR,#SampingFreq+08H
+0151 93                MOVC    A,@A+DPTR
+0152 F500        R     MOV     wCalcul,A
+0154 7401              MOV     A,#01H
+0156 93                MOVC    A,@A+DPTR
+0157 F500        R     MOV     wCalcul+01H,A
+                                           ; SOURCE LINE # 733
+0159 900000      E     MOV     DPTR,#pbTmpBuf+0BH
+015C E500        R     MOV     A,wCalcul+01H
+015E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 734
+015F A3                INC     DPTR
+0160 E500        R     MOV     A,wCalcul
+0162 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 735
+0163 E4                CLR     A
+0164 A3                INC     DPTR
+0165 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 736
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 43  
+
+                                           ; SOURCE LINE # 737
+                                           ; SOURCE LINE # 738
+0166 22                RET     
+                                           ; SOURCE LINE # 739
+0167         ?C0083:
+                                           ; SOURCE LINE # 740
+0167 7800        E     MOV     R0,#LOW pbTmpBuf
+0169 7C00        E     MOV     R4,#HIGH pbTmpBuf
+016B 7D01              MOV     R5,#01H
+016D 7BFF              MOV     R3,#0FFH
+016F 7A00        R     MOV     R2,#HIGH EPAlt1Desc
+0171 7900        R     MOV     R1,#LOW EPAlt1Desc
+0173 7E00              MOV     R6,#00H
+0175 7F09              MOV     R7,#09H
+0177 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 742
+017A 200003      E     JB      xHighSpdMode,$ + 6H
+017D 020000      R     LJMP    ?C0084
+                                           ; SOURCE LINE # 743
+                                           ; SOURCE LINE # 744
+0180 E500        R     MOV     A,bformatLevel
+0182 75F003            MOV     B,#03H
+0185 A4                MUL     AB
+0186 FF                MOV     R7,A
+0187 900000      E     MOV     DPTR,#bSupFormat
+018A E0                MOVX    A,@DPTR
+018B FE                MOV     R6,A
+018C A807              MOV     R0,AR7
+018E 08                INC     R0
+018F 8002              SJMP    ?C0227
+0191         ?C0226:
+0191 C3                CLR     C
+0192 13                RRC     A
+0193         ?C0227:
+0193 D8FC              DJNZ    R0,?C0226
+0195 5407              ANL     A,#07H
+0197 F500        R     MOV     bformatLevel,A
+                                           ; SOURCE LINE # 746
+0199 C3                CLR     C
+019A 13                RRC     A
+019B 2401              ADD     A,#01H
+019D FF                MOV     R7,A
+019E E4                CLR     A
+019F 33                RLC     A
+01A0 FE                MOV     R6,A
+01A1 E500        R     MOV     A,bformatLevel
+01A3 5401              ANL     A,#01H
+01A5 FD                MOV     R5,A
+01A6 EF                MOV     A,R7
+01A7 A805              MOV     R0,AR5
+01A9 08                INC     R0
+01AA 8005              SJMP    ?C0229
+01AC         ?C0228:
+01AC C3                CLR     C
+01AD 33                RLC     A
+01AE CE                XCH     A,R6
+01AF 33                RLC     A
+01B0 CE                XCH     A,R6
+01B1         ?C0229:
+01B1 D8F9              DJNZ    R0,?C0228
+01B3 F500        R     MOV     wCalcul+01H,A
+01B5 8E00        R     MOV     wCalcul,R6
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 44  
+
+                                           ; SOURCE LINE # 748
+01B7 E4                CLR     A
+01B8 F500        R     MOV     i,A
+01BA         ?C0085:
+                                           ; SOURCE LINE # 749
+01BA AF00        R     MOV     R7,i
+01BC 900000      E     MOV     DPTR,#bSupSampFreq
+01BF E0                MOVX    A,@DPTR
+01C0 FE                MOV     R6,A
+01C1 A807              MOV     R0,AR7
+01C3 08                INC     R0
+01C4 8002              SJMP    ?C0231
+01C6         ?C0230:
+01C6 C3                CLR     C
+01C7 13                RRC     A
+01C8         ?C0231:
+01C8 D8FC              DJNZ    R0,?C0230
+01CA 30E038            JNB     ACC.0,?C0087
+                                           ; SOURCE LINE # 750
+                                           ; SOURCE LINE # 751
+01CD E500        R     MOV     A,i
+01CF 25E0              ADD     A,ACC
+01D1 2400        R     ADD     A,#LOW SampingFreq
+01D3 F582              MOV     DPL,A
+01D5 E4                CLR     A
+01D6 3400        R     ADDC    A,#HIGH SampingFreq
+01D8 F583              MOV     DPH,A
+01DA E4                CLR     A
+01DB 93                MOVC    A,@A+DPTR
+01DC FE                MOV     R6,A
+01DD 7401              MOV     A,#01H
+01DF 93                MOVC    A,@A+DPTR
+01E0 FF                MOV     R7,A
+01E1 7C03              MOV     R4,#03H
+01E3 7DE8              MOV     R5,#0E8H
+01E5 120000      E     LCALL   ?C?UIDIV
+01E8 EF                MOV     A,R7
+01E9 2402              ADD     A,#02H
+01EB FF                MOV     R7,A
+01EC E4                CLR     A
+01ED 3E                ADDC    A,R6
+01EE FE                MOV     R6,A
+01EF AC00        R     MOV     R4,wCalcul
+01F1 AD00        R     MOV     R5,wCalcul+01H
+01F3 120000      E     LCALL   ?C?IMUL
+01F6 8E00        R     MOV     wCalcul,R6
+01F8 8F00        R     MOV     wCalcul+01H,R7
+                                           ; SOURCE LINE # 752
+01FA 900000      E     MOV     DPTR,#pbTmpBuf+04H
+01FD E500        R     MOV     A,wCalcul+01H
+01FF F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 753
+0200 A3                INC     DPTR
+0201 E500        R     MOV     A,wCalcul
+0203 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 754
+0204 22                RET     
+                                           ; SOURCE LINE # 755
+                                           ; SOURCE LINE # 756
+0205         ?C0087:
+0205 0500        R     INC     i
+0207 E500        R     MOV     A,i
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 45  
+
+0209 B408AE            CJNE    A,#08H,?C0085
+020C 22                RET     
+                                           ; SOURCE LINE # 757
+020D         ?C0084:
+                                           ; SOURCE LINE # 760
+020D 900000      E     MOV     DPTR,#pbTmpBuf+04H
+0210 7428              MOV     A,#028H
+0212 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 761
+0213 E4                CLR     A
+0214 A3                INC     DPTR
+0215 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 762
+0216 A3                INC     DPTR
+0217 04                INC     A
+0218 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 763
+                                           ; SOURCE LINE # 764
+0219 22                RET     
+                                           ; SOURCE LINE # 765
+021A         ?C0090:
+                                           ; SOURCE LINE # 766
+021A 7800        E     MOV     R0,#LOW pbTmpBuf
+021C 7C00        E     MOV     R4,#HIGH pbTmpBuf
+021E 7D01              MOV     R5,#01H
+0220 7BFF              MOV     R3,#0FFH
+0222 7A00        R     MOV     R2,#HIGH CSEPoint
+0224 7900        R     MOV     R1,#LOW CSEPoint
+0226         ?C0238:
+0226 7E00              MOV     R6,#00H
+0228 7F07              MOV     R7,#07H
+022A 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 767
+                                           ; SOURCE LINE # 768
+                                           ; SOURCE LINE # 770
+                                           ; SOURCE LINE # 771
+                                           ; SOURCE LINE # 773
+022D         ?C0092:
+022D 22                RET     
+             ; FUNCTION _AudioDescGen (END)
+
+             ; FUNCTION USBAudioControl (BEGIN)
+                                           ; SOURCE LINE # 776
+                                           ; SOURCE LINE # 777
+                                           ; SOURCE LINE # 778
+0000 E500        E     MOV     A,wIndex
+0002 14                DEC     A
+0003 6011              JZ      ?C0097
+0005 24FC              ADD     A,#0FCH
+0007 7046              JNZ     ?C0103
+                                           ; SOURCE LINE # 779
+                                           ; SOURCE LINE # 780
+0009         ?C0094:
+                                           ; SOURCE LINE # 781
+0009 E500        E     MOV     A,bRequestType
+000B 30E705            JNB     ACC.7,?C0095
+                                           ; SOURCE LINE # 782
+000E 7F01              MOV     R7,#01H
+0010 020000      R     LJMP    _FUGetCtrl
+0013         ?C0095:
+                                           ; SOURCE LINE # 784
+0013 020000      R     LJMP    FUSetCtrl
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 46  
+
+                                           ; SOURCE LINE # 785
+                                           ; SOURCE LINE # 786
+0016         ?C0097:
+                                           ; SOURCE LINE # 787
+0016 E500        E     MOV     A,bRequest
+0018 6485              XRL     A,#085H
+001A 7036              JNZ     ?C0104
+                                           ; SOURCE LINE # 788
+                                           ; SOURCE LINE # 789
+001C 7F69              MOV     R7,#069H
+001E 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 791
+0021 E4                CLR     A
+0022 F500        E     MOV     wIndex,A
+0024         ?C0099:
+0024 E500        E     MOV     A,wIndex
+0026 C3                CLR     C
+0027 9500        E     SUBB    A,wLength+01H
+0029 5018              JNC     ?C0100
+                                           ; SOURCE LINE # 792
+002B AF00        E     MOV     R7,wIndex
+002D 7E00              MOV     R6,#00H
+002F 120000      E     LCALL   _GetTab
+0032 7400        E     MOV     A,#LOW pbIBuf
+0034 2500        E     ADD     A,wIndex
+0036 F582              MOV     DPL,A
+0038 E4                CLR     A
+0039 3400        E     ADDC    A,#HIGH pbIBuf
+003B F583              MOV     DPH,A
+003D EF                MOV     A,R7
+003E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 793
+003F 0500        E     INC     wIndex
+0041 80E1              SJMP    ?C0099
+0043         ?C0100:
+                                           ; SOURCE LINE # 794
+0043 750001      E     MOV     wIndex,#01H
+                                           ; SOURCE LINE # 795
+0046 900003            MOV     DPTR,#03H
+0049 E500        E     MOV     A,wLength+01H
+004B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 796
+004C 020000      E     LJMP    WaitTXEnd
+                                           ; SOURCE LINE # 797
+                                           ; SOURCE LINE # 798
+                                           ; SOURCE LINE # 805
+                                           ; SOURCE LINE # 808
+004F         ?C0103:
+                                           ; SOURCE LINE # 809
+004F 120000      E     LCALL   InvalidCtrlandStall
+                                           ; SOURCE LINE # 810
+                                           ; SOURCE LINE # 811
+                                           ; SOURCE LINE # 812
+0052         ?C0104:
+0052 22                RET     
+             ; FUNCTION USBAudioControl (END)
+
+             ; FUNCTION _FUGetCtrl (BEGIN)
+                                           ; SOURCE LINE # 814
+0000 8F00        R     MOV     isDMIC,R7
+                                           ; SOURCE LINE # 815
+                                           ; SOURCE LINE # 816
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 47  
+
+0002 E4                CLR     A
+0003 F500        R     MOV     bLen,A
+                                           ; SOURCE LINE # 819
+0005 E500        E     MOV     A,wValue
+0007 24FE              ADD     A,#0FEH
+0009 604E              JZ      ?C0112
+000B 24F8              ADD     A,#0F8H
+000D 4003              JC      $ + 5H
+000F 020000      R     LJMP    ?C0128
+0012 2409              ADD     A,#09H
+0014 6003              JZ      $ + 5H
+0016 020000      R     LJMP    ?C0132
+                                           ; SOURCE LINE # 820
+                                           ; SOURCE LINE # 821
+0019         ?C0106:
+                                           ; SOURCE LINE # 822
+0019 E500        E     MOV     A,wValue+01H
+001B 20E002            JB      ACC.0,?C0108
+001E 7015              JNZ     ?C0107
+0020         ?C0108:
+                                           ; SOURCE LINE # 823
+0020 900000      E     MOV     DPTR,#DMICCurSetting+02H
+0023 E0                MOVX    A,@DPTR
+0024 FF                MOV     R7,A
+0025 AE00        R     MOV     R6,bLen
+0027 0500        R     INC     bLen
+0029 7400        E     MOV     A,#LOW pbEP0Buf
+002B 2E                ADD     A,R6
+002C F582              MOV     DPL,A
+002E E4                CLR     A
+002F 3400        E     ADDC    A,#HIGH pbEP0Buf
+0031 F583              MOV     DPH,A
+0033 EF                MOV     A,R7
+0034 F0                MOVX    @DPTR,A
+0035         ?C0107:
+                                           ; SOURCE LINE # 825
+0035 E500        E     MOV     A,wValue+01H
+0037 30E115            JNB     ACC.1,?C0109
+                                           ; SOURCE LINE # 826
+003A 900000      E     MOV     DPTR,#DMICCurSetting+03H
+003D E0                MOVX    A,@DPTR
+003E FF                MOV     R7,A
+003F AE00        R     MOV     R6,bLen
+0041 0500        R     INC     bLen
+0043 7400        E     MOV     A,#LOW pbEP0Buf
+0045 2E                ADD     A,R6
+0046 F582              MOV     DPL,A
+0048 E4                CLR     A
+0049 3400        E     ADDC    A,#HIGH pbEP0Buf
+004B F583              MOV     DPH,A
+004D EF                MOV     A,R7
+004E F0                MOVX    @DPTR,A
+004F         ?C0109:
+                                           ; SOURCE LINE # 828
+004F E500        R     MOV     A,bLen
+0051 7003              JNZ     ?C0110
+                                           ; SOURCE LINE # 829
+0053 020000      R     LJMP    ?C0243
+                                           ; SOURCE LINE # 831
+0056         ?C0110:
+                                           ; SOURCE LINE # 833
+                                           ; SOURCE LINE # 834
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 48  
+
+0056 020000      R     LJMP    ?C0240
+                                           ; SOURCE LINE # 835
+0059         ?C0112:
+                                           ; SOURCE LINE # 836
+                                           ; SOURCE LINE # 838
+0059 7F67              MOV     R7,#067H
+005B 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 840
+005E E500        E     MOV     A,bRequest
+0060 247E              ADD     A,#07EH
+0062 601E              JZ      ?C0115
+0064 14                DEC     A
+0065 6020              JZ      ?C0116
+0067 14                DEC     A
+0068 6023              JZ      ?C0117
+006A 2403              ADD     A,#03H
+006C 7030              JNZ     ?C0113
+                                           ; SOURCE LINE # 841
+                                           ; SOURCE LINE # 842
+006E         ?C0114:
+                                           ; SOURCE LINE # 843
+006E 900000      E     MOV     DPTR,#DMICCurSetting+04H
+0071 E0                MOVX    A,@DPTR
+0072 F500        R     MOV     wTmpL,A
+0074 A3                INC     DPTR
+0075 E0                MOVX    A,@DPTR
+0076 F500        R     MOV     wTmpL+01H,A
+                                           ; SOURCE LINE # 844
+0078 A3                INC     DPTR
+0079 E0                MOVX    A,@DPTR
+007A F500        R     MOV     wTmpR,A
+007C A3                INC     DPTR
+007D E0                MOVX    A,@DPTR
+007E F500        R     MOV     wTmpR+01H,A
+                                           ; SOURCE LINE # 845
+0080 801C              SJMP    ?C0113
+                                           ; SOURCE LINE # 846
+0082         ?C0115:
+                                           ; SOURCE LINE # 847
+0082 E4                CLR     A
+0083 FF                MOV     R7,A
+0084 FE                MOV     R6,A
+                                           ; SOURCE LINE # 848
+                                           ; SOURCE LINE # 849
+0085 800A              SJMP    ?C0242
+                                           ; SOURCE LINE # 850
+0087         ?C0116:
+                                           ; SOURCE LINE # 851
+0087 7F02              MOV     R7,#02H
+0089 7E00              MOV     R6,#00H
+008B         ?C0241:
+                                           ; SOURCE LINE # 852
+                                           ; SOURCE LINE # 853
+008B 8004              SJMP    ?C0242
+                                           ; SOURCE LINE # 854
+008D         ?C0117:
+                                           ; SOURCE LINE # 855
+008D 7F04              MOV     R7,#04H
+008F 7E00              MOV     R6,#00H
+0091         ?C0242:
+0091 120000      E     LCALL   _GetTabW
+0094 8E00        R     MOV     wTmpL,R6
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 49  
+
+0096 8F00        R     MOV     wTmpL+01H,R7
+                                           ; SOURCE LINE # 856
+0098 850000      R     MOV     wTmpR,wTmpL
+009B 850000      R     MOV     wTmpR+01H,wTmpL+01H
+                                           ; SOURCE LINE # 857
+                                           ; SOURCE LINE # 858
+009E         ?C0113:
+                                           ; SOURCE LINE # 860
+009E E500        E     MOV     A,wValue+01H
+00A0 20E002            JB      ACC.0,?C0119
+00A3 7022              JNZ     ?C0118
+00A5         ?C0119:
+                                           ; SOURCE LINE # 861
+00A5 AF00        R     MOV     R7,bLen
+00A7 0500        R     INC     bLen
+00A9 7400        E     MOV     A,#LOW pbEP0Buf
+00AB 2F                ADD     A,R7
+00AC F582              MOV     DPL,A
+00AE E4                CLR     A
+00AF 3400        E     ADDC    A,#HIGH pbEP0Buf
+00B1 F583              MOV     DPH,A
+00B3 E500        R     MOV     A,wTmpL+01H
+00B5 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 862
+00B6 AF00        R     MOV     R7,bLen
+00B8 0500        R     INC     bLen
+00BA 7400        E     MOV     A,#LOW pbEP0Buf
+00BC 2F                ADD     A,R7
+00BD F582              MOV     DPL,A
+00BF E4                CLR     A
+00C0 3400        E     ADDC    A,#HIGH pbEP0Buf
+00C2 F583              MOV     DPH,A
+00C4 E500        R     MOV     A,wTmpL
+00C6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 863
+00C7         ?C0118:
+                                           ; SOURCE LINE # 864
+00C7 E500        E     MOV     A,wValue+01H
+00C9 30E122            JNB     ACC.1,?C0120
+                                           ; SOURCE LINE # 865
+00CC AF00        R     MOV     R7,bLen
+00CE 0500        R     INC     bLen
+00D0 7400        E     MOV     A,#LOW pbEP0Buf
+00D2 2F                ADD     A,R7
+00D3 F582              MOV     DPL,A
+00D5 E4                CLR     A
+00D6 3400        E     ADDC    A,#HIGH pbEP0Buf
+00D8 F583              MOV     DPH,A
+00DA E500        R     MOV     A,wTmpR+01H
+00DC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 866
+00DD AF00        R     MOV     R7,bLen
+00DF 0500        R     INC     bLen
+00E1 7400        E     MOV     A,#LOW pbEP0Buf
+00E3 2F                ADD     A,R7
+00E4 F582              MOV     DPL,A
+00E6 E4                CLR     A
+00E7 3400        E     ADDC    A,#HIGH pbEP0Buf
+00E9 F583              MOV     DPH,A
+00EB E500        R     MOV     A,wTmpR
+00ED F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 867
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 50  
+
+00EE         ?C0120:
+                                           ; SOURCE LINE # 868
+00EE E500        R     MOV     A,bLen
+00F0 7002              JNZ     ?C0121
+                                           ; SOURCE LINE # 869
+00F2         ?C0239:
+00F2 8020              SJMP    ?C0243
+                                           ; SOURCE LINE # 871
+00F4         ?C0121:
+                                           ; SOURCE LINE # 872
+00F4         ?C0240:
+00F4 900003            MOV     DPTR,#03H
+00F7 E500        R     MOV     A,bLen
+00F9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 874
+                                           ; SOURCE LINE # 875
+00FA 801E              SJMP    ?C0105
+                                           ; SOURCE LINE # 876
+                                           ; SOURCE LINE # 877
+                                           ; SOURCE LINE # 878
+                                           ; SOURCE LINE # 879
+                                           ; SOURCE LINE # 880
+                                           ; SOURCE LINE # 881
+                                           ; SOURCE LINE # 882
+00FC         ?C0128:
+                                           ; SOURCE LINE # 883
+                                           ; SOURCE LINE # 884
+00FC E500        R     MOV     A,isDMIC
+00FE 6014              JZ      ?C0129
+0100 E500        E     MOV     A,wValue+01H
+0102 7010              JNZ     ?C0129
+                                           ; SOURCE LINE # 885
+                                           ; SOURCE LINE # 886
+0104 900000      E     MOV     DPTR,#bBassBoost_DMIC
+0107 E0                MOVX    A,@DPTR
+0108 900000      E     MOV     DPTR,#pbEP0Buf
+010B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 887
+010C 900003            MOV     DPTR,#03H
+010F 7401              MOV     A,#01H
+0111 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 888
+0112 8006              SJMP    ?C0105
+0114         ?C0129:
+                                           ; SOURCE LINE # 889
+                                           ; SOURCE LINE # 890
+0114         ?C0243:
+0114 020000      E     LJMP    OutofRangeCtrlandStall
+                                           ; SOURCE LINE # 892
+                                           ; SOURCE LINE # 893
+                                           ; SOURCE LINE # 894
+                                           ; SOURCE LINE # 895
+                                           ; SOURCE LINE # 896
+0117         ?C0132:
+                                           ; SOURCE LINE # 897
+0117 020000      E     LJMP    InvalidCtrlandStall
+                                           ; SOURCE LINE # 899
+                                           ; SOURCE LINE # 900
+011A         ?C0105:
+                                           ; SOURCE LINE # 901
+011A E4                CLR     A
+011B 900000      E     MOV     DPTR,#bRequestErrorCode
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 51  
+
+011E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 902
+011F 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 903
+0122         ?C0111:
+0122 22                RET     
+             ; FUNCTION _FUGetCtrl (END)
+
+             ; FUNCTION FUSetCtrl (BEGIN)
+                                           ; SOURCE LINE # 905
+                                           ; SOURCE LINE # 906
+0000         ?C0133:
+                                           ; SOURCE LINE # 910
+0000 900002            MOV     DPTR,#02H
+0003 E0                MOVX    A,@DPTR
+0004 30E0F9            JNB     ACC.0,?C0133
+0007         ?C0134:
+                                           ; SOURCE LINE # 911
+0007 900003            MOV     DPTR,#03H
+000A E0                MOVX    A,@DPTR
+000B 547F              ANL     A,#07FH
+000D F500        R     MOV     blen,A
+                                           ; SOURCE LINE # 912
+000F FF                MOV     R7,A
+0010 7E00              MOV     R6,#00H
+0012 7800        E     MOV     R0,#LOW pbIBuf
+0014 7C00        E     MOV     R4,#HIGH pbIBuf
+0016 7D01              MOV     R5,#01H
+0018 7B01              MOV     R3,#01H
+001A 7A00        E     MOV     R2,#HIGH pbEP0Buf
+001C 7900        E     MOV     R1,#LOW pbEP0Buf
+001E 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 913
+0021 900002            MOV     DPTR,#02H
+0024 E0                MOVX    A,@DPTR
+0025 54FE              ANL     A,#0FEH
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 917
+0028 E4                CLR     A
+0029 F500        R     MOV     blen,A
+                                           ; SOURCE LINE # 918
+002B E500        E     MOV     A,wValue
+002D 24FE              ADD     A,#0FEH
+002F 6045              JZ      ?C0141
+0031 24F8              ADD     A,#0F8H
+0033 4003              JC      $ + 5H
+0035 020000      R     LJMP    ?C0135
+0038 2409              ADD     A,#09H
+003A 6003              JZ      $ + 5H
+003C 020000      R     LJMP    ?C0167
+                                           ; SOURCE LINE # 919
+                                           ; SOURCE LINE # 920
+003F         ?C0136:
+                                           ; SOURCE LINE # 921
+                                           ; SOURCE LINE # 922
+003F E500        E     MOV     A,wValue+01H
+0041 20E002            JB      ACC.0,?C0138
+0044 7010              JNZ     ?C0137
+0046         ?C0138:
+                                           ; SOURCE LINE # 923
+0046 900000      E     MOV     DPTR,#pbIBuf
+0049 E0                MOVX    A,@DPTR
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 52  
+
+004A 900000      E     MOV     DPTR,#DMICCurSetting+02H
+004D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 924
+004E E500        E     MOV     A,wValue+01H
+0050 5401              ANL     A,#01H
+0052 2500        R     ADD     A,blen
+0054 F500        R     MOV     blen,A
+                                           ; SOURCE LINE # 925
+0056         ?C0137:
+                                           ; SOURCE LINE # 927
+0056 E500        E     MOV     A,wValue+01H
+0058 20E102            JB      ACC.1,?C0140
+005B 7013              JNZ     ?C0139
+005D         ?C0140:
+                                           ; SOURCE LINE # 928
+005D AF00        R     MOV     R7,blen
+005F 0500        R     INC     blen
+0061 7400        E     MOV     A,#LOW pbIBuf
+0063 2F                ADD     A,R7
+0064 F582              MOV     DPL,A
+0066 E4                CLR     A
+0067 3400        E     ADDC    A,#HIGH pbIBuf
+0069 F583              MOV     DPH,A
+006B E0                MOVX    A,@DPTR
+006C 900000      E     MOV     DPTR,#DMICCurSetting+03H
+006F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 929
+0070         ?C0139:
+                                           ; SOURCE LINE # 932
+0070 120000      R     LCALL   DMICMute
+                                           ; SOURCE LINE # 933
+                                           ; SOURCE LINE # 934
+0073 020000      R     LJMP    ?C0135
+                                           ; SOURCE LINE # 935
+0076         ?C0141:
+                                           ; SOURCE LINE # 936
+                                           ; SOURCE LINE # 939
+0076 7F67              MOV     R7,#067H
+0078 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 941
+007B E500        E     MOV     A,bRequest
+007D 14                DEC     A
+007E 6003              JZ      $ + 5H
+0080 020000      R     LJMP    ?C0135
+                                           ; SOURCE LINE # 942
+                                           ; SOURCE LINE # 943
+0083         ?C0143:
+                                           ; SOURCE LINE # 944
+                                           ; SOURCE LINE # 945
+0083 E500        E     MOV     A,wValue+01H
+0085 20E005            JB      ACC.0,?C0145
+0088 6003              JZ      $ + 5H
+008A 020000      R     LJMP    ?C0144
+008D         ?C0145:
+                                           ; SOURCE LINE # 946
+008D 900000      E     MOV     DPTR,#pbIBuf+01H
+0090 E0                MOVX    A,@DPTR
+0091 FE                MOV     R6,A
+0092 900000      E     MOV     DPTR,#pbIBuf
+0095 E0                MOVX    A,@DPTR
+0096 7C00              MOV     R4,#00H
+0098 2400              ADD     A,#00H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 53  
+
+009A FF                MOV     R7,A
+009B EC                MOV     A,R4
+009C 3E                ADDC    A,R6
+009D FE                MOV     R6,A
+009E 900000      E     MOV     DPTR,#DMICCurSetting+04H
+00A1 F0                MOVX    @DPTR,A
+00A2 A3                INC     DPTR
+00A3 EF                MOV     A,R7
+00A4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 947
+00A5 E500        E     MOV     A,wValue+01H
+00A7 5401              ANL     A,#01H
+00A9 25E0              ADD     A,ACC
+00AB 2500        R     ADD     A,blen
+00AD F500        R     MOV     blen,A
+                                           ; SOURCE LINE # 949
+00AF E4                CLR     A
+00B0 B5070D            CJNE    A,AR7,?C0146
+00B3 EE                MOV     A,R6
+00B4 B48009            CJNE    A,#080H,?C0146
+00B7 900000      E     MOV     DPTR,#DMICCurSetting+02H
+00BA E0                MOVX    A,@DPTR
+00BB 4480              ORL     A,#080H
+00BD FF                MOV     R7,A
+00BE 8007              SJMP    ?C0147
+00C0         ?C0146:
+00C0 900000      E     MOV     DPTR,#DMICCurSetting+02H
+00C3 E0                MOVX    A,@DPTR
+00C4 547F              ANL     A,#07FH
+00C6 FF                MOV     R7,A
+00C7         ?C0147:
+00C7 900000      E     MOV     DPTR,#DMICCurSetting+02H
+00CA EF                MOV     A,R7
+00CB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 952
+00CC E4                CLR     A
+00CD FF                MOV     R7,A
+00CE FE                MOV     R6,A
+00CF 120000      E     LCALL   _GetTabW
+00D2 C3                CLR     C
+00D3 900000      E     MOV     DPTR,#DMICCurSetting+05H
+00D6 E0                MOVX    A,@DPTR
+00D7 9F                SUBB    A,R7
+00D8 EE                MOV     A,R6
+00D9 6480              XRL     A,#080H
+00DB F8                MOV     R0,A
+00DC 900000      E     MOV     DPTR,#DMICCurSetting+04H
+00DF E0                MOVX    A,@DPTR
+00E0 6480              XRL     A,#080H
+00E2 98                SUBB    A,R0
+00E3 500E              JNC     ?C0148
+                                           ; SOURCE LINE # 953
+00E5 E4                CLR     A
+00E6 FF                MOV     R7,A
+00E7 FE                MOV     R6,A
+00E8 120000      E     LCALL   _GetTabW
+00EB 900000      E     MOV     DPTR,#DMICCurSetting+04H
+00EE EE                MOV     A,R6
+00EF F0                MOVX    @DPTR,A
+00F0 A3                INC     DPTR
+00F1 EF                MOV     A,R7
+00F2 F0                MOVX    @DPTR,A
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 54  
+
+00F3         ?C0148:
+                                           ; SOURCE LINE # 954
+00F3 7F02              MOV     R7,#02H
+00F5 7E00              MOV     R6,#00H
+00F7 120000      E     LCALL   _GetTabW
+00FA D3                SETB    C
+00FB 900000      E     MOV     DPTR,#DMICCurSetting+05H
+00FE E0                MOVX    A,@DPTR
+00FF 9F                SUBB    A,R7
+0100 EE                MOV     A,R6
+0101 6480              XRL     A,#080H
+0103 F8                MOV     R0,A
+0104 900000      E     MOV     DPTR,#DMICCurSetting+04H
+0107 E0                MOVX    A,@DPTR
+0108 6480              XRL     A,#080H
+010A 98                SUBB    A,R0
+010B 400F              JC      ?C0144
+                                           ; SOURCE LINE # 955
+010D 7F02              MOV     R7,#02H
+010F 7E00              MOV     R6,#00H
+0111 120000      E     LCALL   _GetTabW
+0114 900000      E     MOV     DPTR,#DMICCurSetting+04H
+0117 EE                MOV     A,R6
+0118 F0                MOVX    @DPTR,A
+0119 A3                INC     DPTR
+011A EF                MOV     A,R7
+011B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 957
+011C         ?C0144:
+                                           ; SOURCE LINE # 959
+011C E500        E     MOV     A,wValue+01H
+011E 20E105            JB      ACC.1,?C0151
+0121 6003              JZ      $ + 5H
+0123 020000      R     LJMP    ?C0150
+0126         ?C0151:
+                                           ; SOURCE LINE # 960
+                                           ; SOURCE LINE # 961
+0126 7400        E     MOV     A,#LOW pbIBuf+01H
+0128 2500        R     ADD     A,blen
+012A F582              MOV     DPL,A
+012C E4                CLR     A
+012D 3400        E     ADDC    A,#HIGH pbIBuf+01H
+012F F583              MOV     DPH,A
+0131 E0                MOVX    A,@DPTR
+0132 FE                MOV     R6,A
+0133 7400        E     MOV     A,#LOW pbIBuf
+0135 2500        R     ADD     A,blen
+0137 F582              MOV     DPL,A
+0139 E4                CLR     A
+013A 3400        E     ADDC    A,#HIGH pbIBuf
+013C F583              MOV     DPH,A
+013E E0                MOVX    A,@DPTR
+013F 7C00              MOV     R4,#00H
+0141 2400              ADD     A,#00H
+0143 FF                MOV     R7,A
+0144 EC                MOV     A,R4
+0145 3E                ADDC    A,R6
+0146 FE                MOV     R6,A
+0147 900000      E     MOV     DPTR,#DMICCurSetting+06H
+014A F0                MOVX    @DPTR,A
+014B A3                INC     DPTR
+014C EF                MOV     A,R7
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 55  
+
+014D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 964
+014E B4000D            CJNE    A,#00H,?C0152
+0151 EE                MOV     A,R6
+0152 B48009            CJNE    A,#080H,?C0152
+0155 900000      E     MOV     DPTR,#DMICCurSetting+03H
+0158 E0                MOVX    A,@DPTR
+0159 4480              ORL     A,#080H
+015B FF                MOV     R7,A
+015C 8007              SJMP    ?C0153
+015E         ?C0152:
+015E 900000      E     MOV     DPTR,#DMICCurSetting+03H
+0161 E0                MOVX    A,@DPTR
+0162 547F              ANL     A,#07FH
+0164 FF                MOV     R7,A
+0165         ?C0153:
+0165 900000      E     MOV     DPTR,#DMICCurSetting+03H
+0168 EF                MOV     A,R7
+0169 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 967
+016A E4                CLR     A
+016B FF                MOV     R7,A
+016C FE                MOV     R6,A
+016D 120000      E     LCALL   _GetTabW
+0170 C3                CLR     C
+0171 900000      E     MOV     DPTR,#DMICCurSetting+07H
+0174 E0                MOVX    A,@DPTR
+0175 9F                SUBB    A,R7
+0176 EE                MOV     A,R6
+0177 6480              XRL     A,#080H
+0179 F8                MOV     R0,A
+017A 900000      E     MOV     DPTR,#DMICCurSetting+06H
+017D E0                MOVX    A,@DPTR
+017E 6480              XRL     A,#080H
+0180 98                SUBB    A,R0
+0181 500E              JNC     ?C0154
+                                           ; SOURCE LINE # 968
+0183 E4                CLR     A
+0184 FF                MOV     R7,A
+0185 FE                MOV     R6,A
+0186 120000      E     LCALL   _GetTabW
+0189 900000      E     MOV     DPTR,#DMICCurSetting+06H
+018C EE                MOV     A,R6
+018D F0                MOVX    @DPTR,A
+018E A3                INC     DPTR
+018F EF                MOV     A,R7
+0190 F0                MOVX    @DPTR,A
+0191         ?C0154:
+                                           ; SOURCE LINE # 969
+0191 7F02              MOV     R7,#02H
+0193 7E00              MOV     R6,#00H
+0195 120000      E     LCALL   _GetTabW
+0198 D3                SETB    C
+0199 900000      E     MOV     DPTR,#DMICCurSetting+07H
+019C E0                MOVX    A,@DPTR
+019D 9F                SUBB    A,R7
+019E EE                MOV     A,R6
+019F 6480              XRL     A,#080H
+01A1 F8                MOV     R0,A
+01A2 900000      E     MOV     DPTR,#DMICCurSetting+06H
+01A5 E0                MOVX    A,@DPTR
+01A6 6480              XRL     A,#080H
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 56  
+
+01A8 98                SUBB    A,R0
+01A9 400F              JC      ?C0150
+                                           ; SOURCE LINE # 970
+01AB 7F02              MOV     R7,#02H
+01AD 7E00              MOV     R6,#00H
+01AF 120000      E     LCALL   _GetTabW
+01B2 900000      E     MOV     DPTR,#DMICCurSetting+06H
+01B5 EE                MOV     A,R6
+01B6 F0                MOVX    @DPTR,A
+01B7 A3                INC     DPTR
+01B8 EF                MOV     A,R7
+01B9 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 971
+01BA         ?C0150:
+                                           ; SOURCE LINE # 974
+01BA 120000      R     LCALL   DMICVolume
+                                           ; SOURCE LINE # 975
+                                           ; SOURCE LINE # 976
+01BD 8003              SJMP    ?C0135
+                                           ; SOURCE LINE # 977
+                                           ; SOURCE LINE # 978
+                                           ; SOURCE LINE # 979
+                                           ; SOURCE LINE # 980
+                                           ; SOURCE LINE # 981
+                                           ; SOURCE LINE # 983
+                                           ; SOURCE LINE # 984
+                                           ; SOURCE LINE # 985
+                                           ; SOURCE LINE # 986
+                                           ; SOURCE LINE # 987
+                                           ; SOURCE LINE # 988
+                                           ; SOURCE LINE # 989
+                                           ; SOURCE LINE # 990
+                                           ; SOURCE LINE # 991
+                                           ; SOURCE LINE # 992
+                                           ; SOURCE LINE # 996
+                                           ; SOURCE LINE # 997
+                                           ; SOURCE LINE # 998
+                                           ; SOURCE LINE # 999
+01BF         ?C0167:
+                                           ; SOURCE LINE # 1000
+01BF 020000      E     LJMP    InvalidCtrlandStall
+                                           ; SOURCE LINE # 1002
+                                           ; SOURCE LINE # 1003
+01C2         ?C0135:
+                                           ; SOURCE LINE # 1004
+01C2 E4                CLR     A
+01C3 900000      E     MOV     DPTR,#bRequestErrorCode
+01C6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1005
+01C7 900002            MOV     DPTR,#02H
+01CA 7440              MOV     A,#040H
+01CC F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1007
+01CD         ?C0168:
+01CD 22                RET     
+             ; FUNCTION FUSetCtrl (END)
+
+             ; FUNCTION USBAudioStreamingEP (BEGIN)
+                                           ; SOURCE LINE # 1010
+                                           ; SOURCE LINE # 1011
+                                           ; SOURCE LINE # 1019
+0000 E500        E     MOV     A,bRequestType
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 57  
+
+0002 20E703            JB      ACC.7,$ + 6H
+0005 020000      R     LJMP    ?C0193
+                                           ; SOURCE LINE # 1020
+                                           ; SOURCE LINE # 1022
+0008 E500        E     MOV     A,bRequest
+000A 247E              ADD     A,#07EH
+000C 6023              JZ      ?C0175
+000E 14                DEC     A
+000F 604D              JZ      ?C0182
+0011 14                DEC     A
+0012 7003              JNZ     $ + 5H
+0014 020000      R     LJMP    ?C0191
+0017 2403              ADD     A,#03H
+0019 6003              JZ      $ + 5H
+001B 020000      R     LJMP    ?C0191
+                                           ; SOURCE LINE # 1023
+                                           ; SOURCE LINE # 1024
+001E         ?C0171:
+                                           ; SOURCE LINE # 1026
+001E E500        E     MOV     A,wValue
+0020 B4010B            CJNE    A,#01H,?C0172
+                                           ; SOURCE LINE # 1027
+                                           ; SOURCE LINE # 1029
+0023 900000      E     MOV     DPTR,#DMICCurSetting
+0026 E0                MOVX    A,@DPTR
+0027 FF                MOV     R7,A
+0028 C3                CLR     C
+0029 7407              MOV     A,#07H
+002B 9F                SUBB    A,R7
+                                           ; SOURCE LINE # 1031
+                                           ; SOURCE LINE # 1032
+                                           ; SOURCE LINE # 1033
+                                           ; SOURCE LINE # 1034
+                                           ; SOURCE LINE # 1035
+002C 805B              SJMP    ?C0246
+002E         ?C0172:
+                                           ; SOURCE LINE # 1036
+                                           ; SOURCE LINE # 1037
+002E 020000      R     LJMP    ?C0251
+                                           ; SOURCE LINE # 1039
+                                           ; SOURCE LINE # 1040
+                                           ; SOURCE LINE # 1041
+0031         ?C0175:
+                                           ; SOURCE LINE # 1042
+0031 E500        E     MOV     A,wValue
+0033 6401              XRL     A,#01H
+0035 7024              JNZ     ?C0176
+                                           ; SOURCE LINE # 1043
+                                           ; SOURCE LINE # 1044
+0037 750007      R     MOV     i,#07H
+003A         ?C0177:
+                                           ; SOURCE LINE # 1045
+                                           ; SOURCE LINE # 1046
+003A 7401              MOV     A,#01H
+003C 7E00              MOV     R6,#00H
+003E A800        R     MOV     R0,i
+0040 08                INC     R0
+0041 8005              SJMP    ?C0235
+0043         ?C0234:
+0043 C3                CLR     C
+0044 33                RLC     A
+0045 CE                XCH     A,R6
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 58  
+
+0046 33                RLC     A
+0047 CE                XCH     A,R6
+0048         ?C0235:
+0048 D8F9              DJNZ    R0,?C0234
+004A FF                MOV     R7,A
+004B 900000      E     MOV     DPTR,#bSupSampFreq
+004E E0                MOVX    A,@DPTR
+004F FD                MOV     R5,A
+0050 EF                MOV     A,R7
+0051 5D                ANL     A,R5
+0052 7003              JNZ     ?C0178
+                                           ; SOURCE LINE # 1047
+                                           ; SOURCE LINE # 1048
+                                           ; SOURCE LINE # 1049
+                                           ; SOURCE LINE # 1050
+0054         ?C0179:
+0054 D500E3      R     DJNZ    i,?C0177
+0057         ?C0178:
+                                           ; SOURCE LINE # 1051
+0057 E500        R     MOV     A,i
+0059         ?C0244:
+                                           ; SOURCE LINE # 1052
+                                           ; SOURCE LINE # 1053
+                                           ; SOURCE LINE # 1054
+                                           ; SOURCE LINE # 1055
+                                           ; SOURCE LINE # 1056
+0059 802E              SJMP    ?C0246
+005B         ?C0176:
+                                           ; SOURCE LINE # 1057
+                                           ; SOURCE LINE # 1058
+005B         ?C0245:
+005B 020000      R     LJMP    ?C0251
+                                           ; SOURCE LINE # 1060
+                                           ; SOURCE LINE # 1061
+                                           ; SOURCE LINE # 1062
+005E         ?C0182:
+                                           ; SOURCE LINE # 1063
+005E E500        E     MOV     A,wValue
+0060 6401              XRL     A,#01H
+0062 7049              JNZ     ?C0183
+                                           ; SOURCE LINE # 1064
+                                           ; SOURCE LINE # 1065
+0064 F500        R     MOV     i,A
+0066         ?C0184:
+                                           ; SOURCE LINE # 1066
+                                           ; SOURCE LINE # 1067
+0066 7401              MOV     A,#01H
+0068 7E00              MOV     R6,#00H
+006A A800        R     MOV     R0,i
+006C 08                INC     R0
+006D 8005              SJMP    ?C0237
+006F         ?C0236:
+006F C3                CLR     C
+0070 33                RLC     A
+0071 CE                XCH     A,R6
+0072 33                RLC     A
+0073 CE                XCH     A,R6
+0074         ?C0237:
+0074 D8F9              DJNZ    R0,?C0236
+0076 FF                MOV     R7,A
+0077 900000      E     MOV     DPTR,#bSupSampFreq
+007A E0                MOVX    A,@DPTR
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 59  
+
+007B FD                MOV     R5,A
+007C EF                MOV     A,R7
+007D 5D                ANL     A,R5
+007E 7007              JNZ     ?C0185
+                                           ; SOURCE LINE # 1068
+                                           ; SOURCE LINE # 1069
+                                           ; SOURCE LINE # 1070
+                                           ; SOURCE LINE # 1071
+0080         ?C0186:
+0080 0500        R     INC     i
+0082 E500        R     MOV     A,i
+0084 B408DF            CJNE    A,#08H,?C0184
+0087         ?C0185:
+                                           ; SOURCE LINE # 1072
+0087 E500        R     MOV     A,i
+0089         ?C0246:
+0089 25E0              ADD     A,ACC
+008B 2400        R     ADD     A,#LOW SampingFreq
+008D F582              MOV     DPL,A
+008F E4                CLR     A
+0090 3400        R     ADDC    A,#HIGH SampingFreq
+0092 F583              MOV     DPH,A
+0094 E4                CLR     A
+0095 93                MOVC    A,@A+DPTR
+0096 F500        R     MOV     SampFreqTmp,A
+0098 7401              MOV     A,#01H
+009A 93                MOVC    A,@A+DPTR
+009B F500        R     MOV     SampFreqTmp+01H,A
+                                           ; SOURCE LINE # 1073
+009D 900000      E     MOV     DPTR,#pbEP0Buf
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1074
+00A1 A3                INC     DPTR
+00A2 E500        R     MOV     A,SampFreqTmp
+00A4 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1075
+00A5 E4                CLR     A
+00A6 A3                INC     DPTR
+00A7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1076
+00A8 750003      R     MOV     bRecBytesCnt,#03H
+                                           ; SOURCE LINE # 1077
+00AB 8006              SJMP    ?C0170
+00AD         ?C0183:
+                                           ; SOURCE LINE # 1078
+                                           ; SOURCE LINE # 1079
+00AD         ?C0247:
+00AD 020000      R     LJMP    ?C0251
+                                           ; SOURCE LINE # 1081
+                                           ; SOURCE LINE # 1082
+                                           ; SOURCE LINE # 1083
+                                           ; SOURCE LINE # 1094
+                                           ; SOURCE LINE # 1095
+                                           ; SOURCE LINE # 1096
+                                           ; SOURCE LINE # 1097
+00B0         ?C0191:
+                                           ; SOURCE LINE # 1098
+00B0         ?C0249:
+00B0 020000      R     LJMP    ?C0251
+                                           ; SOURCE LINE # 1100
+                                           ; SOURCE LINE # 1101
+00B3         ?C0170:
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 60  
+
+                                           ; SOURCE LINE # 1103
+00B3 900003            MOV     DPTR,#03H
+00B6 E500        R     MOV     A,bRecBytesCnt
+00B8 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1104
+00B9 020000      E     LJMP    WaitTXEnd
+                                           ; SOURCE LINE # 1105
+                                           ; SOURCE LINE # 1107
+00BC         ?C0193:
+                                           ; SOURCE LINE # 1109
+00BC 900002            MOV     DPTR,#02H
+00BF E0                MOVX    A,@DPTR
+00C0 30E0F9            JNB     ACC.0,?C0193
+00C3         ?C0194:
+                                           ; SOURCE LINE # 1110
+00C3 900003            MOV     DPTR,#03H
+00C6 E0                MOVX    A,@DPTR
+00C7 547F              ANL     A,#07FH
+00C9 F500        R     MOV     bRecBytesCnt,A
+                                           ; SOURCE LINE # 1111
+00CB FF                MOV     R7,A
+00CC 7E00              MOV     R6,#00H
+00CE 7800        E     MOV     R0,#LOW pbIBuf
+00D0 7C00        E     MOV     R4,#HIGH pbIBuf
+00D2 7D01              MOV     R5,#01H
+00D4 7B01              MOV     R3,#01H
+00D6 7A00        E     MOV     R2,#HIGH pbEP0Buf
+00D8 7900        E     MOV     R1,#LOW pbEP0Buf
+00DA 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 1112
+00DD 900002            MOV     DPTR,#02H
+00E0 E0                MOVX    A,@DPTR
+00E1 54FE              ANL     A,#0FEH
+00E3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1114
+00E4 E500        E     MOV     A,bRequest
+00E6 24FE              ADD     A,#0FEH
+00E8 24FC              ADD     A,#0FCH
+00EA 5060              JNC     ?C0195
+00EC 2405              ADD     A,#05H
+00EE 7059              JNZ     ?C0209
+                                           ; SOURCE LINE # 1115
+                                           ; SOURCE LINE # 1116
+00F0         ?C0196:
+                                           ; SOURCE LINE # 1117
+00F0 E500        E     MOV     A,wValue
+00F2 6401              XRL     A,#01H
+00F4 7051              JNZ     ?C0197
+                                           ; SOURCE LINE # 1118
+                                           ; SOURCE LINE # 1119
+00F6 900000      E     MOV     DPTR,#pbIBuf+01H
+00F9 E0                MOVX    A,@DPTR
+00FA FE                MOV     R6,A
+00FB 900000      E     MOV     DPTR,#pbIBuf
+00FE E0                MOVX    A,@DPTR
+00FF 7C00              MOV     R4,#00H
+0101 2400              ADD     A,#00H
+0103 F500        R     MOV     SampFreqTmp+01H,A
+0105 EC                MOV     A,R4
+0106 3E                ADDC    A,R6
+0107 F500        R     MOV     SampFreqTmp,A
+                                           ; SOURCE LINE # 1121
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 61  
+
+0109 E4                CLR     A
+010A F500        R     MOV     i,A
+010C         ?C0198:
+                                           ; SOURCE LINE # 1122
+010C E500        R     MOV     A,i
+010E 25E0              ADD     A,ACC
+0110 2400        R     ADD     A,#LOW SampingFreq
+0112 F582              MOV     DPL,A
+0114 E4                CLR     A
+0115 3400        R     ADDC    A,#HIGH SampingFreq
+0117 F583              MOV     DPH,A
+0119 D3                SETB    C
+011A 7401              MOV     A,#01H
+011C 93                MOVC    A,@A+DPTR
+011D 9500        R     SUBB    A,SampFreqTmp+01H
+011F E4                CLR     A
+0120 93                MOVC    A,@A+DPTR
+0121 9500        R     SUBB    A,SampFreqTmp
+0123 4005              JC      ?C0202
+0125 E500        R     MOV     A,i
+0127 B4070B            CJNE    A,#07H,?C0200
+012A         ?C0202:
+                                           ; SOURCE LINE # 1123
+                                           ; SOURCE LINE # 1124
+012A C3                CLR     C
+012B 7407              MOV     A,#07H
+012D 9500        R     SUBB    A,i
+012F 900000      E     MOV     DPTR,#DMICCurSetting
+0132 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1125
+0133 8007              SJMP    ?C0199
+                                           ; SOURCE LINE # 1126
+                                           ; SOURCE LINE # 1127
+0135         ?C0200:
+0135 0500        R     INC     i
+0137 E500        R     MOV     A,i
+0139 B408D0            CJNE    A,#08H,?C0198
+013C         ?C0199:
+                                           ; SOURCE LINE # 1130
+013C 900000      E     MOV     DPTR,#bDMICAltSetting
+013F E0                MOVX    A,@DPTR
+0140 600A              JZ      ?C0195
+                                           ; SOURCE LINE # 1131
+                                           ; SOURCE LINE # 1135
+0142 120000      R     LCALL   EnableDMIC
+                                           ; SOURCE LINE # 1136
+                                           ; SOURCE LINE # 1138
+0145 8005              SJMP    ?C0195
+0147         ?C0197:
+                                           ; SOURCE LINE # 1140
+                                           ; SOURCE LINE # 1141
+0147         ?C0250:
+0147 8000              SJMP    ?C0251
+                                           ; SOURCE LINE # 1143
+                                           ; SOURCE LINE # 1145
+                                           ; SOURCE LINE # 1146
+                                           ; SOURCE LINE # 1147
+                                           ; SOURCE LINE # 1148
+                                           ; SOURCE LINE # 1149
+                                           ; SOURCE LINE # 1150
+                                           ; SOURCE LINE # 1151
+                                           ; SOURCE LINE # 1152
+C51 COMPILER V7.06   AUDIOHANDLE                                                           07/22/2020 17:08:20 PAGE 62  
+
+0149         ?C0209:
+                                           ; SOURCE LINE # 1153
+0149         ?C0251:
+0149 020000      E     LJMP    InvalidCtrlandStall
+                                           ; SOURCE LINE # 1155
+                                           ; SOURCE LINE # 1156
+014C         ?C0195:
+                                           ; SOURCE LINE # 1158
+014C E4                CLR     A
+014D 900000      E     MOV     DPTR,#bRequestErrorCode
+0150 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1159
+0151 900002            MOV     DPTR,#02H
+0154 E0                MOVX    A,@DPTR
+0155 4440              ORL     A,#040H
+0157 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1161
+                                           ; SOURCE LINE # 1163
+0158         ?C0174:
+0158 22                RET     
+             ; FUNCTION USBAudioStreamingEP (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3085    ----
+   CONSTANT SIZE    =    547    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      22
+   IDATA SIZE       =      3       2
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,4 @@
+
+[dev]
+pyramid_debugtoolbar
+pytest

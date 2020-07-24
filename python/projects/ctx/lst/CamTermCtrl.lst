@@ -1,0 +1,1628 @@
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE CAMTERMCTRL
+OBJECT MODULE PLACED IN .\output\CamTermCtrl.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE CamTermCtrl.c OPTIMIZE(SIZE) BROWSE DEBUG OBJECTEXTEND CODE PRINT(.\lst\Cam
+                    -TermCtrl.lst) OBJECT(.\output\CamTermCtrl.obj)
+
+stmt level    source
+
+   1          /************************************************************************|
+   2          |                  A L C O R   M I C R O,  C O R P.                      |
+   3          |                                                                        |
+   4          |         This source code is classified as confidential and             |
+   5          |         contains trade secrets owned by Alcor Micro, Corp.             |
+   6          |                                                                        |
+   7          |                         (C)Copyright 2008                              |
+   8          |                         Alcor Micro, Corp.                             |
+   9          |                        All rights reserved.                            |
+  10          |************************************************************************/
+  11          
+  12          #include "globaldef.h"
+  13          #include "regmap.h"
+  14          #include "globalvar.h"
+  15          #include "Base.h"
+  16          #include "InFirmdef.h"
+  17          #include "usbif.h"
+  18          #include "util.h"
+  19          #include "CamTermCtrl.h"
+  20          #include "SettingDef.h"
+  21          #include "setintf.h"
+  22          #include "InTable.h"
+  23          #include "string.h"
+  24          
+  25          static void SetCurRequestNoErr()
+  26          {
+  27   1              bRequestErrorCode = EC_NO_ERROR;
+  28   1              Reg[REG_EP0_FIFO_CTRL]=EP0_STATUS_OUT_NO_DATA;
+  29   1              while( Reg[REG_EP0_FIFO_CTRL] & EP0_STATUS_OUT_NO_DATA );
+  30   1      
+  31   1      }
+  32          void PrivacyCtrlInterrupt(void)
+  33          {
+  34   1              // if(!( Reg[REG_EP1_FIFO_CTRL] & EP1_FIFO_BUSY )){
+  35   1         while ((ReadReg(REG_EP1_FIFO_CTRL)&EP1_FIFO_BUSY)&&(Reg[REG_EP1_FIFO_LEN] !=0));
+  36   1         /*{
+  37   1                      if(Reg[REG_EP1_FIFO_LEN] ==0)
+  38   1                              break;
+  39   1         }*/
+  40   1              pbEP1Buf[0] = SC_VIDEO_CONTROL;
+  41   1              pbEP1Buf[1] = CT_ID;
+  42   1              pbEP1Buf[2] = CONTROL_CHANGE;
+  43   1              pbEP1Buf[3] = CTRL_CT_PRIVACY;
+  44   1              pbEP1Buf[4] = CONTROL_VAL_CHANGE;       
+  45   1              pbEP1Buf[5] = xPrivacyControl;            
+  46   1              Reg[REG_EP1_FIFO_LEN] = 6;
+  47   1      //        while( Reg[REG_EP1_FIFO_CTRL] & EP1_FIFO_BUSY );
+  48   1              if(xPrivacyControl == TRUE){
+  49   2                      SetRegBits(REG_SIZE_CTRL, PRIVACY);
+  50   2              }else{
+  51   2                      ClrRegBits(REG_SIZE_CTRL, PRIVACY);
+  52   2              }
+  53   1      }
+  54          
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 2   
+
+  55          
+  56          static void SetPrivacyCtrl(void)
+  57          {
+  58   1              if(pbIBuf[0x0] <=1 )
+  59   1              {       //xPrivacyControl=pbIBuf[0];
+  60   2                      SetCurRequestNoErr();
+  61   2      
+  62   2                      xPrivacyControl=pbIBuf[0];      
+  63   2                      PrivacyCtrlInterrupt();
+  64   2      
+  65   2                      return;
+  66   2              }else
+  67   1              {
+  68   2                      OutofRangeCtrlandStall();
+  69   2                      while ((ReadReg(REG_EP1_FIFO_CTRL)&EP1_FIFO_BUSY)&&(Reg[REG_EP1_FIFO_LEN] !=0));
+  70   2                      pbEP1Buf[0] = SC_VIDEO_CONTROL;
+  71   2                      pbEP1Buf[1] = CT_ID;
+  72   2                      pbEP1Buf[2] = CONTROL_CHANGE;
+  73   2                      pbEP1Buf[3] = CTRL_CT_PRIVACY;
+  74   2                      pbEP1Buf[4] = CONTROL_FAILURE_CHANGE;   
+  75   2                      pbEP1Buf[5] = EC_OUT_OF_RANGE;            
+  76   2                      Reg[REG_EP1_FIFO_LEN] = 6;
+  77   2              }
+  78   1      
+  79   1              
+  80   1      }
+  81          
+  82          // Privacy Control
+  83          static void GetPrivacyCtrl(void)
+  84          {
+  85   1          BYTE data  bRecBytesCnt = 0;
+  86   1      
+  87   1              // Get Control
+  88   1              switch(bRequest){
+  89   2                  case REQ_GET_CUR:
+  90   2                      pbEP0Buf[0] = xPrivacyControl;
+  91   2                         //for pass UVC Test          
+  92   2                         Reg[REG_EP1_FIFO_LEN]=0;  //don't need to send interrupt 
+  93   2                      break;
+  94   2                  case REQ_GET_INFO:
+  95   2                      // Support GET_CUR, SET_CUR, AutoUpdate
+  96   2                      pbEP0Buf[0] = 0xB;
+  97   2                     // pbEP0Buf[0] = 0x9;  // remove SET_CUR support to pass UVC test 
+  98   2                      break;
+  99   2                   case REQ_GET_MIN:
+ 100   2                      pbEP0Buf[0] = 0x0;
+ 101   2                      break;
+ 102   2                  case REQ_GET_MAX:
+ 103   2                      pbEP0Buf[0] = 0x1;
+ 104   2                      break;
+ 105   2                  case REQ_GET_RES:
+ 106   2                      pbEP0Buf[0] = 0x1;
+ 107   2                      break;     
+ 108   2                   case REQ_GET_DEF:
+ 109   2                      pbEP0Buf[0] = 0x0;
+ 110   2                      break;
+ 111   2                  default:
+ 112   2                      InvalidRequestandStall();
+ 113   2                      return;                
+ 114   2              }
+ 115   1              Reg[REG_EP0_FIFO_LEN] = 0x01;
+ 116   1              bRequestErrorCode = EC_NO_ERROR;
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 3   
+
+ 117   1              WaitTXEnd();
+ 118   1      }
+ 119          
+ 120          //===== Camera Terminal Set Control =====//
+ 121          
+ 122          /*static void GetSetDataFromPC()
+ 123          {
+ 124                  BYTE    data bRecBytesCnt=0;
+ 125                  while( !(Reg[REG_EP0_FIFO_CTRL] & EP0_IN_FIFO_READY) );
+ 126                  bRecBytesCnt = Reg[REG_EP0_FIFO_LEN] & EP0_FIFO_BYTE_LEN_MASK;
+ 127                memcpy(pbIBuf, pbEP0Buf, bRecBytesCnt);
+ 128                   Reg[REG_EP0_FIFO_CTRL]&=~EP0_IN_FIFO_READY;
+ 129          }*/
+ 130          static void AEModeSetCtrl()
+ 131          {
+ 132   1              BYTE data i=0,count=0;//,bOldAEMode;
+ 133   1              DWORD data dwETtemp=0;
+ 134   1              //GetSetDataFromPC();
+ 135   1              for(i=0;i<8;i++)
+ 136   1              {
+ 137   2                      if((pbIBuf[0x0]>>i)&0x01)
+ 138   2                      {
+ 139   3                              count++;
+ 140   3                      }
+ 141   2              }
+ 142   1              SetPtrTabEx(path_AETime);       
+ 143   1              if((pbIBuf[0x0] & GetTab(0)) && (count==1))     
+ 144   1              {       //match bitmap and only one mode
+ 145   2                      count=bAEMode;
+ 146   2                      bAEMode = pbIBuf[0x0];
+ 147   2                      xSetAEMode = TRUE;
+ 148   2                      SetCurRequestNoErr();
+ 149   2                      if(count!=bAEMode )
+ 150   2                      {       // AE mode change
+ 151   3                              //SetPtrTabEx(path_AETime);
+ 152   3                               while ((ReadReg(REG_EP1_FIFO_CTRL)&EP1_FIFO_BUSY)&&(Reg[REG_EP1_FIFO_LEN] !=0));       
+ 153   3                              pbEP1Buf[0] = SC_VIDEO_CONTROL;
+ 154   3                              pbEP1Buf[1] = CT_ID;
+ 155   3                              pbEP1Buf[2] = CONTROL_CHANGE;
+ 156   3                              pbEP1Buf[3] = CTRL_CT_EXPOSURE_TIME_ABS;  //for exposture time
+ 157   3                              pbEP1Buf[4] = CONTROL_INFO_CHANGE;
+ 158   3                         pbEP1Buf[5] = GetTab(3)  ; 
+ 159   3                              if(bAEMode &(AEMODE_AUTO|AEMODE_APERTURE))
+ 160   3                              {       //auto mode
+ 161   4                                      pbEP1Buf[5] |=  INFO_DISABLE_BIT;       //info value
+ 162   4                      dwETtemp=FPS_Table[GetFPSTableIndex(VideoProbeCommitCtrls.CurFPS)];
+ 163   4                                       dwETtemp=dwETtemp/1000;
+ 164   4                              }
+ 165   3                              Reg[REG_EP1_FIFO_LEN]=6;
+ 166   3      
+ 167   3                              //the order can't be revised for UVC Test
+ 168   3                              if(bAEMode &(AEMODE_AUTO|AEMODE_APERTURE)) 
+ 169   3                              {
+ 170   4                                      if(dwETtemp!=dwETAbs)
+ 171   4                                      {       dwETAbs=dwETtemp;
+ 172   5                                              /*count=0;
+ 173   5                                              while( (Reg[REG_EP1_FIFO_CTRL] & EP1_FIFO_BUSY) &&(count<254))
+ 174   5                                              {count++;}
+ 175   5                                              pbEP1Buf[0] = SC_VIDEO_CONTROL;
+ 176   5                                              pbEP1Buf[1] = CT_ID;
+ 177   5                                              pbEP1Buf[2] = CONTROL_CHANGE;
+ 178   5                                              pbEP1Buf[3] = CTRL_CT_EXPOSURE_TIME_ABS;
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 4   
+
+ 179   5                                              pbEP1Buf[4] = CONTROL_VAL_CHANGE;
+ 180   5                                              pbEP1Buf[5] = Byte0OfDWord(dwETAbs);
+ 181   5                                              pbEP1Buf[6] = Byte1OfDWord(dwETAbs);
+ 182   5                                              pbEP1Buf[7] = Byte2OfDWord(dwETAbs);
+ 183   5                                              pbEP1Buf[8] = Byte3OfDWord(dwETAbs);
+ 184   5                                              Reg[REG_EP1_FIFO_LEN]=9;
+ 185   5                                              */
+ 186   5                                      }
+ 187   4                              }                       
+ 188   3                      }               
+ 189   2                      
+ 190   2                      return;
+ 191   2              }
+ 192   1              OutofRangeCtrlandStall();
+ 193   1                      return;
+ 194   1      }
+ 195          
+ 196          static void AEPrioritySetCtrl()
+ 197          {
+ 198   1              //GetSetDataFromPC();
+ 199   1              if(pbIBuf[0x0] > 1) {
+ 200   2                      OutofRangeCtrlandStall();
+ 201   2                      return;
+ 202   2              }else{
+ 203   2                      bAEPriority = pbIBuf[0x0];
+ 204   2                      xSetAEPriority = TRUE;
+ 205   2                      SetCurRequestNoErr();
+ 206   2              }       
+ 207   1      }
+ 208          
+ 209          static void ExTimeAbsSetCtrl()
+ 210          {
+ 211   1              DWORD   idata dwVal,dwMin,dwMax;
+ 212   1              //GetSetDataFromPC();
+ 213   1              if(!(bAEMode&(AEMODE_AUTO|AEMODE_APERTURE)))
+ 214   1              { //exposture time in manual  mode
+ 215   2                      Byte3OfDWord(dwVal)=pbIBuf[3];
+ 216   2                      Byte2OfDWord(dwVal)=pbIBuf[2];
+ 217   2                      Byte1OfDWord(dwVal)=pbIBuf[1];
+ 218   2                      Byte0OfDWord(dwVal)=pbIBuf[0];
+ 219   2      
+ 220   2                      SetPtrTabEx(path_AETime);
+ 221   2                      //dwMin=((GetTabW(4)<<16)|GetTabW(6));
+ 222   2                      HiWordOfDWord(dwMin)=GetTabW(4);
+ 223   2                      LoWordOfDWord(dwMin)=GetTabW(6);
+ 224   2                      //dwMax=((GetTabW(8)<<16)|GetTabW(10)); 
+ 225   2                      HiWordOfDWord(dwMax)=GetTabW(8);
+ 226   2                      LoWordOfDWord(dwMax)=GetTabW(10);
+ 227   2      
+ 228   2                       if((dwVal< dwMin) || (dwVal> dwMax)  )
+ 229   2                       {        //out of range
+ 230   3                                      OutofRangeCtrlandStall();
+ 231   3                                      return;
+ 232   3                      }else
+ 233   2                      {
+ 234   3                                       dwETAbs = dwVal;
+ 235   3                                      xSetETAbs = TRUE;
+ 236   3                                      SetCurRequestNoErr();
+ 237   3                                      return;
+ 238   3                      }       
+ 239   2              }
+ 240   1                bRequestErrorCode = EC_WRONG_STATE;  //INPUT or OUTPUT control all not support
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 5   
+
+ 241   1              Reg[REG_USB_EP_CTRL]|=EP0_STALL; 
+ 242   1                      return;
+ 243   1      }
+ 244          
+ 245          
+ 246          
+ 247          //===== Camera Terminal Get Control =====//
+ 248          static void AEModeGetCtrl()
+ 249          {
+ 250   1              SetPtrTabEx(path_AETime);
+ 251   1              switch(bRequest){
+ 252   2                      case REQ_GET_CUR:               //0x81
+ 253   2                              pbEP0Buf[0] = bAEMode;
+ 254   2                              break;
+ 255   2                      case REQ_GET_INFO:    //0x86
+ 256   2                                      pbEP0Buf[0] = 0x3; // Support GET, SET control
+ 257   2                              break;
+ 258   2                      case REQ_GET_RES:       //0x84
+ 259   2                              pbEP0Buf[0] = GetTab(0);
+ 260   2                              break;
+ 261   2                      case REQ_GET_DEF:       //0x87
+ 262   2                              pbEP0Buf[0] = GetTab(1);
+ 263   2                              break;
+ 264   2                      default:
+ 265   2                              InvalidRequestandStall();
+ 266   2                              return;
+ 267   2              }
+ 268   1              bRequestErrorCode = EC_NO_ERROR;
+ 269   1              Reg[REG_EP0_FIFO_LEN]= 0x1; // always return length 1
+ 270   1              WaitTXEnd();
+ 271   1      
+ 272   1      }
+ 273          
+ 274          static void  ExTimeAbsGetCtrl()
+ 275          {
+ 276   1              DWORD   data dwVal;
+ 277   1                      
+ 278   1              SetPtrTabEx(path_AETime);
+ 279   1              
+ 280   1              switch(bRequest){
+ 281   2                      case REQ_GET_INFO:
+ 282   2                              if(bAEMode &(AEMODE_AUTO|AEMODE_APERTURE))
+ 283   2                              {   pbEP0Buf[0] =GetTab(3) | INFO_DISABLE_BIT;
+ 284   3                              }else
+ 285   2                              {       pbEP0Buf[0] =GetTab(3); // Support GET, SET control
+ 286   3                              }
+ 287   2                              Reg[REG_EP0_FIFO_LEN]= 0x01;    // always return length 1
+ 288   2                              bRequestErrorCode = EC_NO_ERROR;        
+ 289   2                              WaitTXEnd();
+ 290   2                              return;
+ 291   2                      case REQ_GET_CUR:       //0x81
+ 292   2                              dwVal = dwETAbs;
+ 293   2                              break;
+ 294   2                      case REQ_GET_MIN:
+ 295   2                              //dwVal=((GetTabW(4)<<16)|GetTabW(6));
+ 296   2                              HiWordOfDWord(dwVal)=GetTabW(4);
+ 297   2                              LoWordOfDWord(dwVal)=GetTabW(6);
+ 298   2                              break;
+ 299   2                      case REQ_GET_MAX:
+ 300   2                              //dwVal=((GetTabW(8)<<16)|GetTabW(10));
+ 301   2                              HiWordOfDWord(dwVal)=GetTabW(8);
+ 302   2                              LoWordOfDWord(dwVal)=GetTabW(10);
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 6   
+
+ 303   2                              break;  
+ 304   2                      case REQ_GET_RES:
+ 305   2                              //dwVal=((GetTabW(12)<<16)|GetTabW(14));
+ 306   2                              HiWordOfDWord(dwVal)=GetTabW(12);
+ 307   2                              LoWordOfDWord(dwVal)=GetTabW(14);
+ 308   2                              break;
+ 309   2                      case REQ_GET_DEF:
+ 310   2                              //dwVal=((GetTabW(16)<<16)|GetTabW(18));
+ 311   2                              HiWordOfDWord(dwVal)=GetTabW(16);
+ 312   2                              LoWordOfDWord(dwVal)=GetTabW(18);
+ 313   2                              break;
+ 314   2                      default:
+ 315   2                              InvalidRequestandStall();
+ 316   2                              return;
+ 317   2              }
+ 318   1              pbEP0Buf[0]=Byte0OfDWord(dwVal);
+ 319   1              pbEP0Buf[1]=Byte1OfDWord(dwVal);
+ 320   1              pbEP0Buf[2]=Byte2OfDWord(dwVal);
+ 321   1              pbEP0Buf[3]=Byte3OfDWord(dwVal);
+ 322   1              Reg[REG_EP0_FIFO_LEN]= 0x04;    // always return length 1
+ 323   1              bRequestErrorCode = EC_NO_ERROR;        
+ 324   1              WaitTXEnd();
+ 325   1      }
+ 326          
+ 327          static void AEPriorityGetCtrl()
+ 328          {
+ 329   1              switch(bRequest){
+ 330   2                      case REQ_GET_CUR:               //0x81
+ 331   2                              pbEP0Buf[0] = bAEPriority;
+ 332   2                      break;
+ 333   2                      case REQ_GET_INFO:
+ 334   2                              pbEP0Buf[0] = 0x3; // Support GET, SET control
+ 335   2                      break;
+ 336   2                      default:
+ 337   2                              InvalidRequestandStall();
+ 338   2                              return;
+ 339   2              }
+ 340   1      
+ 341   1              bRequestErrorCode = EC_NO_ERROR;
+ 342   1              Reg[REG_EP0_FIFO_LEN]= 0x1; // always return length 1
+ 343   1              WaitTXEnd();
+ 344   1      }
+ 345          
+ 346          
+ 347          void CameraTermSetCtrl(void)
+ 348          {
+ 349   1              BYTE    data bmControl0;
+ 350   1              BYTE    data bmControl2;
+ 351   1              BYTE    data bRecBytesCnt=0;
+ 352   1              
+ 353   1              if(xHighSpdMode){
+ 354   2                  SetPtrTabEx(path_HSCameraTermDesc);
+ 355   2            }else{
+ 356   2              SetPtrTabEx(path_FSCameraTermDesc);
+ 357   2            }     
+ 358   1              bmControl0 = GetTab(0x0F);
+ 359   1              bmControl2 = GetTab(0x11);
+ 360   1      
+ 361   1              //Check range
+ 362   1              if(bHwValue==0)
+ 363   1              {
+ 364   2                       InvalidCtrlandStall();
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 7   
+
+ 365   2                            return;
+ 366   2              }
+ 367   1              else if(bHwValue<=0x10)
+ 368   1              {
+ 369   2                      if(!(bmControl0 &(0x01<<(bHwValue-1))))
+ 370   2                      {
+ 371   3                               InvalidCtrlandStall();
+ 372   3                            return;
+ 373   3                      }
+ 374   2              }else
+ 375   1              {
+ 376   2                      if(!(bmControl2 &PRIVACY_ENABLE))
+ 377   2                      {
+ 378   3                               InvalidCtrlandStall();
+ 379   3                            return;
+ 380   3                      }
+ 381   2              }
+ 382   1              
+ 383   1      
+ 384   1              //Get Set Data
+ 385   1              while( !(Reg[REG_EP0_FIFO_CTRL] & EP0_IN_FIFO_READY) );
+ 386   1              bRecBytesCnt = Reg[REG_EP0_FIFO_LEN] & EP0_FIFO_BYTE_LEN_MASK;
+ 387   1            memcpy(pbIBuf, pbEP0Buf, bRecBytesCnt);
+ 388   1               Reg[REG_EP0_FIFO_CTRL]&=~EP0_IN_FIFO_READY;
+ 389   1              
+ 390   1              switch(bHwValue){               
+ 391   2                      case CTRL_CT_AE_MODE:
+ 392   2                              AEModeSetCtrl();
+ 393   2                              break;
+ 394   2                      case CTRL_CT_AE_PRIORITY:
+ 395   2                              AEPrioritySetCtrl();
+ 396   2                              break;                  
+ 397   2                      case CTRL_CT_EXPOSURE_TIME_ABS:
+ 398   2                              ExTimeAbsSetCtrl();
+ 399   2                              break;
+ 400   2                  case CTRL_CT_PRIVACY:
+ 401   2                              // Dosen't support PRIVACY SET_CUR control
+ 402   2                              SetPrivacyCtrl();
+ 403   2                              break;
+ 404   2              default:
+ 405   2                  InvalidCtrlandStall();
+ 406   2                  return;
+ 407   2              }
+ 408   1      }
+ 409          
+ 410          // Camera Terminal Get Control
+ 411          void CameraTermGetCtrl(void)
+ 412          {
+ 413   1          BYTE    data bmControl0;
+ 414   1              BYTE    data bmControl2;
+ 415   1              if(xHighSpdMode){
+ 416   2                  SetPtrTabEx(path_HSCameraTermDesc);
+ 417   2          }else{
+ 418   2              SetPtrTabEx(path_FSCameraTermDesc);
+ 419   2          }       
+ 420   1              bmControl0 = GetTab(0xF);
+ 421   1              bmControl2 = GetTab(0x11);
+ 422   1              
+ 423   1              switch(bHwValue){
+ 424   2                      case CTRL_CT_AE_MODE:
+ 425   2                              if(!(bmControl0 &AUTOEXPOSURE_ENABLE)){
+ 426   3                                      InvalidCtrlandStall();
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 8   
+
+ 427   3                                      return;
+ 428   3                              }
+ 429   2                              AEModeGetCtrl();
+ 430   2                              break;
+ 431   2                      
+ 432   2                      case CTRL_CT_AE_PRIORITY:
+ 433   2                              if(!(bmControl0 &AUTOEXPOSURE_PRIORITY_ENABLE)){
+ 434   3                                      InvalidCtrlandStall();
+ 435   3                                      return;
+ 436   3                              }
+ 437   2                              AEPriorityGetCtrl();
+ 438   2                              break;
+ 439   2                      
+ 440   2                      case CTRL_CT_EXPOSURE_TIME_ABS:
+ 441   2                              if(!(bmControl0 &EXPSOSURETIME_ABS_ENABLE)){
+ 442   3                              InvalidCtrlandStall();
+ 443   3                                      return;
+ 444   3                              }
+ 445   2                              ExTimeAbsGetCtrl();
+ 446   2                              break;
+ 447   2              
+ 448   2                      case CTRL_CT_PRIVACY:
+ 449   2                              if(!(bmControl2 &PRIVACY_ENABLE)){
+ 450   3                              InvalidCtrlandStall();
+ 451   3                                      return;
+ 452   3                              }
+ 453   2                   //   if(xSupportPrivacy ==TRUE){
+ 454   2                          GetPrivacyCtrl();
+ 455   2                     // }else{
+ 456   2                    //      InvalidCtrlandStall();
+ 457   2                     // }
+ 458   2                              break;
+ 459   2                      default:
+ 460   2                  InvalidCtrlandStall();
+ 461   2                              break;
+ 462   2              }
+ 463   1      }
+ 464          
+ 465          
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 9   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION SetCurRequestNoErr (BEGIN)
+                                           ; SOURCE LINE # 25
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 27
+0000 E4                CLR     A
+0001 900000      E     MOV     DPTR,#bRequestErrorCode
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 28
+0005 900002            MOV     DPTR,#02H
+0008 7440              MOV     A,#040H
+000A F0                MOVX    @DPTR,A
+000B         ?C0001:
+                                           ; SOURCE LINE # 29
+000B 900002            MOV     DPTR,#02H
+000E E0                MOVX    A,@DPTR
+000F 20E6F9            JB      ACC.6,?C0001
+                                           ; SOURCE LINE # 31
+0012         ?C0003:
+0012 22                RET     
+             ; FUNCTION SetCurRequestNoErr (END)
+
+             ; FUNCTION PrivacyCtrlInterrupt (BEGIN)
+                                           ; SOURCE LINE # 32
+                                           ; SOURCE LINE # 33
+0000         ?C0004:
+                                           ; SOURCE LINE # 35
+0000 900004            MOV     DPTR,#04H
+0003 E0                MOVX    A,@DPTR
+0004 30E104            JNB     ACC.1,?C0005
+0007 A3                INC     DPTR
+0008 E0                MOVX    A,@DPTR
+0009 70F5              JNZ     ?C0004
+000B         ?C0005:
+                                           ; SOURCE LINE # 40
+000B 900000      E     MOV     DPTR,#pbEP1Buf
+000E 7401              MOV     A,#01H
+0010 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 41
+0011 A3                INC     DPTR
+0012 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 42
+0013 E4                CLR     A
+0014 A3                INC     DPTR
+0015 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 43
+0016 A3                INC     DPTR
+0017 7411              MOV     A,#011H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 44
+001A E4                CLR     A
+001B A3                INC     DPTR
+001C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 45
+001D A200        E     MOV     C,xPrivacyControl
+001F 33                RLC     A
+0020 A3                INC     DPTR
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 46
+0022 900005            MOV     DPTR,#05H
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 10  
+
+0025 7406              MOV     A,#06H
+0027 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 48
+0028 900053            MOV     DPTR,#053H
+002B E0                MOVX    A,@DPTR
+002C 300004      E     JNB     xPrivacyControl,?C0006
+                                           ; SOURCE LINE # 49
+002F 4410              ORL     A,#010H
+0031 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 50
+0032 22                RET     
+0033         ?C0006:
+                                           ; SOURCE LINE # 51
+0033 54EF              ANL     A,#0EFH
+0035 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 53
+0036         ?C0008:
+0036 22                RET     
+             ; FUNCTION PrivacyCtrlInterrupt (END)
+
+             ; FUNCTION SetPrivacyCtrl (BEGIN)
+                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 58
+0000 900000      E     MOV     DPTR,#pbIBuf
+0003 E0                MOVX    A,@DPTR
+0004 D3                SETB    C
+0005 9401              SUBB    A,#01H
+0007 500E              JNC     ?C0009
+                                           ; SOURCE LINE # 59
+                                           ; SOURCE LINE # 60
+0009 120000      R     LCALL   SetCurRequestNoErr
+                                           ; SOURCE LINE # 62
+000C 900000      E     MOV     DPTR,#pbIBuf
+000F E0                MOVX    A,@DPTR
+0010 24FF              ADD     A,#0FFH
+0012 9200        E     MOV     xPrivacyControl,C
+                                           ; SOURCE LINE # 63
+0014 020000      R     LJMP    PrivacyCtrlInterrupt
+                                           ; SOURCE LINE # 66
+0017         ?C0009:
+                                           ; SOURCE LINE # 67
+                                           ; SOURCE LINE # 68
+0017 120000      E     LCALL   OutofRangeCtrlandStall
+001A         ?C0012:
+                                           ; SOURCE LINE # 69
+001A 900004            MOV     DPTR,#04H
+001D E0                MOVX    A,@DPTR
+001E 30E104            JNB     ACC.1,?C0013
+0021 A3                INC     DPTR
+0022 E0                MOVX    A,@DPTR
+0023 70F5              JNZ     ?C0012
+0025         ?C0013:
+                                           ; SOURCE LINE # 70
+0025 900000      E     MOV     DPTR,#pbEP1Buf
+0028 7401              MOV     A,#01H
+002A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 71
+002B A3                INC     DPTR
+002C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 72
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 11  
+
+002D E4                CLR     A
+002E A3                INC     DPTR
+002F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+0030 A3                INC     DPTR
+0031 7411              MOV     A,#011H
+0033 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 74
+0034 A3                INC     DPTR
+0035 7402              MOV     A,#02H
+0037 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 75
+0038 A3                INC     DPTR
+0039 7404              MOV     A,#04H
+003B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 76
+003C 900005            MOV     DPTR,#05H
+003F 7406              MOV     A,#06H
+0041 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 77
+                                           ; SOURCE LINE # 80
+0042         ?C0010:
+0042 22                RET     
+             ; FUNCTION SetPrivacyCtrl (END)
+
+             ; FUNCTION GetPrivacyCtrl (BEGIN)
+                                           ; SOURCE LINE # 83
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+0000 E4                CLR     A
+0001 F500        R     MOV     bRecBytesCnt,A
+                                           ; SOURCE LINE # 88
+0003 E500        E     MOV     A,bRequest
+0005 247E              ADD     A,#07EH
+0007 6028              JZ      ?C0017
+0009 14                DEC     A
+000A 6027              JZ      ?C0018
+000C 14                DEC     A
+000D 6026              JZ      ?C0019
+000F 24FE              ADD     A,#0FEH
+0011 6016              JZ      ?C0016
+0013 14                DEC     A
+0014 601B              JZ      ?C0017
+0016 2406              ADD     A,#06H
+0018 702A              JNZ     ?C0021
+                                           ; SOURCE LINE # 89
+001A         ?C0015:
+                                           ; SOURCE LINE # 90
+001A A200        E     MOV     C,xPrivacyControl
+001C E4                CLR     A
+001D 33                RLC     A
+001E 900000      E     MOV     DPTR,#pbEP0Buf
+0021 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 92
+0022 900005            MOV     DPTR,#05H
+0025 E4                CLR     A
+0026 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 93
+0027 801E              SJMP    ?C0014
+                                           ; SOURCE LINE # 94
+0029         ?C0016:
+                                           ; SOURCE LINE # 96
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 12  
+
+0029 900000      E     MOV     DPTR,#pbEP0Buf
+002C 740B              MOV     A,#0BH
+002E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 98
+002F 8016              SJMP    ?C0014
+                                           ; SOURCE LINE # 99
+0031         ?C0017:
+                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 101
+0031 800A              SJMP    ?C0100
+                                           ; SOURCE LINE # 102
+0033         ?C0018:
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 104
+0033 8000              SJMP    ?C0101
+                                           ; SOURCE LINE # 105
+0035         ?C0019:
+                                           ; SOURCE LINE # 106
+0035         ?C0101:
+0035 900000      E     MOV     DPTR,#pbEP0Buf
+0038 7401              MOV     A,#01H
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 107
+003B 800A              SJMP    ?C0014
+                                           ; SOURCE LINE # 108
+003D         ?C0100:
+003D E4                CLR     A
+003E 900000      E     MOV     DPTR,#pbEP0Buf
+0041 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 110
+0042 8003              SJMP    ?C0014
+                                           ; SOURCE LINE # 111
+0044         ?C0021:
+                                           ; SOURCE LINE # 112
+0044 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 114
+0047         ?C0014:
+                                           ; SOURCE LINE # 115
+0047 900003            MOV     DPTR,#03H
+004A 7401              MOV     A,#01H
+004C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 116
+004D E4                CLR     A
+004E 900000      E     MOV     DPTR,#bRequestErrorCode
+0051 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 117
+0052 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 118
+0055         ?C0022:
+0055 22                RET     
+             ; FUNCTION GetPrivacyCtrl (END)
+
+             ; FUNCTION AEModeSetCtrl (BEGIN)
+                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 132
+;---- Variable 'i' assigned to Register 'R7' ----
+0000 E4                CLR     A
+0001 FF                MOV     R7,A
+0002 F500        R     MOV     count,A
+                                           ; SOURCE LINE # 133
+0004 F500        R     MOV     dwETtemp+03H,A
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 13  
+
+0006 F500        R     MOV     dwETtemp+02H,A
+0008 F500        R     MOV     dwETtemp+01H,A
+000A F500        R     MOV     dwETtemp,A
+                                           ; SOURCE LINE # 135
+000C         ?C0023:
+                                           ; SOURCE LINE # 136
+                                           ; SOURCE LINE # 137
+000C 900000      E     MOV     DPTR,#pbIBuf
+000F E0                MOVX    A,@DPTR
+0010 FE                MOV     R6,A
+0011 A807              MOV     R0,AR7
+0013 08                INC     R0
+0014 8002              SJMP    ?C0097
+0016         ?C0096:
+0016 C3                CLR     C
+0017 13                RRC     A
+0018         ?C0097:
+0018 D8FC              DJNZ    R0,?C0096
+001A 30E002            JNB     ACC.0,?C0025
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+001D 0500        R     INC     count
+                                           ; SOURCE LINE # 140
+                                           ; SOURCE LINE # 141
+001F         ?C0025:
+001F 0F                INC     R7
+0020 BF08E9            CJNE    R7,#08H,?C0023
+0023         ?C0024:
+                                           ; SOURCE LINE # 142
+0023 7F43              MOV     R7,#043H
+0025 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 143
+0028 E4                CLR     A
+0029 FF                MOV     R7,A
+002A FE                MOV     R6,A
+002B 120000      E     LCALL   _GetTab
+002E 900000      E     MOV     DPTR,#pbIBuf
+0031 E0                MOVX    A,@DPTR
+0032 FE                MOV     R6,A
+0033 5F                ANL     A,R7
+0034 7003              JNZ     $ + 5H
+0036 020000      R     LJMP    ?C0027
+0039 E500        R     MOV     A,count
+003B 6401              XRL     A,#01H
+003D 6003              JZ      $ + 5H
+003F 020000      R     LJMP    ?C0027
+                                           ; SOURCE LINE # 144
+                                           ; SOURCE LINE # 145
+0042 900000      E     MOV     DPTR,#bAEMode
+0045 E0                MOVX    A,@DPTR
+0046 F500        R     MOV     count,A
+                                           ; SOURCE LINE # 146
+0048 EE                MOV     A,R6
+0049 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 147
+004A D200        E     SETB    xSetAEMode
+                                           ; SOURCE LINE # 148
+004C 120000      R     LCALL   SetCurRequestNoErr
+                                           ; SOURCE LINE # 149
+004F 900000      E     MOV     DPTR,#bAEMode
+0052 E0                MOVX    A,@DPTR
+0053 6500        R     XRL     A,count
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 14  
+
+0055 7003              JNZ     $ + 5H
+0057 020000      R     LJMP    ?C0034
+                                           ; SOURCE LINE # 150
+005A         ?C0029:
+                                           ; SOURCE LINE # 152
+005A 900004            MOV     DPTR,#04H
+005D E0                MOVX    A,@DPTR
+005E 30E104            JNB     ACC.1,?C0030
+0061 A3                INC     DPTR
+0062 E0                MOVX    A,@DPTR
+0063 70F5              JNZ     ?C0029
+0065         ?C0030:
+                                           ; SOURCE LINE # 153
+0065 900000      E     MOV     DPTR,#pbEP1Buf
+0068 7401              MOV     A,#01H
+006A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 154
+006B A3                INC     DPTR
+006C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 155
+006D E4                CLR     A
+006E A3                INC     DPTR
+006F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 156
+0070 A3                INC     DPTR
+0071 7404              MOV     A,#04H
+0073 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 157
+0074 A3                INC     DPTR
+0075 7401              MOV     A,#01H
+0077 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 158
+0078 7F03              MOV     R7,#03H
+007A 7E00              MOV     R6,#00H
+007C 120000      E     LCALL   _GetTab
+007F 900000      E     MOV     DPTR,#pbEP1Buf+05H
+0082 EF                MOV     A,R7
+0083 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 159
+0084 900000      E     MOV     DPTR,#bAEMode
+0087 E0                MOVX    A,@DPTR
+0088 540A              ANL     A,#0AH
+008A 6036              JZ      ?C0031
+                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 161
+008C 900000      E     MOV     DPTR,#pbEP1Buf+05H
+008F E0                MOVX    A,@DPTR
+0090 4404              ORL     A,#04H
+0092 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 162
+0093 900000      E     MOV     DPTR,#VideoProbeCommitCtrls+03H
+0096 E0                MOVX    A,@DPTR
+0097 FF                MOV     R7,A
+0098 120000      E     LCALL   _GetFPSTableIndex
+009B 75F004            MOV     B,#04H
+009E EF                MOV     A,R7
+009F 900000      E     MOV     DPTR,#FPS_Table
+00A2 120000      E     LCALL   ?C?OFFXADD
+00A5 120000      E     LCALL   ?C?LLDCODE
+00A8 8F00        R     MOV     dwETtemp+03H,R7
+00AA 8E00        R     MOV     dwETtemp+02H,R6
+00AC 8D00        R     MOV     dwETtemp+01H,R5
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 15  
+
+00AE 8C00        R     MOV     dwETtemp,R4
+                                           ; SOURCE LINE # 163
+00B0 E4                CLR     A
+00B1 7BE8              MOV     R3,#0E8H
+00B3 7A03              MOV     R2,#03H
+00B5 F9                MOV     R1,A
+00B6 F8                MOV     R0,A
+00B7 120000      E     LCALL   ?C?ULDIV
+00BA 8F00        R     MOV     dwETtemp+03H,R7
+00BC 8E00        R     MOV     dwETtemp+02H,R6
+00BE 8D00        R     MOV     dwETtemp+01H,R5
+00C0 8C00        R     MOV     dwETtemp,R4
+                                           ; SOURCE LINE # 164
+00C2         ?C0031:
+                                           ; SOURCE LINE # 165
+00C2 900005            MOV     DPTR,#05H
+00C5 7406              MOV     A,#06H
+00C7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 168
+00C8 900000      E     MOV     DPTR,#bAEMode
+00CB E0                MOVX    A,@DPTR
+00CC 540A              ANL     A,#0AH
+00CE 6025              JZ      ?C0034
+                                           ; SOURCE LINE # 169
+                                           ; SOURCE LINE # 170
+00D0 900000      E     MOV     DPTR,#dwETAbs
+00D3 120000      E     LCALL   ?C?LLDXDATA
+00D6 AB00        R     MOV     R3,dwETtemp+03H
+00D8 AA00        R     MOV     R2,dwETtemp+02H
+00DA A900        R     MOV     R1,dwETtemp+01H
+00DC A800        R     MOV     R0,dwETtemp
+00DE C3                CLR     C
+00DF 120000      E     LCALL   ?C?ULCMP
+00E2 6011              JZ      ?C0034
+                                           ; SOURCE LINE # 171
+00E4 AF00        R     MOV     R7,dwETtemp+03H
+00E6 AE00        R     MOV     R6,dwETtemp+02H
+00E8 AD00        R     MOV     R5,dwETtemp+01H
+00EA AC00        R     MOV     R4,dwETtemp
+00EC 900000      E     MOV     DPTR,#dwETAbs
+00EF 020000      E     LJMP    ?C?LSTXDATA
+                                           ; SOURCE LINE # 186
+                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 188
+                                           ; SOURCE LINE # 191
+00F2         ?C0027:
+                                           ; SOURCE LINE # 192
+00F2 120000      E     LCALL   OutofRangeCtrlandStall
+                                           ; SOURCE LINE # 194
+00F5         ?C0034:
+00F5 22                RET     
+             ; FUNCTION AEModeSetCtrl (END)
+
+             ; FUNCTION AEPrioritySetCtrl (BEGIN)
+                                           ; SOURCE LINE # 196
+                                           ; SOURCE LINE # 197
+                                           ; SOURCE LINE # 199
+0000 900000      E     MOV     DPTR,#pbIBuf
+0003 E0                MOVX    A,@DPTR
+0004 D3                SETB    C
+0005 9401              SUBB    A,#01H
+0007 4003              JC      ?C0035
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 16  
+
+                                           ; SOURCE LINE # 200
+0009 020000      E     LJMP    OutofRangeCtrlandStall
+                                           ; SOURCE LINE # 202
+000C         ?C0035:
+                                           ; SOURCE LINE # 203
+000C 900000      E     MOV     DPTR,#pbIBuf
+000F E0                MOVX    A,@DPTR
+0010 900000      E     MOV     DPTR,#bAEPriority
+0013 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 204
+0014 D200        E     SETB    xSetAEPriority
+                                           ; SOURCE LINE # 205
+0016 120000      R     LCALL   SetCurRequestNoErr
+                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 207
+0019         ?C0036:
+0019 22                RET     
+             ; FUNCTION AEPrioritySetCtrl (END)
+
+             ; FUNCTION ExTimeAbsSetCtrl (BEGIN)
+                                           ; SOURCE LINE # 209
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 213
+0000 900000      E     MOV     DPTR,#bAEMode
+0003 E0                MOVX    A,@DPTR
+0004 540A              ANL     A,#0AH
+0006 6003              JZ      $ + 5H
+0008 020000      R     LJMP    ?C0038
+                                           ; SOURCE LINE # 214
+                                           ; SOURCE LINE # 215
+000B 900000      E     MOV     DPTR,#pbIBuf+03H
+000E E0                MOVX    A,@DPTR
+000F 7800        R     MOV     R0,#LOW dwVal
+0011 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 216
+0012 900000      E     MOV     DPTR,#pbIBuf+02H
+0015 E0                MOVX    A,@DPTR
+0016 08                INC     R0
+0017 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 217
+0018 900000      E     MOV     DPTR,#pbIBuf+01H
+001B E0                MOVX    A,@DPTR
+001C 08                INC     R0
+001D F6                MOV     @R0,A
+                                           ; SOURCE LINE # 218
+001E 900000      E     MOV     DPTR,#pbIBuf
+0021 E0                MOVX    A,@DPTR
+0022 08                INC     R0
+0023 F6                MOV     @R0,A
+                                           ; SOURCE LINE # 220
+0024 7F43              MOV     R7,#043H
+0026 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 222
+0029 7F04              MOV     R7,#04H
+002B 7E00              MOV     R6,#00H
+002D 120000      E     LCALL   _GetTabW
+0030 7800        R     MOV     R0,#LOW dwMin
+0032 A606              MOV     @R0,AR6
+0034 08                INC     R0
+0035 A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 223
+0037 7F06              MOV     R7,#06H
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 17  
+
+0039 7E00              MOV     R6,#00H
+003B 120000      E     LCALL   _GetTabW
+003E 7800        R     MOV     R0,#LOW dwMin+02H
+0040 A606              MOV     @R0,AR6
+0042 08                INC     R0
+0043 A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 225
+0045 7F08              MOV     R7,#08H
+0047 7E00              MOV     R6,#00H
+0049 120000      E     LCALL   _GetTabW
+004C 7800        R     MOV     R0,#LOW dwMax
+004E A606              MOV     @R0,AR6
+0050 08                INC     R0
+0051 A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 226
+0053 7F0A              MOV     R7,#0AH
+0055 7E00              MOV     R6,#00H
+0057 120000      E     LCALL   _GetTabW
+005A 7800        R     MOV     R0,#LOW dwMax+02H
+005C A606              MOV     @R0,AR6
+005E 08                INC     R0
+005F A607              MOV     @R0,AR7
+                                           ; SOURCE LINE # 228
+0061 7800        R     MOV     R0,#LOW dwMin
+0063 120000      E     LCALL   ?C?LLDIDATA
+0066 7800        R     MOV     R0,#LOW dwVal
+0068 120000      E     LCALL   ?C?LLDIDATA0
+006B C3                CLR     C
+006C 120000      E     LCALL   ?C?ULCMP
+006F 4010              JC      ?C0040
+0071 7800        R     MOV     R0,#LOW dwMax
+0073 120000      E     LCALL   ?C?LLDIDATA
+0076 7800        R     MOV     R0,#LOW dwVal
+0078 120000      E     LCALL   ?C?LLDIDATA0
+007B D3                SETB    C
+007C 120000      E     LCALL   ?C?ULCMP
+007F 4003              JC      ?C0039
+0081         ?C0040:
+                                           ; SOURCE LINE # 229
+                                           ; SOURCE LINE # 230
+0081 020000      E     LJMP    OutofRangeCtrlandStall
+                                           ; SOURCE LINE # 232
+0084         ?C0039:
+                                           ; SOURCE LINE # 233
+                                           ; SOURCE LINE # 234
+0084 7800        R     MOV     R0,#LOW dwVal
+0086 120000      E     LCALL   ?C?LLDIDATA
+0089 900000      E     MOV     DPTR,#dwETAbs
+008C 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 235
+008F D200        E     SETB    xSetETAbs
+                                           ; SOURCE LINE # 236
+0091 020000      R     LJMP    SetCurRequestNoErr
+                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 239
+0094         ?C0038:
+                                           ; SOURCE LINE # 240
+0094 900000      E     MOV     DPTR,#bRequestErrorCode
+0097 7402              MOV     A,#02H
+0099 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+009A 900001            MOV     DPTR,#01H
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 18  
+
+009D E0                MOVX    A,@DPTR
+009E 4401              ORL     A,#01H
+00A0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 243
+00A1         ?C0041:
+00A1 22                RET     
+             ; FUNCTION ExTimeAbsSetCtrl (END)
+
+             ; FUNCTION AEModeGetCtrl (BEGIN)
+                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 250
+0000 7F43              MOV     R7,#043H
+0002 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 251
+0005 E500        E     MOV     A,bRequest
+0007 247C              ADD     A,#07CH
+0009 601D              JZ      ?C0046
+000B 24FE              ADD     A,#0FEH
+000D 6011              JZ      ?C0045
+000F 14                DEC     A
+0010 601B              JZ      ?C0047
+0012 2406              ADD     A,#06H
+0014 7025              JNZ     ?C0048
+                                           ; SOURCE LINE # 252
+0016         ?C0044:
+                                           ; SOURCE LINE # 253
+0016 900000      E     MOV     DPTR,#bAEMode
+0019 E0                MOVX    A,@DPTR
+001A 900000      E     MOV     DPTR,#pbEP0Buf
+001D F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 254
+001E 801E              SJMP    ?C0043
+                                           ; SOURCE LINE # 255
+0020         ?C0045:
+                                           ; SOURCE LINE # 256
+0020 900000      E     MOV     DPTR,#pbEP0Buf
+0023 7403              MOV     A,#03H
+0025 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 257
+0026 8016              SJMP    ?C0043
+                                           ; SOURCE LINE # 258
+0028         ?C0046:
+                                           ; SOURCE LINE # 259
+0028 E4                CLR     A
+0029 FF                MOV     R7,A
+002A FE                MOV     R6,A
+                                           ; SOURCE LINE # 260
+002B 8004              SJMP    ?C0102
+                                           ; SOURCE LINE # 261
+002D         ?C0047:
+                                           ; SOURCE LINE # 262
+002D 7F01              MOV     R7,#01H
+002F 7E00              MOV     R6,#00H
+0031         ?C0102:
+0031 120000      E     LCALL   _GetTab
+0034 900000      E     MOV     DPTR,#pbEP0Buf
+0037 EF                MOV     A,R7
+0038 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 263
+0039 8003              SJMP    ?C0043
+                                           ; SOURCE LINE # 264
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 19  
+
+003B         ?C0048:
+                                           ; SOURCE LINE # 265
+003B 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 267
+003E         ?C0043:
+                                           ; SOURCE LINE # 268
+003E E4                CLR     A
+003F 900000      E     MOV     DPTR,#bRequestErrorCode
+0042 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 269
+0043 900003            MOV     DPTR,#03H
+0046 04                INC     A
+0047 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 270
+0048 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 272
+004B         ?C0049:
+004B 22                RET     
+             ; FUNCTION AEModeGetCtrl (END)
+
+             ; FUNCTION ExTimeAbsGetCtrl (BEGIN)
+                                           ; SOURCE LINE # 274
+                                           ; SOURCE LINE # 275
+                                           ; SOURCE LINE # 278
+0000 7F43              MOV     R7,#043H
+0002 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 280
+0005 E500        E     MOV     A,bRequest
+0007 247F              ADD     A,#07FH
+0009 6037              JZ      ?C0055
+000B 14                DEC     A
+000C 6044              JZ      ?C0056
+000E 14                DEC     A
+000F 6050              JZ      ?C0057
+0011 14                DEC     A
+0012 605C              JZ      ?C0058
+0014 24FD              ADD     A,#0FDH
+0016 6067              JZ      ?C0059
+0018 04                INC     A
+0019 707C              JNZ     ?C0060
+                                           ; SOURCE LINE # 281
+001B         ?C0051:
+                                           ; SOURCE LINE # 282
+001B 900000      E     MOV     DPTR,#bAEMode
+001E E0                MOVX    A,@DPTR
+001F 540A              ANL     A,#0AH
+0021 7F03              MOV     R7,#03H
+0023 7E00              MOV     R6,#00H
+0025 600C              JZ      ?C0052
+                                           ; SOURCE LINE # 283
+0027 120000      E     LCALL   _GetTab
+002A EF                MOV     A,R7
+002B 4404              ORL     A,#04H
+002D 900000      E     MOV     DPTR,#pbEP0Buf
+0030 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 284
+0031 8008              SJMP    ?C0053
+0033         ?C0052:
+                                           ; SOURCE LINE # 285
+0033 120000      E     LCALL   _GetTab
+0036 900000      E     MOV     DPTR,#pbEP0Buf
+0039 EF                MOV     A,R7
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 20  
+
+003A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 286
+003B         ?C0053:
+                                           ; SOURCE LINE # 287
+003B 900003            MOV     DPTR,#03H
+003E 7401              MOV     A,#01H
+                                           ; SOURCE LINE # 288
+                                           ; SOURCE LINE # 289
+0040 806F              SJMP    ?C0103
+                                           ; SOURCE LINE # 291
+0042         ?C0055:
+                                           ; SOURCE LINE # 292
+0042 900000      E     MOV     DPTR,#dwETAbs
+0045 120000      E     LCALL   ?C?LLDXDATA
+0048 8F00        R     MOV     dwVal+03H,R7
+004A 8E00        R     MOV     dwVal+02H,R6
+004C 8D00        R     MOV     dwVal+01H,R5
+004E 8C00        R     MOV     dwVal,R4
+                                           ; SOURCE LINE # 293
+0050 8048              SJMP    ?C0050
+                                           ; SOURCE LINE # 294
+0052         ?C0056:
+                                           ; SOURCE LINE # 296
+0052 7F04              MOV     R7,#04H
+0054 7E00              MOV     R6,#00H
+0056 120000      E     LCALL   _GetTabW
+0059 8E00        R     MOV     dwVal,R6
+005B 8F00        R     MOV     dwVal+01H,R7
+                                           ; SOURCE LINE # 297
+005D 7F06              MOV     R7,#06H
+                                           ; SOURCE LINE # 298
+005F 802B              SJMP    ?C0106
+                                           ; SOURCE LINE # 299
+0061         ?C0057:
+                                           ; SOURCE LINE # 301
+0061 7F08              MOV     R7,#08H
+0063 7E00              MOV     R6,#00H
+0065 120000      E     LCALL   _GetTabW
+0068 8E00        R     MOV     dwVal,R6
+006A 8F00        R     MOV     dwVal+01H,R7
+                                           ; SOURCE LINE # 302
+006C 7F0A              MOV     R7,#0AH
+006E         ?C0104:
+                                           ; SOURCE LINE # 303
+006E 801C              SJMP    ?C0106
+                                           ; SOURCE LINE # 304
+0070         ?C0058:
+                                           ; SOURCE LINE # 306
+0070 7F0C              MOV     R7,#0CH
+0072 7E00              MOV     R6,#00H
+0074 120000      E     LCALL   _GetTabW
+0077 8E00        R     MOV     dwVal,R6
+0079 8F00        R     MOV     dwVal+01H,R7
+                                           ; SOURCE LINE # 307
+007B 7F0E              MOV     R7,#0EH
+007D         ?C0105:
+                                           ; SOURCE LINE # 308
+007D 800D              SJMP    ?C0106
+                                           ; SOURCE LINE # 309
+007F         ?C0059:
+                                           ; SOURCE LINE # 311
+007F 7F10              MOV     R7,#010H
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 21  
+
+0081 7E00              MOV     R6,#00H
+0083 120000      E     LCALL   _GetTabW
+0086 8E00        R     MOV     dwVal,R6
+0088 8F00        R     MOV     dwVal+01H,R7
+                                           ; SOURCE LINE # 312
+008A 7F12              MOV     R7,#012H
+008C         ?C0106:
+008C 7E00              MOV     R6,#00H
+008E 120000      E     LCALL   _GetTabW
+0091 8E00        R     MOV     dwVal+02H,R6
+0093 8F00        R     MOV     dwVal+03H,R7
+                                           ; SOURCE LINE # 313
+0095 8003              SJMP    ?C0050
+                                           ; SOURCE LINE # 314
+0097         ?C0060:
+                                           ; SOURCE LINE # 315
+0097 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 317
+009A         ?C0050:
+                                           ; SOURCE LINE # 318
+009A 900000      E     MOV     DPTR,#pbEP0Buf
+009D E500        R     MOV     A,dwVal+03H
+009F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 319
+00A0 A3                INC     DPTR
+00A1 E500        R     MOV     A,dwVal+02H
+00A3 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 320
+00A4 A3                INC     DPTR
+00A5 E500        R     MOV     A,dwVal+01H
+00A7 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 321
+00A8 A3                INC     DPTR
+00A9 E500        R     MOV     A,dwVal
+00AB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 322
+00AC 900003            MOV     DPTR,#03H
+00AF 7404              MOV     A,#04H
+00B1         ?C0103:
+00B1 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 323
+00B2 E4                CLR     A
+00B3 900000      E     MOV     DPTR,#bRequestErrorCode
+00B6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 324
+00B7 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 325
+00BA         ?C0054:
+00BA 22                RET     
+             ; FUNCTION ExTimeAbsGetCtrl (END)
+
+             ; FUNCTION AEPriorityGetCtrl (BEGIN)
+                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 328
+                                           ; SOURCE LINE # 329
+0000 E500        E     MOV     A,bRequest
+0002 247A              ADD     A,#07AH
+0004 600E              JZ      ?C0063
+0006 2405              ADD     A,#05H
+0008 7012              JNZ     ?C0064
+                                           ; SOURCE LINE # 330
+000A         ?C0062:
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 22  
+
+                                           ; SOURCE LINE # 331
+000A 900000      E     MOV     DPTR,#bAEPriority
+000D E0                MOVX    A,@DPTR
+000E 900000      E     MOV     DPTR,#pbEP0Buf
+0011 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 332
+0012 800B              SJMP    ?C0061
+                                           ; SOURCE LINE # 333
+0014         ?C0063:
+                                           ; SOURCE LINE # 334
+0014 900000      E     MOV     DPTR,#pbEP0Buf
+0017 7403              MOV     A,#03H
+0019 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 335
+001A 8003              SJMP    ?C0061
+                                           ; SOURCE LINE # 336
+001C         ?C0064:
+                                           ; SOURCE LINE # 337
+001C 020000      E     LJMP    InvalidRequestandStall
+                                           ; SOURCE LINE # 339
+001F         ?C0061:
+                                           ; SOURCE LINE # 341
+001F E4                CLR     A
+0020 900000      E     MOV     DPTR,#bRequestErrorCode
+0023 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 342
+0024 900003            MOV     DPTR,#03H
+0027 04                INC     A
+0028 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 343
+0029 120000      E     LCALL   WaitTXEnd
+                                           ; SOURCE LINE # 344
+002C         ?C0065:
+002C 22                RET     
+             ; FUNCTION AEPriorityGetCtrl (END)
+
+             ; FUNCTION CameraTermSetCtrl (BEGIN)
+                                           ; SOURCE LINE # 347
+                                           ; SOURCE LINE # 348
+                                           ; SOURCE LINE # 351
+0000 E4                CLR     A
+0001 F500        R     MOV     bRecBytesCnt,A
+                                           ; SOURCE LINE # 353
+0003 300004      E     JNB     xHighSpdMode,?C0066
+                                           ; SOURCE LINE # 354
+0006 7F06              MOV     R7,#06H
+                                           ; SOURCE LINE # 355
+0008 8002              SJMP    ?C0107
+000A         ?C0066:
+                                           ; SOURCE LINE # 356
+000A 7F1A              MOV     R7,#01AH
+000C         ?C0107:
+000C 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 357
+000F         ?C0067:
+                                           ; SOURCE LINE # 358
+000F 7F0F              MOV     R7,#0FH
+0011 7E00              MOV     R6,#00H
+0013 120000      E     LCALL   _GetTab
+0016 8F00        R     MOV     bmControl0,R7
+                                           ; SOURCE LINE # 359
+0018 7F11              MOV     R7,#011H
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 23  
+
+001A 7E00              MOV     R6,#00H
+001C 120000      E     LCALL   _GetTab
+001F 8F00        R     MOV     bmControl2,R7
+                                           ; SOURCE LINE # 362
+0021 E500        E     MOV     A,wValue
+0023 7002              JNZ     ?C0068
+                                           ; SOURCE LINE # 363
+                                           ; SOURCE LINE # 364
+0025 806F              SJMP    ?C0110
+                                           ; SOURCE LINE # 366
+0027         ?C0068:
+                                           ; SOURCE LINE # 367
+0027 E500        E     MOV     A,wValue
+0029 D3                SETB    C
+002A 9410              SUBB    A,#010H
+002C 501C              JNC     ?C0071
+                                           ; SOURCE LINE # 368
+                                           ; SOURCE LINE # 369
+002E E500        E     MOV     A,wValue
+0030 14                DEC     A
+0031 FF                MOV     R7,A
+0032 7401              MOV     A,#01H
+0034 7E00              MOV     R6,#00H
+0036 A807              MOV     R0,AR7
+0038 08                INC     R0
+0039 8005              SJMP    ?C0099
+003B         ?C0098:
+003B C3                CLR     C
+003C 33                RLC     A
+003D CE                XCH     A,R6
+003E 33                RLC     A
+003F CE                XCH     A,R6
+0040         ?C0099:
+0040 D8F9              DJNZ    R0,?C0098
+0042 FF                MOV     R7,A
+0043 EF                MOV     A,R7
+0044 5500        R     ANL     A,bmControl0
+0046 7009              JNZ     ?C0075
+                                           ; SOURCE LINE # 370
+                                           ; SOURCE LINE # 371
+0048         ?C0108:
+0048 804C              SJMP    ?C0110
+                                           ; SOURCE LINE # 373
+                                           ; SOURCE LINE # 374
+004A         ?C0071:
+                                           ; SOURCE LINE # 375
+                                           ; SOURCE LINE # 376
+004A E500        R     MOV     A,bmControl2
+004C 20E202            JB      ACC.2,?C0075
+                                           ; SOURCE LINE # 377
+                                           ; SOURCE LINE # 378
+004F         ?C0109:
+004F 8045              SJMP    ?C0110
+                                           ; SOURCE LINE # 380
+                                           ; SOURCE LINE # 381
+0051         ?C0075:
+                                           ; SOURCE LINE # 385
+0051 900002            MOV     DPTR,#02H
+0054 E0                MOVX    A,@DPTR
+0055 30E0F9            JNB     ACC.0,?C0075
+0058         ?C0076:
+                                           ; SOURCE LINE # 386
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 24  
+
+0058 900003            MOV     DPTR,#03H
+005B E0                MOVX    A,@DPTR
+005C 547F              ANL     A,#07FH
+005E F500        R     MOV     bRecBytesCnt,A
+                                           ; SOURCE LINE # 387
+0060 FF                MOV     R7,A
+0061 7E00              MOV     R6,#00H
+0063 7800        E     MOV     R0,#LOW pbIBuf
+0065 7C00        E     MOV     R4,#HIGH pbIBuf
+0067 7D01              MOV     R5,#01H
+0069 7B01              MOV     R3,#01H
+006B 7A00        E     MOV     R2,#HIGH pbEP0Buf
+006D 7900        E     MOV     R1,#LOW pbEP0Buf
+006F 120000      E     LCALL   ?C?COPY
+                                           ; SOURCE LINE # 388
+0072 900002            MOV     DPTR,#02H
+0075 E0                MOVX    A,@DPTR
+0076 54FE              ANL     A,#0FEH
+0078 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 390
+0079 E500        E     MOV     A,wValue
+007B 24FD              ADD     A,#0FDH
+007D 600E              JZ      ?C0079
+007F 14                DEC     A
+0080 600E              JZ      ?C0080
+0082 24F3              ADD     A,#0F3H
+0084 600D              JZ      ?C0081
+0086 240F              ADD     A,#0FH
+0088 700C              JNZ     ?C0082
+                                           ; SOURCE LINE # 391
+008A         ?C0078:
+                                           ; SOURCE LINE # 392
+008A 020000      R     LJMP    AEModeSetCtrl
+                                           ; SOURCE LINE # 393
+                                           ; SOURCE LINE # 394
+008D         ?C0079:
+                                           ; SOURCE LINE # 395
+008D 020000      R     LJMP    AEPrioritySetCtrl
+                                           ; SOURCE LINE # 396
+                                           ; SOURCE LINE # 397
+0090         ?C0080:
+                                           ; SOURCE LINE # 398
+0090 020000      R     LJMP    ExTimeAbsSetCtrl
+                                           ; SOURCE LINE # 399
+                                           ; SOURCE LINE # 400
+0093         ?C0081:
+                                           ; SOURCE LINE # 402
+0093 020000      R     LJMP    SetPrivacyCtrl
+                                           ; SOURCE LINE # 403
+                                           ; SOURCE LINE # 404
+0096         ?C0082:
+                                           ; SOURCE LINE # 405
+0096         ?C0110:
+0096 120000      E     LCALL   InvalidCtrlandStall
+                                           ; SOURCE LINE # 407
+                                           ; SOURCE LINE # 408
+0099         ?C0069:
+0099 22                RET     
+             ; FUNCTION CameraTermSetCtrl (END)
+
+             ; FUNCTION CameraTermGetCtrl (BEGIN)
+                                           ; SOURCE LINE # 411
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 25  
+
+                                           ; SOURCE LINE # 412
+                                           ; SOURCE LINE # 415
+0000 300004      E     JNB     xHighSpdMode,?C0083
+                                           ; SOURCE LINE # 416
+0003 7F06              MOV     R7,#06H
+                                           ; SOURCE LINE # 417
+0005 8002              SJMP    ?C0111
+0007         ?C0083:
+                                           ; SOURCE LINE # 418
+0007 7F1A              MOV     R7,#01AH
+0009         ?C0111:
+0009 120000      E     LCALL   _SetPtrTabEx
+                                           ; SOURCE LINE # 419
+000C         ?C0084:
+                                           ; SOURCE LINE # 420
+000C 7F0F              MOV     R7,#0FH
+000E 7E00              MOV     R6,#00H
+0010 120000      E     LCALL   _GetTab
+0013 8F00        R     MOV     bmControl0,R7
+                                           ; SOURCE LINE # 421
+0015 7F11              MOV     R7,#011H
+0017 7E00              MOV     R6,#00H
+0019 120000      E     LCALL   _GetTab
+001C 8F00        R     MOV     bmControl2,R7
+                                           ; SOURCE LINE # 423
+001E E500        E     MOV     A,wValue
+0020 24FD              ADD     A,#0FDH
+0022 6015              JZ      ?C0089
+0024 14                DEC     A
+0025 601C              JZ      ?C0091
+0027 24F3              ADD     A,#0F3H
+0029 6022              JZ      ?C0093
+002B 240F              ADD     A,#0FH
+002D 7028              JNZ     ?C0095
+                                           ; SOURCE LINE # 424
+002F         ?C0086:
+                                           ; SOURCE LINE # 425
+002F E500        R     MOV     A,bmControl0
+0031 20E102            JB      ACC.1,?C0087
+                                           ; SOURCE LINE # 426
+0034 8021              SJMP    ?C0115
+                                           ; SOURCE LINE # 428
+0036         ?C0087:
+                                           ; SOURCE LINE # 429
+0036 020000      R     LJMP    AEModeGetCtrl
+                                           ; SOURCE LINE # 430
+                                           ; SOURCE LINE # 432
+0039         ?C0089:
+                                           ; SOURCE LINE # 433
+0039 E500        R     MOV     A,bmControl0
+003B 20E202            JB      ACC.2,?C0090
+                                           ; SOURCE LINE # 434
+003E         ?C0112:
+003E 8017              SJMP    ?C0115
+                                           ; SOURCE LINE # 436
+0040         ?C0090:
+                                           ; SOURCE LINE # 437
+0040 020000      R     LJMP    AEPriorityGetCtrl
+                                           ; SOURCE LINE # 438
+                                           ; SOURCE LINE # 440
+0043         ?C0091:
+                                           ; SOURCE LINE # 441
+C51 COMPILER V7.06   CAMTERMCTRL                                                           07/22/2020 17:08:20 PAGE 26  
+
+0043 E500        R     MOV     A,bmControl0
+0045 20E302            JB      ACC.3,?C0092
+                                           ; SOURCE LINE # 442
+0048         ?C0113:
+0048 800D              SJMP    ?C0115
+                                           ; SOURCE LINE # 444
+004A         ?C0092:
+                                           ; SOURCE LINE # 445
+004A 020000      R     LJMP    ExTimeAbsGetCtrl
+                                           ; SOURCE LINE # 446
+                                           ; SOURCE LINE # 448
+004D         ?C0093:
+                                           ; SOURCE LINE # 449
+004D E500        R     MOV     A,bmControl2
+004F 20E202            JB      ACC.2,?C0094
+                                           ; SOURCE LINE # 450
+0052         ?C0114:
+0052 8003              SJMP    ?C0115
+                                           ; SOURCE LINE # 452
+0054         ?C0094:
+                                           ; SOURCE LINE # 454
+0054 020000      R     LJMP    GetPrivacyCtrl
+                                           ; SOURCE LINE # 458
+                                           ; SOURCE LINE # 459
+0057         ?C0095:
+                                           ; SOURCE LINE # 460
+0057         ?C0115:
+0057 120000      E     LCALL   InvalidCtrlandStall
+                                           ; SOURCE LINE # 461
+                                           ; SOURCE LINE # 462
+                                           ; SOURCE LINE # 463
+005A         ?C0088:
+005A 22                RET     
+             ; FUNCTION CameraTermGetCtrl (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1214    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      15
+   IDATA SIZE       =   ----      12
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
